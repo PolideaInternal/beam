@@ -37,9 +37,7 @@ public class SnowflakeJDBCIOTest {
   @Rule
   public final transient TestPipeline pipelineWrite = TestPipeline.create();
 
-  static TestDataflowPipelineOptions options;
   static SnowflakeBasicDataSource snowflakeBasicDataSource;
-  static SnowflakeExtendedDatasource snowflakeExtendedDatasource;
   static SnowflakeIO.DataSourceConfiguration dc;
   static String pass;
   static String user;
@@ -48,6 +46,7 @@ public class SnowflakeJDBCIOTest {
   static String region;
   static String table;
   static String output;
+  static SnowflakeTestPipelineOptions options;
   static SnowflakeIO.DataSourceConfiguration dcextended;
 
   public interface SnowflakeTestPipelineOptions extends TestPipelineOptions, DataflowPipelineOptions {
@@ -83,7 +82,7 @@ public class SnowflakeJDBCIOTest {
   @BeforeClass
   public static void setup() throws Exception {
     PipelineOptionsFactory.register(TestPipelineOptions.class);
-    SnowflakeTestPipelineOptions options = PipelineOptionsFactory
+    options = PipelineOptionsFactory
         .as(SnowflakeTestPipelineOptions.class);
 
     Properties props = new Properties();
