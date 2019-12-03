@@ -1,15 +1,23 @@
 package com.polidea.snowflake.io;
 
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.sql.ResultSet;
-import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
+import java.util.Base64;
+import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.BigEndianIntegerCoder;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.TextIO;
-import org.apache.beam.sdk.options.PipelineOptions;
+import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -26,73 +34,28 @@ public class ReadPipelineExample {
     }
   }
 
-  public interface SnowflakePipelineOptions extends PipelineOptions {
-    String getAccount();
+  public interface ExamplePipelineOptions extends SnowflakePipelineOptions {
 
-    void setAccount(String account);
-
-    String getUsername();
-
-    void setUsername(String username);
-
-    String getPassword();
-
-    void setPassword(String password);
-
-    String getOauthToken();
-
-    void setOauthToken(String oauthToken);
-
-    String getPrivateKeyPath();
-
-    void setPrivateKeyPath(String privateKeyPath);
-
-    String getPrivateKeyPassphrase();
-
-    void setPrivateKeyPassphrase(String keyPassphrase);
-
+    @Description("Table name to connect to.")
     String getTable();
 
     void setTable(String table);
 
+    @Description("Destination of output data.")
     String getOutput();
 
     void setOutput(String output);
-
-    String getDatabase();
-
-    void setDatabase(String database);
-
-    String getSchema();
-
-    void setSchema(String schema);
   }
 
   public static void main(String[] args) {
-    SnowflakePipelineOptions options =
-        PipelineOptionsFactory.fromArgs(args).withValidation().as(SnowflakePipelineOptions.class);
+    ExamplePipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args).withValidation().as(ExamplePipelineOptions.class);
     Pipeline pipelineRead = Pipeline.create(options);
 
-    SnowflakeBasicDataSource snowflakeBasicDataSource = new SnowflakeBasicDataSource();
-
-    String pass = options.getPassword();
-    String account = options.getAccount();
-    String user = options.getUsername();
     String table = options.getTable();
-
     String output = options.getOutput();
 
-    String serverName = String.format("%s.snowflakecomputing.com/", account);
-    snowflakeBasicDataSource.setServerName(serverName);
-
-    String url = snowflakeBasicDataSource.getUrl();
-    SnowflakeIO.DataSourceConfiguration dc =
-        SnowflakeIO.DataSourceConfiguration.create("net.snowflake.client.jdbc.SnowflakeDriver", url)
-            .withUsername(user)
-            .withPassword(pass)
-            .withConnectionProperties(
-                String.format(
-                    "database=%s;schema=%s;", options.getDatabase(), options.getSchema()));
+    SnowflakeIO.DataSourceConfiguration dc = getDataSourceConfiguration(options);
 
     PCollection<KV<Integer, String>> namesAndIds =
         pipelineRead.apply(
@@ -115,5 +78,58 @@ public class ReadPipelineExample {
 
     PipelineResult pipelineResult = pipelineRead.run(options);
     pipelineResult.waitUntilFinish();
+  }
+
+  private static SnowflakeIO.DataSourceConfiguration getDataSourceConfiguration(
+      ExamplePipelineOptions options) {
+    if (options.getOauthToken() != null && !options.getOauthToken().isEmpty()) {
+      return SnowflakeIO.DataSourceConfiguration.create()
+          .withUrl(options.getUrl())
+          .withServerName(options.getServerName())
+          .withOauthToken(options.getOauthToken())
+          .withDatabase(options.getDatabase())
+          .withWarehouse(options.getWarehouse())
+          .withSchema(options.getSchema());
+    } else if (!options.getUsername().isEmpty() && !options.getPassword().isEmpty()) {
+      return SnowflakeIO.DataSourceConfiguration.create()
+          .withUrl(options.getUrl())
+          .withServerName(options.getServerName())
+          .withUsername(options.getUsername())
+          .withPassword(options.getPassword())
+          .withDatabase(options.getDatabase())
+          .withSchema(options.getSchema());
+    } else if (!options.getUsername().isEmpty()
+        && !options.getPrivateKeyPath().isEmpty()
+        && !options.getPrivateKeyPassphrase().isEmpty()) {
+      return SnowflakeIO.DataSourceConfiguration.create()
+          .withUrl(options.getUrl())
+          .withServerName(options.getServerName())
+          .withUsername(options.getUsername())
+          .withPrivateKey(
+              getPrivateKey(options.getPrivateKeyPath(), options.getPrivateKeyPassphrase()))
+          .withDatabase(options.getDatabase())
+          .withSchema(options.getSchema());
+    }
+    throw new RuntimeException("Can't create DataSourceConfiguration from options");
+  }
+
+  private static PrivateKey getPrivateKey(String privateKeyPath, String privateKeyPassphrase) {
+    try {
+      byte[] keyBytes = Files.readAllBytes(Paths.get(privateKeyPath));
+
+      String encrypted = new String(keyBytes);
+      encrypted = encrypted.replace("-----BEGIN ENCRYPTED PRIVATE KEY-----", "");
+      encrypted = encrypted.replace("-----END ENCRYPTED PRIVATE KEY-----", "");
+      EncryptedPrivateKeyInfo pkInfo =
+          new EncryptedPrivateKeyInfo(Base64.getMimeDecoder().decode(encrypted));
+      PBEKeySpec keySpec = new PBEKeySpec(privateKeyPassphrase.toCharArray());
+      SecretKeyFactory pbeKeyFactory = SecretKeyFactory.getInstance(pkInfo.getAlgName());
+      PKCS8EncodedKeySpec encodedKeySpec = pkInfo.getKeySpec(pbeKeyFactory.generateSecret(keySpec));
+
+      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+      return keyFactory.generatePrivate(encodedKeySpec);
+    } catch (Exception ex) {
+      throw new RuntimeException("Can't create PrivateKey from options");
+    }
   }
 }
