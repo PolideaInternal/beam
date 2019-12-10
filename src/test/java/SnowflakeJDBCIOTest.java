@@ -24,11 +24,23 @@ import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
 import java.io.Serializable;
-import java.util.Properties;
 
-
+/**
+ * To run this tests on Dataflow
+ * ./gradlew test -DintegrationTestPipelineOptions='["
+ *    --runner=DataflowRunner",
+ *    "--project=gcp_project",
+ *    "--stagingLocation=gs://gcp_location",
+ *    "--account=snowflake_account",
+ *    "--username=snowflake_username",
+ *    "--table=test_table_name",
+ *    "--snowflakeRegion=ex_us-east-1",
+ *    "--password=snowflake_password",
+ *    "--schema=ex_PUBLIC",
+ *    "--output=gs://..."]'
+ *
+ */
 @RunWith(JUnit4.class)
 public class SnowflakeJDBCIOTest {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeJDBCIOTest.class);
@@ -47,65 +59,24 @@ public class SnowflakeJDBCIOTest {
   static String table;
   static String output;
   static SnowflakeTestPipelineOptions options;
-  static SnowflakeIO.DataSourceConfiguration dcextended;
-
-  public interface SnowflakeTestPipelineOptions extends TestPipelineOptions, DataflowPipelineOptions {
-    String getAccount();
-
-    void setAccount(String account);
-
-    String getUsername();
-
-    void setUsername(String username);
-
-    String getPassword();
-
-    void setPassword(String password);
-
-    String getOauthToken();
-
-    void setOauthToken(String oauthToken);
-
-    String getPrivateKeyPath();
-
-    void setPrivateKeyPath(String privateKeyPath);
-
-    String getPrivateKeyPassphrase();
-
-    void setPrivateKeyPassphrase(String keyPassphrase);
-
-    String getTempRoot();
-
-    void setTempRoot(String tempRoot);
-  }
 
   @BeforeClass
-  public static void setup() throws Exception {
-    PipelineOptionsFactory.register(TestPipelineOptions.class);
-    options = PipelineOptionsFactory
-        .as(SnowflakeTestPipelineOptions.class);
+  public static void setup() {
+    PipelineOptionsFactory.register(SnowflakeTestPipelineOptions.class);
+    options = TestPipeline.testingPipelineOptions().as(SnowflakeTestPipelineOptions.class);
 
-    Properties props = new Properties();
-    props.load(new FileInputStream("src/test/resources/config.properties"));
+    output = options.getOutput();
+    createConnection();
+  }
 
-    if (props.getProperty("runner").equals("Dataflow")) {
-      options.setRunner(TestDataflowRunner.class);
-      options.setProject(props.getProperty("project"));
-      options.setTempLocation(props.getProperty("tempLocation"));
-      options.setTempRoot(props.getProperty("tempRoot"));
-      output = props.getProperty("output_dataflow");
-    } else {
-      options.setRunner(DirectRunner.class);
-      output = props.getProperty("output_local");
-    }
-
+  private static void createConnection(){
     snowflakeBasicDataSource = new SnowflakeBasicDataSource();
 
-    pass = props.getProperty("pass");
-    account = props.getProperty("account");
-    user = props.getProperty("user");
-    region = props.getProperty("region");
-    table = props.getProperty("table");
+    pass = options.getPassword();
+    account = options.getAccount();
+    user = options.getUsername();
+    region = options.getSnowflakeRegion();
+    table = options.getTable();
 
     serverName = String.format("%s.%s.snowflakecomputing.com/", account, region);
     snowflakeBasicDataSource.setServerName(serverName);
@@ -116,13 +87,12 @@ public class SnowflakeJDBCIOTest {
         url)
         .withUsername(user)
         .withPassword(pass)
-        .withConnectionProperties(String.format("database=%s;schema=%s;", props.getProperty("database"), props.getProperty("schema")));
+        .withConnectionProperties(String.format("database=%s;schema=%s;", options.getDatabase(), options.getSchema()));
   }
 
   static class Parse extends DoFn<TestRow, String> implements Serializable {
     @ProcessElement
     public void processElement(ProcessContext c) {
-      System.out.println("Test");
       c.output(c.element().toString());
     }
   }
@@ -153,7 +123,7 @@ public class SnowflakeJDBCIOTest {
 
       PAssert.that(consolidatedHashcode)
           .containsInAnyOrder(TestRow.getExpectedHashForRowCount(1000));
-      PipelineResult pipelineResult = pipelineRead.run(options);
+      PipelineResult pipelineResult = pipelineRead.run();
       pipelineResult.waitUntilFinish();
     } catch (
         RuntimeException e) {
@@ -162,7 +132,7 @@ public class SnowflakeJDBCIOTest {
   }
 
   @Test
-  public void writeThenReadTest() {
+  public void writeTest() {
     pipelineWrite
         .apply(GenerateSequence.from(0).to(1000))
         .apply(ParDo.of(new TestRow.DeterministicallyConstructTestRowFn()))
