@@ -1,3 +1,5 @@
+import java.io.Serializable;
+import java.sql.ResultSet;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
@@ -10,9 +12,6 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
-
-import java.io.Serializable;
-import java.sql.ResultSet;
 
 public class ReadPipelineExample {
 
@@ -63,14 +62,11 @@ public class ReadPipelineExample {
     String getSchema();
 
     void setSchema(String schema);
-
   }
 
   public static void main(String[] args) {
-    SnowflakePipelineOptions options = PipelineOptionsFactory
-        .fromArgs(args)
-        .withValidation()
-        .as(SnowflakePipelineOptions.class);
+    SnowflakePipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args).withValidation().as(SnowflakePipelineOptions.class);
     Pipeline pipelineRead = Pipeline.create(options);
 
     SnowflakeBasicDataSource snowflakeBasicDataSource = new SnowflakeBasicDataSource();
@@ -86,24 +82,28 @@ public class ReadPipelineExample {
     snowflakeBasicDataSource.setServerName(serverName);
 
     String url = snowflakeBasicDataSource.getUrl();
-    SnowflakeIO.DataSourceConfiguration  dc = SnowflakeIO.DataSourceConfiguration.create(
-        "net.snowflake.client.jdbc.SnowflakeDriver",
-        url)
-        .withUsername(user)
-        .withPassword(pass)
-        .withConnectionProperties(String.format("database=%s;schema=%s;", options.getDatabase(), options.getSchema()));
+    SnowflakeIO.DataSourceConfiguration dc =
+        SnowflakeIO.DataSourceConfiguration.create("net.snowflake.client.jdbc.SnowflakeDriver", url)
+            .withUsername(user)
+            .withPassword(pass)
+            .withConnectionProperties(
+                String.format(
+                    "database=%s;schema=%s;", options.getDatabase(), options.getSchema()));
 
     PCollection<KV<Integer, String>> namesAndIds =
-         pipelineRead
-            .apply("Read from IO",
-                SnowflakeIO.<KV<Integer, String>>read()
-                    .withDataSourceConfiguration(dc)
-                    .withQuery(String.format("SELECT id, name FROM %s LIMIT 1000;", table))
-                    .withRowMapper(new SnowflakeIO.RowMapper<KV<Integer, String>>() {
+        pipelineRead.apply(
+            "Read from IO",
+            SnowflakeIO.<KV<Integer, String>>read()
+                .withDataSourceConfiguration(dc)
+                .withQuery(String.format("SELECT id, name FROM %s LIMIT 1000;", table))
+                .withRowMapper(
+                    new SnowflakeIO.RowMapper<KV<Integer, String>>() {
                       public KV<Integer, String> mapRow(ResultSet resultSet) throws Exception {
-                      return KV.of(resultSet.getInt(1), resultSet.getString(2));}})
-                    .withCoder(KvCoder.of(BigEndianIntegerCoder.of(), (Coder<String>) StringUtf8Coder.of()))
-            );
+                        return KV.of(resultSet.getInt(1), resultSet.getString(2));
+                      }
+                    })
+                .withCoder(
+                    KvCoder.of(BigEndianIntegerCoder.of(), (Coder<String>) StringUtf8Coder.of())));
 
     PDone printableData =
         namesAndIds

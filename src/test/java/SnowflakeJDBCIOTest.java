@@ -1,5 +1,7 @@
+import java.io.FileInputStream;
+import java.io.Serializable;
+import java.util.Properties;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
-import org.apache.beam.runners.dataflow.TestDataflowPipelineOptions;
 import org.apache.beam.runners.dataflow.TestDataflowRunner;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.runners.direct.DirectRunner;
@@ -24,18 +26,11 @@ import org.junit.runners.JUnit4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.Serializable;
-import java.util.Properties;
-
-
 @RunWith(JUnit4.class)
 public class SnowflakeJDBCIOTest {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeJDBCIOTest.class);
-  @Rule
-  public final transient TestPipeline pipelineRead = TestPipeline.create();
-  @Rule
-  public final transient TestPipeline pipelineWrite = TestPipeline.create();
+  @Rule public final transient TestPipeline pipelineRead = TestPipeline.create();
+  @Rule public final transient TestPipeline pipelineWrite = TestPipeline.create();
 
   static SnowflakeBasicDataSource snowflakeBasicDataSource;
   static SnowflakeIO.DataSourceConfiguration dc;
@@ -49,7 +44,8 @@ public class SnowflakeJDBCIOTest {
   static SnowflakeTestPipelineOptions options;
   static SnowflakeIO.DataSourceConfiguration dcextended;
 
-  public interface SnowflakeTestPipelineOptions extends TestPipelineOptions, DataflowPipelineOptions {
+  public interface SnowflakeTestPipelineOptions
+      extends TestPipelineOptions, DataflowPipelineOptions {
     String getAccount();
 
     void setAccount(String account);
@@ -82,8 +78,7 @@ public class SnowflakeJDBCIOTest {
   @BeforeClass
   public static void setup() throws Exception {
     PipelineOptionsFactory.register(TestPipelineOptions.class);
-    options = PipelineOptionsFactory
-        .as(SnowflakeTestPipelineOptions.class);
+    options = PipelineOptionsFactory.as(SnowflakeTestPipelineOptions.class);
 
     Properties props = new Properties();
     props.load(new FileInputStream("src/test/resources/config.properties"));
@@ -111,12 +106,14 @@ public class SnowflakeJDBCIOTest {
     snowflakeBasicDataSource.setServerName(serverName);
 
     String url = snowflakeBasicDataSource.getUrl();
-    dc = SnowflakeIO.DataSourceConfiguration.create(
-        "net.snowflake.client.jdbc.SnowflakeDriver",
-        url)
-        .withUsername(user)
-        .withPassword(pass)
-        .withConnectionProperties(String.format("database=%s;schema=%s;", props.getProperty("database"), props.getProperty("schema")));
+    dc =
+        SnowflakeIO.DataSourceConfiguration.create("net.snowflake.client.jdbc.SnowflakeDriver", url)
+            .withUsername(user)
+            .withPassword(pass)
+            .withConnectionProperties(
+                String.format(
+                    "database=%s;schema=%s;",
+                    props.getProperty("database"), props.getProperty("schema")));
   }
 
   static class Parse extends DoFn<TestRow, String> implements Serializable {
@@ -131,14 +128,14 @@ public class SnowflakeJDBCIOTest {
   public void readTest() {
     try {
       PCollection<TestRow> namesAndIds =
-          (PCollection<TestRow>) pipelineRead
-              .apply("Read from IO",
+          (PCollection<TestRow>)
+              pipelineRead.apply(
+                  "Read from IO",
                   SnowflakeIO.read()
                       .withDataSourceConfiguration(dc)
                       .withQuery(String.format("SELECT id, name FROM %s LIMIT 1000;", table))
                       .withRowMapper(new JdbcTestHelper.CreateTestRowOfNameAndId())
-                      .withCoder(SerializableCoder.of(TestRow.class))
-              );
+                      .withCoder(SerializableCoder.of(TestRow.class)));
 
       PCollection<String> consolidatedHashcode =
           namesAndIds
@@ -150,13 +147,11 @@ public class SnowflakeJDBCIOTest {
               .apply("Find elements to write", ParDo.of(new Parse()))
               .apply("Write to text file", TextIO.write().to(output));
 
-
       PAssert.that(consolidatedHashcode)
           .containsInAnyOrder(TestRow.getExpectedHashForRowCount(1000));
       PipelineResult pipelineResult = pipelineRead.run(options);
       pipelineResult.waitUntilFinish();
-    } catch (
-        RuntimeException e) {
+    } catch (RuntimeException e) {
       throw e;
     }
   }
@@ -175,4 +170,3 @@ public class SnowflakeJDBCIOTest {
     pipelineWrite.run();
   }
 }
-

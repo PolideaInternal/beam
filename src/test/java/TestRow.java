@@ -17,13 +17,9 @@
  */
 
 import com.google.auto.value.AutoValue;
+import java.io.Serializable;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
 
 @AutoValue
 public abstract class TestRow implements Serializable, Comparable<TestRow> {
@@ -41,16 +37,13 @@ public abstract class TestRow implements Serializable, Comparable<TestRow> {
     return id().compareTo(other.id());
   }
 
-
   public static TestRow fromSeed(Integer seed) {
     return create(seed, getNameForSeed(seed));
   }
 
-
   public static String getNameForSeed(Integer seed) {
     return "Testval" + seed;
   }
-
 
   public static class SelectNameFn extends DoFn<TestRow, String> {
     @ProcessElement
@@ -71,9 +64,7 @@ public abstract class TestRow implements Serializable, Comparable<TestRow> {
    * rows generated from seeds in [0, n).
    */
   private static final ImmutableMap<Integer, String> EXPECTED_HASHES =
-      ImmutableMap.of(
-          1000, "c0f993a54cd47a51802853d80e98efa2");
-
+      ImmutableMap.of(1000, "c0f993a54cd47a51802853d80e98efa2");
 
   public static String getExpectedHashForRowCount(int rowCount)
       throws UnsupportedOperationException {
