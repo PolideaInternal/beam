@@ -1,0 +1,9 @@
+image: java:8
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - ./gradlew check

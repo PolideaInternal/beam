@@ -9,8 +9,10 @@ import groovy.json.JsonSlurper
  */
 plugins {
     id 'java'
+    id 'groovy'
     id 'idea'
     id 'application'
+    id "com.diffplug.gradle.spotless" version "3.26.1"
 }
 
 repositories {
@@ -19,6 +21,19 @@ repositories {
 
 configurations {
     testCompile
+}
+
+spotless {
+    enforceCheck true
+    java {
+        googleJavaFormat()
+    }
+    def grEclipseConfig = project(":").file("greclipse.properties")
+    groovy {
+        paddedCell() // Recommended to avoid cyclic ambiguity issues
+        greclipse().configFile(grEclipseConfig)
+    }
+    groovyGradle { greclipse().configFile(grEclipseConfig) }
 }
 
 dependencies {
