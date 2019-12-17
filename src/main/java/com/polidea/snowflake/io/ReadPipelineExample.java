@@ -106,8 +106,7 @@ public class ReadPipelineExample {
                         return KV.of(resultSet.getInt(1), resultSet.getString(2));
                       }
                     })
-                .withCoder(
-                    KvCoder.of(BigEndianIntegerCoder.of(), StringUtf8Coder.of())));
+                .withCoder(KvCoder.of(BigEndianIntegerCoder.of(), StringUtf8Coder.of())));
 
     PDone printableData =
         namesAndIds

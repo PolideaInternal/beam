@@ -264,12 +264,16 @@ public class SnowflakeIO {
     }
 
     public ReadAll<ParameterT, OutputT> withQuery(String query) {
-      checkArgument(query != null, "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
+      checkArgument(
+          query != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
       return withQuery(ValueProvider.StaticValueProvider.of(query));
     }
 
     public ReadAll<ParameterT, OutputT> withQuery(ValueProvider<String> query) {
-      checkArgument(query != null, "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
+      checkArgument(
+          query != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
       return toBuilder().setQuery(query).build();
     }
 
@@ -290,7 +294,9 @@ public class SnowflakeIO {
     }
 
     public ReadAll<ParameterT, OutputT> withCoder(Coder<OutputT> coder) {
-      checkArgument(coder != null, "com.polidea.snowflake.io.SnowflakeIO.readAll().withCoder(coder) called with null coder");
+      checkArgument(
+          coder != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withCoder(coder) called with null coder");
       return toBuilder().setCoder(coder).build();
     }
 
