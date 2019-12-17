@@ -1,4 +1,4 @@
-/*
+package com.polidea.snowflake.io;/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -60,7 +60,7 @@ public abstract class TestRow implements Serializable, Comparable<TestRow> {
   }
 
   /**
-   * Precalculated hashes - you can calculate an entry by running HashingFn on the name() for the
+   * Precalculated hashes - you can calculate an entry by running com.polidea.snowflake.io.HashingFn on the name() for the
    * rows generated from seeds in [0, n).
    */
   private static final ImmutableMap<Integer, String> EXPECTED_HASHES =

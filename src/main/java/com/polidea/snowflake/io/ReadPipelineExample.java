@@ -1,9 +1,13 @@
+package com.polidea.snowflake.io;
+
 import java.io.Serializable;
 import java.sql.ResultSet;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
-import org.apache.beam.sdk.coders.*;
+import org.apache.beam.sdk.coders.BigEndianIntegerCoder;
+import org.apache.beam.sdk.coders.KvCoder;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -103,7 +107,7 @@ public class ReadPipelineExample {
                       }
                     })
                 .withCoder(
-                    KvCoder.of(BigEndianIntegerCoder.of(), (Coder<String>) StringUtf8Coder.of())));
+                    KvCoder.of(BigEndianIntegerCoder.of(), StringUtf8Coder.of())));
 
     PDone printableData =
         namesAndIds

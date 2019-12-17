@@ -1,3 +1,5 @@
+package com.polidea.snowflake.io;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
