@@ -12,7 +12,8 @@ plugins {
   id 'groovy'
   id 'idea'
   id 'application'
-  id "com.diffplug.gradle.spotless" version "3.26.1"
+  id 'com.diffplug.gradle.spotless' version '3.26.1'
+  id 'checkstyle'
 }
 
 repositories {
@@ -23,12 +24,19 @@ configurations {
   testCompile
 }
 
+checkstyle {
+  configFile rootProject.file("build-configs/checkstyle/checkstyle.xml")
+  toolVersion = '8.23'
+  showViolations = true
+  maxErrors = 0
+}
+
 spotless {
   enforceCheck true
   java {
     googleJavaFormat()
   }
-  def grEclipseConfig = project(":").file("greclipse.properties")
+  def grEclipseConfig = project(":").file("build-configs/spotless/greclipse.properties")
   groovy {
     paddedCell() // Recommended to avoid cyclic ambiguity issues
     greclipse().configFile(grEclipseConfig)
