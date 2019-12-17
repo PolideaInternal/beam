@@ -12,7 +12,8 @@ plugins {
   id 'groovy'
   id 'idea'
   id 'application'
-  id "com.diffplug.gradle.spotless" version "3.26.1"
+  id 'com.diffplug.gradle.spotless' version '3.26.1'
+  id 'checkstyle'
 }
 
 repositories {
@@ -21,6 +22,12 @@ repositories {
 
 configurations {
   testCompile
+}
+
+checkstyle {
+  toolVersion = '8.23'
+  showViolations = true
+  maxErrors = 0
 }
 
 spotless {
