@@ -4,6 +4,8 @@ stages:
   - test
 
 test:
+  tags:
+    - docker
   stage: test
   script:
     - ./gradlew check

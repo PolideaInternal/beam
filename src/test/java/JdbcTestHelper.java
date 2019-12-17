@@ -2,7 +2,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-
 class JdbcTestHelper {
 
   static class CreateTestRowOfNameAndId implements SnowflakeIO.RowMapper {
@@ -19,5 +18,4 @@ class JdbcTestHelper {
       statement.setString(2, element.name());
     }
   }
-
 }
