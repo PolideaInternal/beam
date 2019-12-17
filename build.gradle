@@ -25,6 +25,7 @@ configurations {
 }
 
 checkstyle {
+  configFile rootProject.file("build-configs/checkstyle/checkstyle.xml")
   toolVersion = '8.23'
   showViolations = true
   maxErrors = 0
@@ -35,7 +36,7 @@ spotless {
   java {
     googleJavaFormat()
   }
-  def grEclipseConfig = project(":").file("greclipse.properties")
+  def grEclipseConfig = project(":").file("build-configs/spotless/greclipse.properties")
   groovy {
     paddedCell() // Recommended to avoid cyclic ambiguity issues
     greclipse().configFile(grEclipseConfig)
