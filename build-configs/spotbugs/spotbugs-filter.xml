@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FindBugsFilter>
+    <!-- Ignored bug categories. Bugs in these categories should not block the build. -->
+    <Bug category="I18N"/>
+    <Bug pattern="DM_STRING_CTOR"/>
+    <Bug pattern="EI_EXPOSE_REP" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+    <Bug pattern="SE_NO_SERIALVERSIONID"/>
+
+    <!-- The uncallable method error fails on @ProcessElement style methods -->
+    <Bug pattern="UMAC_UNCALLABLE_METHOD_OF_ANONYMOUS_CLASS"/>
+
+    <!-- Suppress checking of AutoValue internals -->
+    <Match>
+        <Class name="~.*AutoValue_.*"/>
+    </Match>
+
+</FindBugsFilter>
