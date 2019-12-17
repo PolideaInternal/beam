@@ -1,13 +1,35 @@
-import static java.sql.JDBCType.*;
+package com.polidea.snowflake.io;
+
+import static java.sql.JDBCType.BINARY;
+import static java.sql.JDBCType.CHAR;
+import static java.sql.JDBCType.LONGNVARCHAR;
+import static java.sql.JDBCType.LONGVARBINARY;
+import static java.sql.JDBCType.LONGVARCHAR;
+import static java.sql.JDBCType.NCHAR;
+import static java.sql.JDBCType.NUMERIC;
+import static java.sql.JDBCType.NVARCHAR;
+import static java.sql.JDBCType.VARBINARY;
+import static java.sql.JDBCType.VARCHAR;
+import static java.sql.JDBCType.valueOf;
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
 import java.io.Serializable;
-import java.sql.*;
+import java.sql.Array;
 import java.sql.Date;
+import java.sql.JDBCType;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.TimeZone;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;

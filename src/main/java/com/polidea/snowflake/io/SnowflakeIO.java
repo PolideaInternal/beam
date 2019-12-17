@@ -1,3 +1,5 @@
+package com.polidea.snowflake.io;
+
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
 import com.google.auto.value.AutoValue;
@@ -7,7 +9,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -19,14 +25,22 @@ import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.schemas.NoSuchSchemaException;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.schemas.SchemaRegistry;
-import org.apache.beam.sdk.transforms.*;
+import org.apache.beam.sdk.transforms.Create;
+import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.sdk.transforms.display.HasDisplayData;
 import org.apache.beam.sdk.util.BackOff;
 import org.apache.beam.sdk.util.BackOffUtils;
 import org.apache.beam.sdk.util.FluentBackoff;
 import org.apache.beam.sdk.util.Sleeper;
-import org.apache.beam.sdk.values.*;
+import org.apache.beam.sdk.values.PBegin;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PDone;
+import org.apache.beam.sdk.values.Row;
+import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
@@ -250,12 +264,16 @@ public class SnowflakeIO {
     }
 
     public ReadAll<ParameterT, OutputT> withQuery(String query) {
-      checkArgument(query != null, "SnowflakeIO.readAll().withQuery(query) called with null query");
+      checkArgument(
+          query != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
       return withQuery(ValueProvider.StaticValueProvider.of(query));
     }
 
     public ReadAll<ParameterT, OutputT> withQuery(ValueProvider<String> query) {
-      checkArgument(query != null, "SnowflakeIO.readAll().withQuery(query) called with null query");
+      checkArgument(
+          query != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
       return toBuilder().setQuery(query).build();
     }
 
@@ -263,7 +281,7 @@ public class SnowflakeIO {
         PreparedStatementSetter<ParameterT> parameterSetter) {
       checkArgument(
           parameterSetter != null,
-          "SnowflakeIO.readAll().withParameterSetter(parameterSetter) called "
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withParameterSetter(parameterSetter) called "
               + "with null statementPreparator");
       return toBuilder().setParameterSetter(parameterSetter).build();
     }
@@ -271,12 +289,14 @@ public class SnowflakeIO {
     public ReadAll<ParameterT, OutputT> withRowMapper(RowMapper<OutputT> rowMapper) {
       checkArgument(
           rowMapper != null,
-          "SnowflakeIO.readAll().withRowMapper(rowMapper) called with null rowMapper");
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withRowMapper(rowMapper) called with null rowMapper");
       return toBuilder().setRowMapper(rowMapper).build();
     }
 
     public ReadAll<ParameterT, OutputT> withCoder(Coder<OutputT> coder) {
-      checkArgument(coder != null, "SnowflakeIO.readAll().withCoder(coder) called with null coder");
+      checkArgument(
+          coder != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withCoder(coder) called with null coder");
       return toBuilder().setCoder(coder).build();
     }
 
