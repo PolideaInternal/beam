@@ -50,10 +50,11 @@ dependencies {
   compile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: '2.16.0'
   compile group: 'org.apache.beam', name: 'beam-runners-google-cloud-dataflow-java', version: '2.16.0'
   compile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: '2.16.0'
+  compile group: 'org.apache.beam', name: 'beam-runners-direct-java', version: '2.16.0'
   compile "com.google.auto.value:auto-value-annotations:1.7"
   annotationProcessor "com.google.auto.value:auto-value:1.7"
   compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
-  compile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.10.2'
+  compile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.11.0'
   compile group: 'org.hamcrest', name: 'hamcrest-library', version: '2.1'
   compile group: 'junit', name: 'junit', version: '4.12'
 
@@ -73,5 +74,5 @@ test{
 
 
 application {
-  mainClassName = 'ReadPipeline'
+  mainClassName = 'com.polidea.snowflake.ReadPipelineExample'
 }

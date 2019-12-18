@@ -5,12 +5,12 @@ import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Prec
 import com.google.auto.value.AutoValue;
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.PrivateKey;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
+import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.io.jdbc.JdbcUtil;
 import org.apache.beam.sdk.options.ValueProvider;
@@ -41,7 +42,6 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.apache.beam.sdk.values.TypeDescriptor;
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -405,9 +405,6 @@ public class SnowflakeIO {
   @AutoValue
   public abstract static class DataSourceConfiguration implements Serializable {
     @Nullable
-    abstract ValueProvider<String> getDriverClassName();
-
-    @Nullable
     abstract ValueProvider<String> getUrl();
 
     @Nullable
@@ -417,10 +414,37 @@ public class SnowflakeIO {
     abstract ValueProvider<String> getPassword();
 
     @Nullable
-    abstract ValueProvider<String> getConnectionProperties();
+    abstract ValueProvider<PrivateKey> getPrivateKey();
 
     @Nullable
-    abstract ValueProvider<Collection<String>> getConnectionInitSqls();
+    abstract ValueProvider<String> getOauthToken();
+
+    @Nullable
+    abstract ValueProvider<String> getDatabase();
+
+    @Nullable
+    abstract ValueProvider<String> getWarehouse();
+
+    @Nullable
+    abstract ValueProvider<String> getSchema();
+
+    @Nullable
+    abstract ValueProvider<String> getServerName();
+
+    @Nullable
+    abstract ValueProvider<Integer> getPortNumber();
+
+    @Nullable
+    abstract ValueProvider<String> getRole();
+
+    @Nullable
+    abstract ValueProvider<String> getAuthenticator();
+
+    @Nullable
+    abstract ValueProvider<Integer> getLoginTimeout();
+
+    @Nullable
+    abstract ValueProvider<Boolean> getSsl();
 
     @Nullable
     abstract DataSource getDataSource();
@@ -429,17 +453,33 @@ public class SnowflakeIO {
 
     @AutoValue.Builder
     abstract static class Builder {
-      abstract Builder setDriverClassName(ValueProvider<String> driverClassName);
-
       abstract Builder setUrl(ValueProvider<String> url);
 
       abstract Builder setUsername(ValueProvider<String> username);
 
       abstract Builder setPassword(ValueProvider<String> password);
 
-      abstract Builder setConnectionProperties(ValueProvider<String> connectionProperties);
+      abstract Builder setPrivateKey(ValueProvider<PrivateKey> privateKey);
 
-      abstract Builder setConnectionInitSqls(ValueProvider<Collection<String>> connectionInitSqls);
+      abstract Builder setOauthToken(ValueProvider<String> oauthToken);
+
+      abstract Builder setDatabase(ValueProvider<String> database);
+
+      abstract Builder setWarehouse(ValueProvider<String> warehouse);
+
+      abstract Builder setSchema(ValueProvider<String> schema);
+
+      abstract Builder setServerName(ValueProvider<String> serverName);
+
+      abstract Builder setPortNumber(ValueProvider<Integer> portNumber);
+
+      abstract Builder setRole(ValueProvider<String> role);
+
+      abstract Builder setAuthenticator(ValueProvider<String> authenticator);
+
+      abstract Builder setLoginTimeout(ValueProvider<Integer> loginTimeout);
+
+      abstract Builder setSsl(ValueProvider<Boolean> ssl);
 
       abstract Builder setDataSource(DataSource dataSource);
 
@@ -453,23 +493,8 @@ public class SnowflakeIO {
           .build();
     }
 
-    public static DataSourceConfiguration create(String driverClassName, String url) {
-      checkArgument(driverClassName != null, "driverClassName can not be null");
-      checkArgument(url != null, "url can not be null");
-      return create(
-          ValueProvider.StaticValueProvider.of(driverClassName),
-          ValueProvider.StaticValueProvider.of(url));
-    }
-
-    public static DataSourceConfiguration create(
-        ValueProvider<String> driverClassName, ValueProvider<String> url) {
-      checkArgument(driverClassName != null, "driverClassName can not be null");
-      checkArgument(url != null, "url can not be null");
-      Builder b =
-          new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
-              .setDriverClassName(driverClassName)
-              .setUrl(url);
-
+    public static DataSourceConfiguration create() {
+      Builder b = new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder();
       return b.build();
     }
 
@@ -481,6 +506,14 @@ public class SnowflakeIO {
       return builder().setUsername(username).build();
     }
 
+    public DataSourceConfiguration withUrl(String url) {
+      return withUrl(ValueProvider.StaticValueProvider.of(url));
+    }
+
+    public DataSourceConfiguration withUrl(ValueProvider<String> url) {
+      return builder().setUrl(url).build();
+    }
+
     public DataSourceConfiguration withPassword(String password) {
       return withPassword(ValueProvider.StaticValueProvider.of(password));
     }
@@ -489,49 +522,90 @@ public class SnowflakeIO {
       return builder().setPassword(password).build();
     }
 
-    /**
-     * Sets the connection properties passed to driver.connect(...). Format of the string must be
-     * [propertyName=property;]*
-     *
-     * <p>NOTE - The "user" and "password" properties can be add via {@link #withUsername(String)},
-     * {@link #withPassword(String)}, so they do not need to be included here.
-     */
-    public DataSourceConfiguration withConnectionProperties(String connectionProperties) {
-      checkArgument(connectionProperties != null, "connectionProperties can not be null");
-      return withConnectionProperties(ValueProvider.StaticValueProvider.of(connectionProperties));
+    public DataSourceConfiguration withPrivateKey(PrivateKey privateKey) {
+      return withPrivateKey(ValueProvider.StaticValueProvider.of(privateKey));
     }
 
-    /** Same as {@link #withConnectionProperties(String)} but accepting a ValueProvider. */
-    public DataSourceConfiguration withConnectionProperties(
-        ValueProvider<String> connectionProperties) {
-      checkArgument(connectionProperties != null, "connectionProperties can not be null");
-      return builder().setConnectionProperties(connectionProperties).build();
+    public DataSourceConfiguration withPrivateKey(ValueProvider<PrivateKey> privateKey) {
+      return builder().setPrivateKey(privateKey).build();
     }
 
-    /**
-     * Sets the connection init sql statements to driver.connect(...).
-     *
-     * <p>NOTE - This property is not applicable across databases. Only MySQL and MariaDB support
-     * this. A Sql exception is thrown if your database does not support it.
-     */
-    public DataSourceConfiguration withConnectionInitSqls(Collection<String> connectionInitSqls) {
-      checkArgument(connectionInitSqls != null, "connectionInitSqls can not be null");
-      return withConnectionInitSqls(ValueProvider.StaticValueProvider.of(connectionInitSqls));
+    public DataSourceConfiguration withDatabase(String database) {
+      return withDatabase(ValueProvider.StaticValueProvider.of(database));
     }
 
-    /** Same as {@link #withConnectionInitSqls(Collection)} but accepting a ValueProvider. */
-    public DataSourceConfiguration withConnectionInitSqls(
-        ValueProvider<Collection<String>> connectionInitSqls) {
-      checkArgument(connectionInitSqls != null, "connectionInitSqls can not be null");
-      checkArgument(!connectionInitSqls.get().isEmpty(), "connectionInitSqls can not be empty");
-      return builder().setConnectionInitSqls(connectionInitSqls).build();
+    public DataSourceConfiguration withDatabase(ValueProvider<String> database) {
+      return builder().setDatabase(database).build();
+    }
+
+    public DataSourceConfiguration withWarehouse(String warehouse) {
+      return withWarehouse(ValueProvider.StaticValueProvider.of(warehouse));
+    }
+
+    public DataSourceConfiguration withWarehouse(ValueProvider<String> warehouse) {
+      return builder().setWarehouse(warehouse).build();
+    }
+
+    public DataSourceConfiguration withSchema(String schema) {
+      return withSchema(ValueProvider.StaticValueProvider.of(schema));
+    }
+
+    public DataSourceConfiguration withSchema(ValueProvider<String> schema) {
+      return builder().setSchema(schema).build();
+    }
+
+    public DataSourceConfiguration withOauthToken(String oauthToken) {
+      return withOauthToken(ValueProvider.StaticValueProvider.of(oauthToken));
+    }
+
+    public DataSourceConfiguration withOauthToken(ValueProvider<String> oauthToken) {
+      return builder().setOauthToken(oauthToken).build();
+    }
+
+    public DataSourceConfiguration withServerName(String withServerName) {
+      return withServerName(ValueProvider.StaticValueProvider.of(withServerName));
+    }
+
+    public DataSourceConfiguration withServerName(ValueProvider<String> withServerName) {
+      return builder().setServerName(withServerName).build();
+    }
+
+    public DataSourceConfiguration withPortNumber(int portNumber) {
+      return withPortNumber(ValueProvider.StaticValueProvider.of(portNumber));
+    }
+
+    public DataSourceConfiguration withPortNumber(ValueProvider<Integer> portNumber) {
+      return builder().setPortNumber(portNumber).build();
+    }
+
+    public DataSourceConfiguration withRole(String role) {
+      return withRole(ValueProvider.StaticValueProvider.of(role));
+    }
+
+    public DataSourceConfiguration withRole(ValueProvider<String> role) {
+      return builder().setRole(role).build();
+    }
+
+    public DataSourceConfiguration withAuthenticator(String authenticator) {
+      return withAuthenticator(ValueProvider.StaticValueProvider.of(authenticator));
+    }
+
+    public DataSourceConfiguration withAuthenticator(ValueProvider<String> authenticator) {
+      return builder().setAuthenticator(authenticator).build();
+    }
+
+    public DataSourceConfiguration withLoginTimeout(Integer loginTimeout) {
+      return withLoginTimeout(ValueProvider.StaticValueProvider.of(loginTimeout));
+    }
+
+    public DataSourceConfiguration withLoginTimeout(ValueProvider<Integer> loginTimeout) {
+      return builder().setLoginTimeout(loginTimeout).build();
     }
 
     void populateDisplayData(DisplayData.Builder builder) {
       if (getDataSource() != null) {
         builder.addIfNotNull(DisplayData.item("dataSource", getDataSource().getClass().getName()));
       } else {
-        builder.addIfNotNull(DisplayData.item("jdbcDriverClassName", getDriverClassName()));
         builder.addIfNotNull(DisplayData.item("jdbcUrl", getUrl()));
         builder.addIfNotNull(DisplayData.item("username", getUsername()));
       }
@@ -539,28 +613,50 @@ public class SnowflakeIO {
 
     DataSource buildDatasource() {
       if (getDataSource() == null) {
-        BasicDataSource basicDataSource = new BasicDataSource();
-        if (getDriverClassName() != null) {
-          basicDataSource.setDriverClassName(getDriverClassName().get());
-        }
+        SnowflakeBasicDataSource basicDataSource = new SnowflakeBasicDataSource();
         if (getUrl() != null) {
           basicDataSource.setUrl(getUrl().get());
         }
         if (getUsername() != null) {
-          basicDataSource.setUsername(getUsername().get());
+          basicDataSource.setUser(getUsername().get());
         }
         if (getPassword() != null) {
           basicDataSource.setPassword(getPassword().get());
         }
-        if (getConnectionProperties() != null && getConnectionProperties().get() != null) {
-          basicDataSource.setConnectionProperties(getConnectionProperties().get());
+        if (getPrivateKey() != null) {
+          basicDataSource.setPrivateKey(getPrivateKey().get());
         }
-        if (getConnectionInitSqls() != null
-            && getConnectionInitSqls().get() != null
-            && !getConnectionInitSqls().get().isEmpty()) {
-          basicDataSource.setConnectionInitSqls(getConnectionInitSqls().get());
+        if (getDatabase() != null) {
+          basicDataSource.setDatabaseName(getDatabase().get());
         }
-
+        if (getWarehouse() != null) {
+          basicDataSource.setWarehouse(getWarehouse().get());
+        }
+        if (getSchema() != null) {
+          basicDataSource.setSchema(getSchema().get());
+        }
+        if (getServerName() != null) {
+          basicDataSource.setServerName(getServerName().get());
+        }
+        if (getPortNumber() != null) {
+          basicDataSource.setPortNumber(getPortNumber().get());
+        }
+        if (getRole() != null) {
+          basicDataSource.setRole(getRole().get());
+        }
+        if (getAuthenticator() != null) {
+          basicDataSource.setAuthenticator(getAuthenticator().get());
+        }
+        if (getLoginTimeout() != null) {
+          try {
+            basicDataSource.setLoginTimeout(getLoginTimeout().get());
+          } catch (SQLException e) {
+            throw new RuntimeException("Failed to setLoginTimeout");
+          }
+        }
+        if (getOauthToken() != null) {
+          basicDataSource.setOauthToken(getOauthToken().get());
+        }
         return basicDataSource;
       }
       return getDataSource();
