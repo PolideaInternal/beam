@@ -1,5 +1,7 @@
-package com.polidea.snowflake.io;
+package com.polidea.snowflake;
 
+import com.polidea.snowflake.io.SnowflakeIO;
+import com.polidea.snowflake.io.SnowflakePipelineOptions;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
