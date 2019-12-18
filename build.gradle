@@ -6,45 +6,67 @@
  * Learn how to create Gradle builds at https://guides.gradle.org/creating-new-gradle-builds
  */
 plugins {
-    id 'java'
-    id 'idea'
-    id 'application'
-    id 'groovy'
+  id 'java'
+  id 'groovy'
+  id 'idea'
+  id 'application'
+  id 'com.diffplug.gradle.spotless' version '3.26.1'
+  id 'checkstyle'
 }
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 repositories {
-    mavenCentral()
+  mavenCentral()
 }
 
 configurations {
-    testCompile
+  testCompile
+}
+
+checkstyle {
+  configFile rootProject.file("build-configs/checkstyle/checkstyle.xml")
+  toolVersion = '8.23'
+  showViolations = true
+  maxErrors = 0
+}
+
+spotless {
+  enforceCheck true
+  java {
+    googleJavaFormat()
+  }
+  def grEclipseConfig = project(":").file("build-configs/spotless/greclipse.properties")
+  groovy {
+    paddedCell() // Recommended to avoid cyclic ambiguity issues
+    greclipse().configFile(grEclipseConfig)
+  }
+  groovyGradle { greclipse().configFile(grEclipseConfig) }
 }
 
 dependencies {
-    compile group: 'org.apache.beam', name: 'beam-sdks-java-core', version: '2.16.0'
-    compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
-    compile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: '2.16.0'
-    compile group: 'org.apache.beam', name: 'beam-runners-google-cloud-dataflow-java', version: '2.16.0'
-    compile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: '2.16.0'
-    compile "com.google.auto.value:auto-value-annotations:1.7"
-    annotationProcessor "com.google.auto.value:auto-value:1.7"
-    compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
-    compile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.10.2'
-    compile group: 'org.hamcrest', name: 'hamcrest-library', version: '2.1'
-    compile group: 'junit', name: 'junit', version: '4.12'
+  compile group: 'org.apache.beam', name: 'beam-sdks-java-core', version: '2.16.0'
+  compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
+  compile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: '2.16.0'
+  compile group: 'org.apache.beam', name: 'beam-runners-google-cloud-dataflow-java', version: '2.16.0'
+  compile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: '2.16.0'
+  compile "com.google.auto.value:auto-value-annotations:1.7"
+  annotationProcessor "com.google.auto.value:auto-value:1.7"
+  compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+  compile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.10.2'
+  compile group: 'org.hamcrest', name: 'hamcrest-library', version: '2.1'
+  compile group: 'junit', name: 'junit', version: '4.12'
 
-    testCompile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: '2.16.0'
-    testCompile group: 'org.apache.beam', name: 'beam-sdks-java-core', version: '2.16.0'
-    testCompile group: 'org.apache.beam', name: 'beam-runners-google-cloud-dataflow-java', version: '2.16.0'
-    testCompile group: 'org.apache.beam', name: 'beam-runners-direct-java', version: '2.16.0'
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile "com.google.auto.value:auto-value-annotations:1.7"
-    testAnnotationProcessor "com.google.auto.value:auto-value:1.7"
-    testCompile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.10.2'
-    testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '2.1'
+  testCompile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: '2.16.0'
+  testCompile group: 'org.apache.beam', name: 'beam-sdks-java-core', version: '2.16.0'
+  testCompile group: 'org.apache.beam', name: 'beam-runners-google-cloud-dataflow-java', version: '2.16.0'
+  testCompile group: 'org.apache.beam', name: 'beam-runners-direct-java', version: '2.16.0'
+  testCompile group: 'junit', name: 'junit', version: '4.12'
+  testCompile "com.google.auto.value:auto-value-annotations:1.7"
+  testAnnotationProcessor "com.google.auto.value:auto-value:1.7"
+  testCompile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.10.2'
+  testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '2.1'
 }
 
 test{
@@ -60,5 +82,5 @@ test{
 }
 
 application {
-    mainClassName = 'ReadPipeline'
+  mainClassName = 'ReadPipeline'
 }

@@ -1,48 +1,57 @@
+package com.polidea.snowflake.io;
+
+import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
+
 import com.google.auto.value.AutoValue;
-import org.apache.beam.sdk.coders.Coder;
-import org.apache.beam.sdk.io.jdbc.JdbcUtil;
-import org.apache.beam.sdk.options.ValueProvider;
-import org.apache.beam.sdk.schemas.NoSuchSchemaException;
-import org.apache.beam.sdk.schemas.Schema;
-import org.apache.beam.sdk.schemas.SchemaRegistry;
-
-import javax.annotation.Nullable;
-
-import org.apache.beam.sdk.transforms.*;
-import org.apache.beam.sdk.transforms.display.DisplayData;
-import org.apache.beam.sdk.transforms.display.HasDisplayData;
-import org.apache.beam.sdk.util.BackOff;
-import org.apache.beam.sdk.util.BackOffUtils;
-import org.apache.beam.sdk.util.FluentBackoff;
-import org.apache.beam.sdk.util.Sleeper;
-import org.apache.beam.sdk.values.*;
-import org.apache.commons.dbcp2.BasicDataSource;
-import org.joda.time.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
+import javax.annotation.Nullable;
+import javax.sql.DataSource;
+import org.apache.beam.sdk.coders.Coder;
+import org.apache.beam.sdk.io.jdbc.JdbcUtil;
+import org.apache.beam.sdk.options.ValueProvider;
+import org.apache.beam.sdk.schemas.NoSuchSchemaException;
+import org.apache.beam.sdk.schemas.Schema;
+import org.apache.beam.sdk.schemas.SchemaRegistry;
+import org.apache.beam.sdk.transforms.Create;
+import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.apache.beam.sdk.transforms.display.DisplayData;
+import org.apache.beam.sdk.transforms.display.HasDisplayData;
+import org.apache.beam.sdk.util.BackOff;
+import org.apache.beam.sdk.util.BackOffUtils;
+import org.apache.beam.sdk.util.FluentBackoff;
+import org.apache.beam.sdk.util.Sleeper;
+import org.apache.beam.sdk.values.PBegin;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PDone;
+import org.apache.beam.sdk.values.Row;
+import org.apache.beam.sdk.values.TypeDescriptor;
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.joda.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SnowflakeIO {
   private static final long DEFAULT_BATCH_SIZE = 1000L;
   private static final int DEFAULT_FETCH_SIZE = 50_000;
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeIO.class);
 
-  /**
-   * Read data from a JDBC datasource.
-   */
+  /** Read data from a JDBC datasource. */
   public static <T> Read<T> read() {
     return new AutoValue_SnowflakeIO_Read.Builder<T>()
         .setFetchSize(DEFAULT_FETCH_SIZE)
@@ -78,7 +87,6 @@ public class SnowflakeIO {
         .build();
   }
 
-
   @AutoValue
   public abstract static class Read<T> extends PTransform<PBegin, PCollection<T>> {
     @Nullable
@@ -95,7 +103,6 @@ public class SnowflakeIO {
 
     @Nullable
     abstract Coder<T> getCoder();
-
 
     abstract int getFetchSize();
 
@@ -257,12 +264,16 @@ public class SnowflakeIO {
     }
 
     public ReadAll<ParameterT, OutputT> withQuery(String query) {
-      checkArgument(query != null, "SnowflakeIO.readAll().withQuery(query) called with null query");
+      checkArgument(
+          query != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
       return withQuery(ValueProvider.StaticValueProvider.of(query));
     }
 
     public ReadAll<ParameterT, OutputT> withQuery(ValueProvider<String> query) {
-      checkArgument(query != null, "SnowflakeIO.readAll().withQuery(query) called with null query");
+      checkArgument(
+          query != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
       return toBuilder().setQuery(query).build();
     }
 
@@ -270,7 +281,7 @@ public class SnowflakeIO {
         PreparedStatementSetter<ParameterT> parameterSetter) {
       checkArgument(
           parameterSetter != null,
-          "SnowflakeIO.readAll().withParameterSetter(parameterSetter) called "
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withParameterSetter(parameterSetter) called "
               + "with null statementPreparator");
       return toBuilder().setParameterSetter(parameterSetter).build();
     }
@@ -278,21 +289,21 @@ public class SnowflakeIO {
     public ReadAll<ParameterT, OutputT> withRowMapper(RowMapper<OutputT> rowMapper) {
       checkArgument(
           rowMapper != null,
-          "SnowflakeIO.readAll().withRowMapper(rowMapper) called with null rowMapper");
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withRowMapper(rowMapper) called with null rowMapper");
       return toBuilder().setRowMapper(rowMapper).build();
     }
 
     public ReadAll<ParameterT, OutputT> withCoder(Coder<OutputT> coder) {
-      checkArgument(coder != null, "SnowflakeIO.readAll().withCoder(coder) called with null coder");
+      checkArgument(
+          coder != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withCoder(coder) called with null coder");
       return toBuilder().setCoder(coder).build();
     }
-
 
     public ReadAll<ParameterT, OutputT> withFetchSize(int fetchSize) {
       checkArgument(fetchSize > 0, "fetch size must be >0");
       return toBuilder().setFetchSize(fetchSize).build();
     }
-
 
     public ReadAll<ParameterT, OutputT> withOutputParallelization(boolean outputParallelization) {
       return toBuilder().setOutputParallelization(outputParallelization).build();
@@ -301,8 +312,8 @@ public class SnowflakeIO {
     @Override
     public PCollection<OutputT> expand(PCollection<ParameterT> input) {
       PCollection<OutputT> output;
-      output = input
-          .apply(
+      output =
+          input.apply(
               ParDo.of(
                   new ReadFn<>(
                       getDataSourceProviderFn(),
@@ -312,18 +323,16 @@ public class SnowflakeIO {
                       getFetchSize())));
       output.setCoder(getCoder());
 
-//      if (getOutputParallelization()) {
-//        output = output.apply(new Reparallelize<>());
-//      }
+      //      if (getOutputParallelization()) {
+      //        output = output.apply(new Reparallelize<>());
+      //      }
 
       try {
         TypeDescriptor<OutputT> typeDesc = getCoder().getEncodedTypeDescriptor();
         SchemaRegistry registry = input.getPipeline().getSchemaRegistry();
         Schema schema = registry.getSchema(typeDesc);
         output.setSchema(
-            schema,
-            registry.getToRowFunction(typeDesc),
-            registry.getFromRowFunction(typeDesc));
+            schema, registry.getToRowFunction(typeDesc), registry.getFromRowFunction(typeDesc));
       } catch (NoSuchSchemaException e) {
         // ignore
       }
@@ -342,7 +351,6 @@ public class SnowflakeIO {
       }
     }
   }
-
 
   private static class ReadFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
     private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
@@ -376,8 +384,8 @@ public class SnowflakeIO {
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
       try (PreparedStatement statement =
-               connection.prepareStatement(
-                   query.get(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+          connection.prepareStatement(
+              query.get(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
         statement.setFetchSize(fetchSize);
         parameterSetter.setParameters(context.element(), statement);
         try (ResultSet resultSet = statement.executeQuery()) {
@@ -393,7 +401,6 @@ public class SnowflakeIO {
       connection.close();
     }
   }
-
 
   @AutoValue
   public abstract static class DataSourceConfiguration implements Serializable {
@@ -458,9 +465,10 @@ public class SnowflakeIO {
         ValueProvider<String> driverClassName, ValueProvider<String> url) {
       checkArgument(driverClassName != null, "driverClassName can not be null");
       checkArgument(url != null, "url can not be null");
-      Builder b = new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
-          .setDriverClassName(driverClassName)
-          .setUrl(url);
+      Builder b =
+          new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
+              .setDriverClassName(driverClassName)
+              .setUrl(url);
 
       return b.build();
     }
@@ -493,9 +501,7 @@ public class SnowflakeIO {
       return withConnectionProperties(ValueProvider.StaticValueProvider.of(connectionProperties));
     }
 
-    /**
-     * Same as {@link #withConnectionProperties(String)} but accepting a ValueProvider.
-     */
+    /** Same as {@link #withConnectionProperties(String)} but accepting a ValueProvider. */
     public DataSourceConfiguration withConnectionProperties(
         ValueProvider<String> connectionProperties) {
       checkArgument(connectionProperties != null, "connectionProperties can not be null");
@@ -513,9 +519,7 @@ public class SnowflakeIO {
       return withConnectionInitSqls(ValueProvider.StaticValueProvider.of(connectionInitSqls));
     }
 
-    /**
-     * Same as {@link #withConnectionInitSqls(Collection)} but accepting a ValueProvider.
-     */
+    /** Same as {@link #withConnectionInitSqls(Collection)} but accepting a ValueProvider. */
     public DataSourceConfiguration withConnectionInitSqls(
         ValueProvider<Collection<String>> connectionInitSqls) {
       checkArgument(connectionInitSqls != null, "connectionInitSqls can not be null");
@@ -611,7 +615,6 @@ public class SnowflakeIO {
               .withDataSourceProviderFn(new DataSourceProviderFromDataSourceConfiguration(config)));
     }
 
-
     public Write<T> withDataSourceProviderFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn) {
       return new Write(inner.withDataSourceProviderFn(dataSourceProviderFn));
@@ -638,7 +641,7 @@ public class SnowflakeIO {
     }
 
     /**
-     * <p>Example: write a {@link PCollection} to one database and then to another database, making
+     * Example: write a {@link PCollection} to one database and then to another database, making
      * sure that writing a window of data to the second database starts only after the respective
      * window has been fully written to the first database.
      *
@@ -690,8 +693,8 @@ public class SnowflakeIO {
       Schema tableSchema;
 
       try (Connection connection = inner.getDataSourceProviderFn().apply(null).getConnection();
-           PreparedStatement statement =
-               connection.prepareStatement((String.format("SELECT * FROM %s", inner.getTable())))) {
+          PreparedStatement statement =
+              connection.prepareStatement((String.format("SELECT * FROM %s", inner.getTable())))) {
         tableSchema = SchemaUtil.toBeamSchema(statement.getMetaData());
         statement.close();
       } catch (SQLException e) {
@@ -727,7 +730,7 @@ public class SnowflakeIO {
                             .findFirst();
                     return (optionalSchemaField.isPresent())
                         ? SchemaUtil.FieldWithIndex.of(
-                        tableField, schema.getFields().indexOf(optionalSchemaField.get()))
+                            tableField, schema.getFields().indexOf(optionalSchemaField.get()))
                         : null;
                   })
               .filter(Objects::nonNull)
@@ -739,7 +742,6 @@ public class SnowflakeIO {
 
       return tableFilteredFields;
     }
-
 
     private class AutoGeneratedPreparedStatementSetter implements PreparedStatementSetter<T> {
 
@@ -760,7 +762,8 @@ public class SnowflakeIO {
                 (index) -> {
                   Schema.FieldType fieldType = fields.get(index).getField().getType();
                   preparedStatementFieldSetterList.add(
-                      (PreparedStatementSetCaller) JdbcUtil.getPreparedStatementSetCaller(fieldType));
+                      (PreparedStatementSetCaller)
+                          JdbcUtil.getPreparedStatementSetCaller(fieldType));
                 });
       }
 
@@ -782,9 +785,7 @@ public class SnowflakeIO {
     }
   }
 
-  /**
-   * Interface implemented by functions that sets prepared statement data.
-   */
+  /** Interface implemented by functions that sets prepared statement data. */
   @FunctionalInterface
   interface PreparedStatementSetCaller extends Serializable {
     void set(
@@ -795,10 +796,7 @@ public class SnowflakeIO {
         throws SQLException;
   }
 
-
-  /**
-   * A {@link PTransform} to write to a JDBC datasource.
-   */
+  /** A {@link PTransform} to write to a JDBC datasource. */
   @AutoValue
   public abstract static class WriteVoid<T> extends PTransform<PCollection<T>, PCollection<Void>> {
     @Nullable
@@ -970,7 +968,7 @@ public class SnowflakeIO {
         BackOff backoff = BUNDLE_WRITE_BACKOFF.backoff();
         while (true) {
           try (PreparedStatement preparedStatement =
-                   connection.prepareStatement(spec.getStatement().get())) {
+              connection.prepareStatement(spec.getStatement().get())) {
             try {
               // add each record in the statement batch
               for (T record : records) {
@@ -1012,6 +1010,4 @@ public class SnowflakeIO {
   public interface RetryStrategy extends Serializable {
     boolean apply(SQLException sqlException);
   }
-
 }
-
