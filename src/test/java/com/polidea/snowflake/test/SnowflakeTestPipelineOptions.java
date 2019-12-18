@@ -1,3 +1,5 @@
+package com.polidea.snowflake.test;
+
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.sdk.testing.TestPipelineOptions;
 

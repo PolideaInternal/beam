@@ -70,15 +70,15 @@ dependencies {
 }
 
 test{
-    String pipelineOptions = System.getProperty("integrationTestPipelineOptions")
+  String pipelineOptions = System.getProperty("integrationTestPipelineOptions")
 
-    if(pipelineOptions) {
-        def allOptionsList = (new JsonSlurper()).parseText(pipelineOptions)
+  if(pipelineOptions) {
+    def allOptionsList = (new JsonSlurper()).parseText(pipelineOptions)
 
-        pipelineOptions = JsonOutput.toJson(allOptionsList)
-    }
+    pipelineOptions = JsonOutput.toJson(allOptionsList)
+  }
 
-    systemProperties.beamTestPipelineOptions = pipelineOptions
+  systemProperties.beamTestPipelineOptions = pipelineOptions
 }
 
 application {
