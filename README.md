@@ -1,11 +1,13 @@
 # SnowflakeIO for Beam
 This project contains [Beam IO](https://beam.apache.org/documentation/io/built-in/) for [Snowflake](https://www.snowflake.com/). 
-It uses [Snowflake JDBC Driver](https://github.com/snowflakedb/snowflake-jdbc).
+It uses [Snowflake JDBC Driver](https://github.com/snowflakedb/snowflake-jdbc). 
+
+Please refer to [Snowflake documentation](https://docs.snowflake.net/manuals/index.html) in case of Snowflake related questions.
  
 ## Authentication
-All authentication methods available in Snowflake JDBC Driver are possible to use with he IO:
-* username-password combination
-* key-pair
+All authentication methods available in Snowflake JDBC Driver are possible to use with the IO:
+* username and password
+* key pair
 * OAuth token
 
 Passing credentials is done via Pipeline Options.
@@ -49,7 +51,7 @@ with `PRIVATE_KEY_OBJECT` being an instance of `java.security.PrivateKey` with y
 ### OAuth token
 SnowflakeIO also supports OAuth token.  
 
-**IMPORTANT**: SnowflakeIO requires valid OAuth access token. It will no be able to refresh the token nor obtain it 
+**IMPORTANT**: SnowflakeIO requires valid OAuth access token. It will neither be able to refresh the token nor obtain it 
 using web-based flow. Please refer to [Snowflake documentation](https://docs.snowflake.net/manuals/user-guide/oauth-intro.html)
 on how to create an OAuth integration and obtain the token.
 
