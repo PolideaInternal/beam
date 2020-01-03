@@ -1,4 +1,4 @@
-package com.polidea.snowflake;
+package com.polidea.snowflake.examples;
 
 import com.polidea.snowflake.io.SnowflakeIO;
 import com.polidea.snowflake.io.SnowflakePipelineOptions;

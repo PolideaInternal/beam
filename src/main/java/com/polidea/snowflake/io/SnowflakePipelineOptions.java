@@ -1,11 +1,12 @@
 package com.polidea.snowflake.io;
 
+import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.sdk.options.Default;
 import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.Validation;
 
-public interface SnowflakePipelineOptions extends PipelineOptions {
+public interface SnowflakePipelineOptions extends PipelineOptions, DataflowPipelineOptions {
   String BASIC_CONNECTION_INFO_VALIDATION_GROUP = "BASIC_CONNECTION_INFO_GROUP";
   String AUTH_VALIDATION_GROUP = "AUTH_VALIDATION_GROUP";
 
