@@ -3,6 +3,10 @@ package com.polidea.snowflake.io;
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
 import com.google.auto.value.AutoValue;
+import com.polidea.snowflake.io.credentials.KeyPairSnowflakeCredentials;
+import com.polidea.snowflake.io.credentials.OAuthTokenSnowflakeCredentials;
+import com.polidea.snowflake.io.credentials.SnowflakeCredentials;
+import com.polidea.snowflake.io.credentials.UsernamePasswordSnowflakeCredentials;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.PrivateKey;
@@ -493,17 +497,28 @@ public class SnowflakeIO {
           .build();
     }
 
-    public static DataSourceConfiguration create() {
-      Builder b = new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder();
-      return b.build();
+    public static DataSourceConfiguration create(SnowflakeCredentials credentials) {
+      return credentials.createSnowflakeDataSourceConfiguration();
     }
 
-    public DataSourceConfiguration withUsername(String username) {
-      return withUsername(ValueProvider.StaticValueProvider.of(username));
+    public static DataSourceConfiguration create(UsernamePasswordSnowflakeCredentials credentials) {
+      return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
+          .setUsername(ValueProvider.StaticValueProvider.of(credentials.getUsername()))
+          .setPassword(ValueProvider.StaticValueProvider.of(credentials.getPassword()))
+          .build();
     }
 
-    public DataSourceConfiguration withUsername(ValueProvider<String> username) {
-      return builder().setUsername(username).build();
+    public static DataSourceConfiguration create(KeyPairSnowflakeCredentials credentials) {
+      return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
+          .setUsername(ValueProvider.StaticValueProvider.of(credentials.getUsername()))
+          .setPrivateKey(ValueProvider.StaticValueProvider.of(credentials.getPrivateKey()))
+          .build();
+    }
+
+    public static DataSourceConfiguration create(OAuthTokenSnowflakeCredentials credentials) {
+      return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
+          .setOauthToken(ValueProvider.StaticValueProvider.of(credentials.getToken()))
+          .build();
     }
 
     public DataSourceConfiguration withUrl(String url) {
@@ -512,22 +527,6 @@ public class SnowflakeIO {
 
     public DataSourceConfiguration withUrl(ValueProvider<String> url) {
       return builder().setUrl(url).build();
-    }
-
-    public DataSourceConfiguration withPassword(String password) {
-      return withPassword(ValueProvider.StaticValueProvider.of(password));
-    }
-
-    public DataSourceConfiguration withPassword(ValueProvider<String> password) {
-      return builder().setPassword(password).build();
-    }
-
-    public DataSourceConfiguration withPrivateKey(PrivateKey privateKey) {
-      return withPrivateKey(ValueProvider.StaticValueProvider.of(privateKey));
-    }
-
-    public DataSourceConfiguration withPrivateKey(ValueProvider<PrivateKey> privateKey) {
-      return builder().setPrivateKey(privateKey).build();
     }
 
     public DataSourceConfiguration withDatabase(String database) {
@@ -552,14 +551,6 @@ public class SnowflakeIO {
 
     public DataSourceConfiguration withSchema(ValueProvider<String> schema) {
       return builder().setSchema(schema).build();
-    }
-
-    public DataSourceConfiguration withOauthToken(String oauthToken) {
-      return withOauthToken(ValueProvider.StaticValueProvider.of(oauthToken));
-    }
-
-    public DataSourceConfiguration withOauthToken(ValueProvider<String> oauthToken) {
-      return builder().setOauthToken(oauthToken).build();
     }
 
     public DataSourceConfiguration withServerName(String withServerName) {
@@ -611,7 +602,7 @@ public class SnowflakeIO {
       }
     }
 
-    DataSource buildDatasource() {
+    public DataSource buildDatasource() {
       if (getDataSource() == null) {
         SnowflakeBasicDataSource basicDataSource = new SnowflakeBasicDataSource();
         if (getUrl() != null) {
