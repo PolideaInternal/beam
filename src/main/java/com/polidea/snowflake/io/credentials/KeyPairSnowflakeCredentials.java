@@ -1,5 +1,6 @@
 package com.polidea.snowflake.io.credentials;
 
+import com.polidea.snowflake.io.SnowflakeIO;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
@@ -23,6 +24,11 @@ public class KeyPairSnowflakeCredentials implements SnowflakeCredentials {
   public KeyPairSnowflakeCredentials(String username, PrivateKey privateKey) {
     this.username = username;
     this.privateKey = privateKey;
+  }
+
+  @Override
+  public SnowflakeIO.DataSourceConfiguration createSnowflakeDataSourceConfiguration() {
+    return SnowflakeIO.DataSourceConfiguration.create(this);
   }
 
   private PrivateKey getPrivateKey(String privateKeyPath, String privateKeyPassphrase) {

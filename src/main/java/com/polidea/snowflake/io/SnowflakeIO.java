@@ -498,33 +498,27 @@ public class SnowflakeIO {
     }
 
     public static DataSourceConfiguration create(SnowflakeCredentials credentials) {
-      Builder b = new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder();
+      return credentials.createSnowflakeDataSourceConfiguration();
+    }
 
-      if (credentials instanceof UsernamePasswordSnowflakeCredentials) {
-        b =
-            b.setUsername(
-                ValueProvider.StaticValueProvider.of(
-                    ((UsernamePasswordSnowflakeCredentials) credentials).getUsername()));
-        b =
-            b.setPassword(
-                ValueProvider.StaticValueProvider.of(
-                    ((UsernamePasswordSnowflakeCredentials) credentials).getPassword()));
-      } else if (credentials instanceof KeyPairSnowflakeCredentials) {
-        b =
-            b.setUsername(
-                ValueProvider.StaticValueProvider.of(
-                    ((KeyPairSnowflakeCredentials) credentials).getUsername()));
-        b =
-            b.setPrivateKey(
-                ValueProvider.StaticValueProvider.of(
-                    ((KeyPairSnowflakeCredentials) credentials).getPrivateKey()));
-      } else if (credentials instanceof OAuthTokenSnowflakeCredentials) {
-        b =
-            b.setOauthToken(
-                ValueProvider.StaticValueProvider.of(
-                    ((OAuthTokenSnowflakeCredentials) credentials).getToken()));
-      }
-      return b.build();
+    public static DataSourceConfiguration create(UsernamePasswordSnowflakeCredentials credentials) {
+      return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
+          .setUsername(ValueProvider.StaticValueProvider.of(credentials.getUsername()))
+          .setPassword(ValueProvider.StaticValueProvider.of(credentials.getPassword()))
+          .build();
+    }
+
+    public static DataSourceConfiguration create(KeyPairSnowflakeCredentials credentials) {
+      return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
+          .setUsername(ValueProvider.StaticValueProvider.of(credentials.getUsername()))
+          .setPrivateKey(ValueProvider.StaticValueProvider.of(credentials.getPrivateKey()))
+          .build();
+    }
+
+    public static DataSourceConfiguration create(OAuthTokenSnowflakeCredentials credentials) {
+      return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
+          .setOauthToken(ValueProvider.StaticValueProvider.of(credentials.getToken()))
+          .build();
     }
 
     public DataSourceConfiguration withUrl(String url) {

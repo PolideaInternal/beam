@@ -1,5 +1,7 @@
 package com.polidea.snowflake.io.credentials;
 
+import com.polidea.snowflake.io.SnowflakeIO;
+
 public class UsernamePasswordSnowflakeCredentials implements SnowflakeCredentials {
   private String username;
   private String password;
@@ -15,5 +17,10 @@ public class UsernamePasswordSnowflakeCredentials implements SnowflakeCredential
 
   public String getPassword() {
     return password;
+  }
+
+  @Override
+  public SnowflakeIO.DataSourceConfiguration createSnowflakeDataSourceConfiguration() {
+    return SnowflakeIO.DataSourceConfiguration.create(this);
   }
 }

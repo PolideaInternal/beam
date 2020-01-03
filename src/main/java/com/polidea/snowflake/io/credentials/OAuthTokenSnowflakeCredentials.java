@@ -1,5 +1,7 @@
 package com.polidea.snowflake.io.credentials;
 
+import com.polidea.snowflake.io.SnowflakeIO;
+
 public class OAuthTokenSnowflakeCredentials implements SnowflakeCredentials {
   private String token;
 
@@ -9,5 +11,10 @@ public class OAuthTokenSnowflakeCredentials implements SnowflakeCredentials {
 
   public String getToken() {
     return token;
+  }
+
+  @Override
+  public SnowflakeIO.DataSourceConfiguration createSnowflakeDataSourceConfiguration() {
+    return SnowflakeIO.DataSourceConfiguration.create(this);
   }
 }
