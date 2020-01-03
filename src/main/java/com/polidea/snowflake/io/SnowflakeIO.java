@@ -7,29 +7,26 @@ import com.polidea.snowflake.io.credentials.KeyPairSnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.OAuthTokenSnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.SnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.UsernamePasswordSnowflakeCredentials;
-import java.io.IOException;
 import java.io.Serializable;
 import java.security.PrivateKey;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import org.apache.beam.sdk.coders.Coder;
-import org.apache.beam.sdk.io.jdbc.JdbcUtil;
+import org.apache.beam.sdk.io.FileIO;
+import org.apache.beam.sdk.io.TextIO;
+import org.apache.beam.sdk.io.WriteFilesResult;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.schemas.NoSuchSchemaException;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.schemas.SchemaRegistry;
+import org.apache.beam.sdk.transforms.Combine;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.PTransform;
@@ -37,16 +34,10 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.sdk.transforms.display.HasDisplayData;
-import org.apache.beam.sdk.util.BackOff;
-import org.apache.beam.sdk.util.BackOffUtils;
-import org.apache.beam.sdk.util.FluentBackoff;
-import org.apache.beam.sdk.util.Sleeper;
+import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PDone;
-import org.apache.beam.sdk.values.Row;
 import org.apache.beam.sdk.values.TypeDescriptor;
-import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,13 +72,9 @@ public class SnowflakeIO {
   }
 
   public static <T> Write<T> write() {
-    return new Write();
-  }
-
-  public static <T> WriteVoid<T> writeVoid() {
-    return new AutoValue_SnowflakeIO_WriteVoid.Builder<T>()
-        .setBatchSize(DEFAULT_BATCH_SIZE)
-        .setRetryStrategy(new DefaultRetryStrategy())
+    return new AutoValue_SnowflakeIO_Write.Builder<T>()
+        .setFileNameTemplate(ValueProvider.StaticValueProvider.of("output*"))
+        .setParallelization(ValueProvider.StaticValueProvider.of(true))
         .build();
   }
 
@@ -684,417 +671,295 @@ public class SnowflakeIO {
     void setParameters(T element, PreparedStatement preparedStatement) throws Exception;
   }
 
-  public static class Write<T> extends PTransform<PCollection<T>, PDone> {
-    WriteVoid<T> inner;
-
-    Write() {
-      this(writeVoid());
-    }
-
-    Write(WriteVoid<T> inner) {
-      this.inner = inner;
-    }
-
-    public Write<T> withDataSourceConfiguration(DataSourceConfiguration config) {
-      return new Write(
-          inner
-              .withDataSourceConfiguration(config)
-              .withDataSourceProviderFn(new DataSourceProviderFromDataSourceConfiguration(config)));
-    }
-
-    public Write<T> withDataSourceProviderFn(
-        SerializableFunction<Void, DataSource> dataSourceProviderFn) {
-      return new Write(inner.withDataSourceProviderFn(dataSourceProviderFn));
-    }
-
-    public Write<T> withStatement(String statement) {
-      return new Write(inner.withStatement(statement));
-    }
-
-    public Write<T> withPreparedStatementSetter(PreparedStatementSetter<T> setter) {
-      return new Write(inner.withPreparedStatementSetter(setter));
-    }
-
-    public Write<T> withBatchSize(long batchSize) {
-      return new Write(inner.withBatchSize(batchSize));
-    }
-
-    public Write<T> withRetryStrategy(RetryStrategy retryStrategy) {
-      return new Write(inner.withRetryStrategy(retryStrategy));
-    }
-
-    public Write<T> withTable(String table) {
-      return new Write(inner.withTable(table));
-    }
-
-    /**
-     * Example: write a {@link PCollection} to one database and then to another database, making
-     * sure that writing a window of data to the second database starts only after the respective
-     * window has been fully written to the first database.
-     *
-     * <pre>{@code
-     * PCollection<Void> firstWriteResults = data.apply(.. .write()
-     *     .withDataSourceConfiguration(CONF_DB_1).withResults());
-     * data.apply(Wait.on(firstWriteResults))
-     *     .apply(JdbcIO.write().withDataSourceConfiguration(CONF_DB_2));
-     * }</pre>
-     */
-    public WriteVoid<T> withResults() {
-      return inner;
-    }
-
-    @Override
-    public void populateDisplayData(DisplayData.Builder builder) {
-      inner.populateDisplayData(builder);
-    }
-
-    private boolean hasStatementAndSetter() {
-      return inner.getStatement() != null && inner.getPreparedStatementSetter() != null;
-    }
-
-    @Override
-    public PDone expand(PCollection<T> input) {
-      // fixme: validate invalid table input
-      if (input.hasSchema() && !hasStatementAndSetter()) {
-        checkArgument(
-            inner.getTable() != null, "table cannot be null if statement is not provided");
-        Schema schema = input.getSchema();
-        List<SchemaUtil.FieldWithIndex> fields = getFilteredFields(schema);
-        inner =
-            inner.withStatement(
-                JdbcUtil.generateStatement(
-                    inner.getTable(),
-                    fields.stream()
-                        .map(SchemaUtil.FieldWithIndex::getField)
-                        .collect(Collectors.toList())));
-        inner =
-            inner.withPreparedStatementSetter(
-                new AutoGeneratedPreparedStatementSetter(fields, input.getToRowFunction()));
-      }
-
-      inner.expand(input);
-      return PDone.in(input.getPipeline());
-    }
-
-    private List<SchemaUtil.FieldWithIndex> getFilteredFields(Schema schema) {
-      Schema tableSchema;
-
-      try (Connection connection = inner.getDataSourceProviderFn().apply(null).getConnection();
-          PreparedStatement statement =
-              connection.prepareStatement((String.format("SELECT * FROM %s", inner.getTable())))) {
-        tableSchema = SchemaUtil.toBeamSchema(statement.getMetaData());
-        statement.close();
-      } catch (SQLException e) {
-        throw new RuntimeException(
-            "Error while determining columns from table: " + inner.getTable(), e);
-      }
-
-      if (tableSchema.getFieldCount() < schema.getFieldCount()) {
-        throw new RuntimeException("Input schema has more fields than actual table.");
-      }
-
-      // filter out missing fields from output table
-      List<Schema.Field> missingFields =
-          tableSchema.getFields().stream()
-              .filter(
-                  line ->
-                      schema.getFields().stream()
-                          .noneMatch(s -> s.getName().equalsIgnoreCase(line.getName())))
-              .collect(Collectors.toList());
-
-      // allow insert only if missing fields are nullable
-      if (SchemaUtil.checkNullabilityForFields(missingFields)) {
-        throw new RuntimeException("Non nullable fields are not allowed without schema.");
-      }
-
-      List<SchemaUtil.FieldWithIndex> tableFilteredFields =
-          tableSchema.getFields().stream()
-              .map(
-                  (tableField) -> {
-                    Optional<Schema.Field> optionalSchemaField =
-                        schema.getFields().stream()
-                            .filter((f) -> SchemaUtil.compareSchemaField(tableField, f))
-                            .findFirst();
-                    return (optionalSchemaField.isPresent())
-                        ? SchemaUtil.FieldWithIndex.of(
-                            tableField, schema.getFields().indexOf(optionalSchemaField.get()))
-                        : null;
-                  })
-              .filter(Objects::nonNull)
-              .collect(Collectors.toList());
-
-      if (tableFilteredFields.size() != schema.getFieldCount()) {
-        throw new RuntimeException("Provided schema doesn't match with database schema.");
-      }
-
-      return tableFilteredFields;
-    }
-
-    private class AutoGeneratedPreparedStatementSetter implements PreparedStatementSetter<T> {
-
-      private List<SchemaUtil.FieldWithIndex> fields;
-      private SerializableFunction<T, Row> toRowFn;
-      private List<PreparedStatementSetCaller> preparedStatementFieldSetterList = new ArrayList<>();
-
-      AutoGeneratedPreparedStatementSetter(
-          List<SchemaUtil.FieldWithIndex> fieldsWithIndex, SerializableFunction<T, Row> toRowFn) {
-        this.fields = fieldsWithIndex;
-        this.toRowFn = toRowFn;
-        populatePreparedStatementFieldSetter();
-      }
-
-      private void populatePreparedStatementFieldSetter() {
-        IntStream.range(0, fields.size())
-            .forEach(
-                (index) -> {
-                  Schema.FieldType fieldType = fields.get(index).getField().getType();
-                  preparedStatementFieldSetterList.add(
-                      (PreparedStatementSetCaller)
-                          JdbcUtil.getPreparedStatementSetCaller(fieldType));
-                });
-      }
-
-      @Override
-      public void setParameters(T element, PreparedStatement preparedStatement) throws Exception {
-        Row row = (element instanceof Row) ? (Row) element : toRowFn.apply(element);
-        IntStream.range(0, fields.size())
-            .forEach(
-                (index) -> {
-                  try {
-                    preparedStatementFieldSetterList
-                        .get(index)
-                        .set(row, preparedStatement, index, fields.get(index));
-                  } catch (SQLException | NullPointerException e) {
-                    throw new RuntimeException("Error while setting data to preparedStatement", e);
-                  }
-                });
-      }
-    }
-  }
-
-  /** Interface implemented by functions that sets prepared statement data. */
-  @FunctionalInterface
-  interface PreparedStatementSetCaller extends Serializable {
-    void set(
-        Row element,
-        PreparedStatement preparedStatement,
-        int prepareStatementIndex,
-        SchemaUtil.FieldWithIndex schemaFieldWithIndex)
-        throws SQLException;
-  }
-
-  /** A {@link PTransform} to write to a JDBC datasource. */
   @AutoValue
-  public abstract static class WriteVoid<T> extends PTransform<PCollection<T>, PCollection<Void>> {
+  public abstract static class Write<T> extends PTransform<PCollection<String>, PCollection> {
     @Nullable
     abstract SerializableFunction<Void, DataSource> getDataSourceProviderFn();
 
     @Nullable
-    abstract ValueProvider<String> getStatement();
-
-    abstract long getBatchSize();
+    abstract ValueProvider<String> getStage();
 
     @Nullable
-    abstract PreparedStatementSetter<T> getPreparedStatementSetter();
+    abstract ValueProvider<String> getTable();
 
     @Nullable
-    abstract RetryStrategy getRetryStrategy();
+    abstract ValueProvider<String> getInternalLocation();
 
     @Nullable
-    abstract String getTable();
+    abstract ValueProvider<String> getExternalBucket();
 
-    abstract WriteVoid.Builder<T> toBuilder();
+    @Nullable
+    abstract ValueProvider<String> getFileNameTemplate();
+
+    @Nullable
+    abstract ValueProvider<Boolean> getParallelization();
+
+    @Nullable
+    abstract Coder<T> getCoder();
+
+    abstract Builder<T> toBuilder();
 
     @AutoValue.Builder
     abstract static class Builder<T> {
-      abstract WriteVoid.Builder<T> setDataSourceProviderFn(
+      abstract Builder<T> setDataSourceProviderFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn);
 
-      abstract WriteVoid.Builder<T> setStatement(ValueProvider<String> statement);
+      abstract Builder<T> setStage(ValueProvider<String> stage);
 
-      abstract WriteVoid.Builder<T> setBatchSize(long batchSize);
+      abstract Builder<T> setTable(ValueProvider<String> table);
 
-      abstract WriteVoid.Builder<T> setPreparedStatementSetter(PreparedStatementSetter<T> setter);
+      abstract Builder<T> setInternalLocation(ValueProvider<String> filesLocation);
 
-      abstract WriteVoid.Builder<T> setRetryStrategy(RetryStrategy deadlockPredicate);
+      abstract Builder<T> setExternalBucket(ValueProvider<String> externalBucket);
 
-      abstract WriteVoid.Builder<T> setTable(String table);
+      abstract Builder<T> setFileNameTemplate(ValueProvider<String> fileNameTemplate);
 
-      abstract WriteVoid<T> build();
+      abstract Builder<T> setParallelization(ValueProvider<Boolean> parallelization);
+
+      abstract Builder<T> setCoder(Coder<T> coder);
+
+      abstract Write<T> build();
     }
 
-    public WriteVoid<T> withDataSourceConfiguration(DataSourceConfiguration config) {
+    public Write<T> withDataSourceConfiguration(final DataSourceConfiguration config) {
       return withDataSourceProviderFn(new DataSourceProviderFromDataSourceConfiguration(config));
     }
 
-    public WriteVoid<T> withDataSourceProviderFn(
+    public Write<T> withDataSourceProviderFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn) {
       return toBuilder().setDataSourceProviderFn(dataSourceProviderFn).build();
     }
 
-    public WriteVoid<T> withStatement(String statement) {
-      return withStatement(ValueProvider.StaticValueProvider.of(statement));
+    public Write<T> withStage(String stage) {
+      return withStage(ValueProvider.StaticValueProvider.of(stage));
     }
 
-    public WriteVoid<T> withStatement(ValueProvider<String> statement) {
-      return toBuilder().setStatement(statement).build();
+    public Write<T> withStage(ValueProvider<String> stage) {
+      return toBuilder().setStage(stage).build();
     }
 
-    public WriteVoid<T> withPreparedStatementSetter(PreparedStatementSetter<T> setter) {
-      return toBuilder().setPreparedStatementSetter(setter).build();
+    public Write<T> withTable(String table) {
+      return withTable(ValueProvider.StaticValueProvider.of(table));
     }
 
-    /**
-     * Provide a maximum size in number of SQL statement for the batch. Default is 1000.
-     *
-     * @param batchSize maximum batch size in number of statements
-     */
-    public WriteVoid<T> withBatchSize(long batchSize) {
-      checkArgument(batchSize > 0, "batchSize must be > 0, but was %s", batchSize);
-      return toBuilder().setBatchSize(batchSize).build();
-    }
-
-    /**
-     * When a SQL exception occurs, {@link Write} uses this {@link RetryStrategy} to determine if it
-     * will retry the statements. If {@link RetryStrategy#apply(SQLException)} returns {@code true},
-     * then {@link Write} retries the statements.
-     */
-    public WriteVoid<T> withRetryStrategy(RetryStrategy retryStrategy) {
-      checkArgument(retryStrategy != null, "retryStrategy can not be null");
-      return toBuilder().setRetryStrategy(retryStrategy).build();
-    }
-
-    public WriteVoid<T> withTable(String table) {
-      checkArgument(table != null, "table name can not be null");
+    public Write<T> withTable(ValueProvider<String> table) {
       return toBuilder().setTable(table).build();
     }
 
+    public Write<T> withExternalBucket(String externalBucket) {
+      return withExternalBucket(ValueProvider.StaticValueProvider.of(externalBucket));
+    }
+
+    public Write<T> withExternalBucket(ValueProvider<String> externalBucket) {
+      return toBuilder().setExternalBucket(externalBucket).build();
+    }
+
+    public Write<T> withInternalLocation(String filesLocation) {
+      return withInternalLocation(ValueProvider.StaticValueProvider.of(filesLocation));
+    }
+
+    public Write<T> withInternalLocation(ValueProvider<String> filesLocation) {
+      return toBuilder().setInternalLocation(filesLocation).build();
+    }
+
+    public Write<T> withFileNameTemplate(ValueProvider<String> fileNameTemplate) {
+      return toBuilder().setFileNameTemplate(fileNameTemplate).build();
+    }
+
+    public Write<T> withFileNameTemplate(String fileNameTemplate) {
+      return withFileNameTemplate(ValueProvider.StaticValueProvider.of(fileNameTemplate));
+    }
+
+    public Write<T> withParallelization(ValueProvider<Boolean> parallelization) {
+      return toBuilder().setParallelization(parallelization).build();
+    }
+
+    public Write<T> withParallelization(Boolean parallelization) {
+      return withParallelization(ValueProvider.StaticValueProvider.of(parallelization));
+    }
+
+    public Write<T> withCoder(Coder<T> coder) {
+      return toBuilder().setCoder(coder).build();
+    }
+
     @Override
-    public PCollection<Void> expand(PCollection<T> input) {
-      checkArgument(getStatement() != null, "withStatement() is required");
-      checkArgument(
-          getPreparedStatementSetter() != null, "withPreparedStatementSetter() is required");
+    public PCollection expand(PCollection<String> input) {
+      class Parse extends DoFn<KV<T, String>, String> {
+        @ProcessElement
+        public void processElement(ProcessContext c) {
+          c.output(c.element().getValue());
+        }
+      }
+      checkArgument(getTable() != null, "withTable() is required");
+      checkArgument(getCoder() != null, "withCoder() is required");
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
 
-      return input.apply(ParDo.of(new WriteVoid.WriteFn<>(this)));
+      checkArgument(
+          getExternalBucket() != null || getInternalLocation() != null,
+          "withExternalBucket() or withInternalLocation() is required");
+
+      ValueProvider<String> outputDirectory =
+          getExternalBucket() != null ? getExternalBucket() : getInternalLocation();
+
+      WriteFilesResult start =
+          (WriteFilesResult)
+              input.apply(
+                  "Write files to specified location",
+                  FileIO.write().via((FileIO.Sink) TextIO.sink()).to(outputDirectory));
+
+      PCollection files =
+          (PCollection)
+              start
+                  .getPerDestinationOutputFilenames()
+                  .apply("Parse KV filenames to Strings", ParDo.of(new Parse()));
+
+      if (getExternalBucket() == null) {
+        files = putFilesToInternalStage(files);
+      }
+
+      files =
+          (PCollection)
+              files.apply("Create list of files to copy", Combine.globally(new Concatenate()));
+      PCollection out = (PCollection) files.apply("Copy files to table", copyToExternalStorage());
+      out.setCoder(getCoder());
+      return out;
     }
 
-    private static class WriteFn<T> extends DoFn<T, Void> {
-
-      private final WriteVoid<T> spec;
-
-      private static final int MAX_RETRIES = 5;
-      private static final FluentBackoff BUNDLE_WRITE_BACKOFF =
-          FluentBackoff.DEFAULT
-              .withMaxRetries(MAX_RETRIES)
-              .withInitialBackoff(Duration.standardSeconds(5));
-
-      private DataSource dataSource;
-      private Connection connection;
-      private PreparedStatement preparedStatement;
-      private final List<T> records = new ArrayList<>();
-
-      public WriteFn(WriteVoid<T> spec) {
-        this.spec = spec;
+    private PCollection putFilesToInternalStage(PCollection pcol) {
+      if (!getParallelization().get()) {
+        pcol =
+            (PCollection)
+                pcol.apply("Combine all files into one flow", Combine.globally(new Concatenate()));
       }
 
-      @Setup
-      public void setup() {
-        dataSource = spec.getDataSourceProviderFn().apply(null);
-      }
+      pcol = (PCollection) pcol.apply("Put files on stage", putToInternalStage());
 
-      @StartBundle
-      public void startBundle() throws Exception {
-        connection = dataSource.getConnection();
-        connection.setAutoCommit(false);
-        preparedStatement = connection.prepareStatement(spec.getStatement().get());
-      }
+      pcol.setCoder(getCoder());
+      return pcol;
+    }
 
-      @ProcessElement
-      public void processElement(ProcessContext context) throws Exception {
-        T record = context.element();
+    private ParDo.SingleOutput<Object, Object> putToInternalStage() {
+      return ParDo.of(
+          new PutFn<>(
+              getDataSourceProviderFn(),
+              getStage(),
+              getInternalLocation(),
+              getFileNameTemplate(),
+              getParallelization()));
+    }
 
-        records.add(record);
-
-        if (records.size() >= spec.getBatchSize()) {
-          executeBatch();
-        }
-      }
-
-      private void processRecord(T record, PreparedStatement preparedStatement) {
-        try {
-          preparedStatement.clearParameters();
-          spec.getPreparedStatementSetter().setParameters(record, preparedStatement);
-          preparedStatement.addBatch();
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }
-
-      @FinishBundle
-      public void finishBundle() throws Exception {
-        executeBatch();
-        try {
-          if (preparedStatement != null) {
-            preparedStatement.close();
-          }
-        } finally {
-          if (connection != null) {
-            connection.close();
-          }
-        }
-      }
-
-      private void executeBatch() throws SQLException, IOException, InterruptedException {
-        if (records.isEmpty()) {
-          return;
-        }
-        Sleeper sleeper = Sleeper.DEFAULT;
-        BackOff backoff = BUNDLE_WRITE_BACKOFF.backoff();
-        while (true) {
-          try (PreparedStatement preparedStatement =
-              connection.prepareStatement(spec.getStatement().get())) {
-            try {
-              // add each record in the statement batch
-              for (T record : records) {
-                processRecord(record, preparedStatement);
-              }
-              // execute the batch
-              preparedStatement.executeBatch();
-              // commit the changes
-              connection.commit();
-              break;
-            } catch (SQLException exception) {
-              if (!spec.getRetryStrategy().apply(exception)) {
-                throw exception;
-              }
-              LOG.warn("Deadlock detected, retrying", exception);
-              // clean up the statement batch and the connection state
-              preparedStatement.clearBatch();
-              connection.rollback();
-              if (!BackOffUtils.next(sleeper, backoff)) {
-                // we tried the max number of times
-                throw exception;
-              }
-            }
-          }
-        }
-        records.clear();
-      }
+    private ParDo.SingleOutput<Object, Object> copyToExternalStorage() {
+      return ParDo.of(
+          new CopyLoadToBucketFn<>(
+              getDataSourceProviderFn(), getTable(), getStage(), getExternalBucket()));
     }
   }
 
-  public static class DefaultRetryStrategy implements RetryStrategy {
-    @Override
-    public boolean apply(SQLException e) {
-      return "40001".equals(e.getSQLState());
+  private static class CopyLoadToBucketFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
+    private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
+    private final ValueProvider<String> table;
+    private final ValueProvider<String> stage;
+    private final ValueProvider<String> externalBucket;
+
+    private DataSource dataSource;
+    private Connection connection;
+
+    CopyLoadToBucketFn(
+        SerializableFunction<Void, DataSource> dataSourceProviderFn,
+        ValueProvider<String> table,
+        ValueProvider<String> stage,
+        ValueProvider<String> externalBucket) {
+      this.dataSourceProviderFn = dataSourceProviderFn;
+      this.table = table;
+      this.stage = stage;
+      this.externalBucket = externalBucket;
+    }
+
+    @Setup
+    public void setup() throws Exception {
+      dataSource = dataSourceProviderFn.apply(null);
+      connection = dataSource.getConnection();
+    }
+
+    @ProcessElement
+    public void processElement(ProcessContext context) throws Exception {
+      List<String> filesList = (List<String>) context.element();
+      String files = String.join(", ", filesList);
+      files = files.replaceAll(String.valueOf(this.externalBucket), "");
+      String query =
+          String.format("COPY INTO %s FROM @%s FILES=(%s);", this.table, this.stage, files);
+      try (PreparedStatement statement =
+          connection.prepareStatement(
+              query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+        try (ResultSet resultSet = statement.executeQuery()) {
+          context.output((OutputT) "OK");
+        }
+      }
+    }
+
+    @Teardown
+    public void teardown() throws Exception {
+      connection.close();
     }
   }
 
-  @FunctionalInterface
-  public interface RetryStrategy extends Serializable {
-    boolean apply(SQLException sqlException);
+  private static class PutFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
+    private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
+    private final ValueProvider<String> stage;
+    private final ValueProvider<String> directory;
+    private final ValueProvider<String> fileNameTemplate;
+    private final ValueProvider<Boolean> parallelization;
+
+    private DataSource dataSource;
+    private Connection connection;
+
+    PutFn(
+        SerializableFunction<Void, DataSource> dataSourceProviderFn,
+        ValueProvider<String> stage,
+        ValueProvider<String> file,
+        ValueProvider<String> fileNameTemplate,
+        ValueProvider<Boolean> parallelization) {
+      this.dataSourceProviderFn = dataSourceProviderFn;
+      this.stage = stage;
+      this.directory = file;
+      this.fileNameTemplate = fileNameTemplate;
+      this.parallelization = parallelization;
+    }
+
+    @Setup
+    public void setup() throws Exception {
+      dataSource = dataSourceProviderFn.apply(null);
+      connection = dataSource.getConnection();
+    }
+
+    /* Right now it is paralleled per each created file */
+    @ProcessElement
+    public void processElement(ProcessContext context) throws Exception {
+      String query;
+      if (parallelization.get()) {
+        query = String.format("put file://%s @%s;", context.element().toString(), this.stage);
+      } else {
+        query =
+            String.format(
+                "put file://%s/%s @%s;", this.directory, this.fileNameTemplate, this.stage);
+      }
+      try (PreparedStatement statement =
+          connection.prepareStatement(
+              query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+        try (ResultSet resultSet = statement.executeQuery()) {
+          int indexOfNameOfFile = 2;
+          while (resultSet.next()) {
+            context.output((OutputT) resultSet.getString(indexOfNameOfFile));
+          }
+        }
+      }
+    }
+
+    @Teardown
+    public void teardown() throws Exception {
+      connection.close();
+    }
   }
 }
