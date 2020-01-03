@@ -1,23 +1,24 @@
 # SnowflakeIO for Beam
-This project contains [Beam IO](https://beam.apache.org/documentation/io/built-in/) for [Snowflake](https://www.snowflake.com/). 
-It uses [Snowflake JDBC Driver](https://github.com/snowflakedb/snowflake-jdbc). 
+This project contains [Beam IO](https://beam.apache.org/documentation/io/built-in/) transforms for reading data from 
+and writing data to [Snowflake](https://www.snowflake.com/) tables. The SnowflakeIO transforms use the 
+[Snowflake JDBC Driver](https://github.com/snowflakedb/snowflake-jdbc).
 
-Please refer to [Snowflake documentation](https://docs.snowflake.net/manuals/index.html) in case of Snowflake related questions.
+For more information about Snowflake, see the [Snowflake documentation](https://docs.snowflake.net/manuals/index.html).
  
 ## Authentication
-All authentication methods available in Snowflake JDBC Driver are possible to use with the IO:
-* username and password
-* key pair
+All authentication methods available for the Snowflake JDBC Driver are possible to use with the IO transforms:
+* Username and password
+* Key pair
 * OAuth token
 
-Passing credentials is done via Pipeline Options.
+Passing credentials is done via Pipeline options.
 
 ### Username and password
-To use username/password authentication in SnowflakeIO invoke your pipeline with following Pipeline Options: 
+To use username/password authentication in SnowflakeIO, invoke your pipeline with the following Pipeline options:
 ```
 --username=<USERNAME> --password=<PASSWORD
 ```
-and set following properties on your DataSource
+and set the following properties on your DataSource:
 ```
 SnowflakeIO.DataSourceConfiguration.create()
         [...]
@@ -29,15 +30,14 @@ SnowflakeIO.DataSourceConfiguration.create()
 ### Key pair
 
 **Note**: 
-Before using this method, a key pair has to be generated and Snowflake's user has to be altered with public key.
-Please refer to [Snowflake JDBC Driver documentation](https://docs.snowflake.net/manuals/user-guide/jdbc-configure.html#using-key-pair-authentication) 
-for more details and instructions how to generate key pair and how to upload pubkey to Snowflake.
+To use this authentication method, you must first generate a key pair and associate the public key with the Snowflake 
+user that will connect using the IO transform. For instructions,  see the [Snowflake documentation](https://docs.snowflake.net/manuals/user-guide/jdbc-configure.html#using-key-pair-authentication).
 
-To use key-pair authentication in SnowflakeIO invoke your pipeline with following Pipeline Options: 
+To use key pair authentication with SnowflakeIO, invoke your pipeline with following Pipeline options:
 ```
 --username=<USERNAME> --privateKeyPath=<PATH_TO_P8_FILE> --privateKeyPassphrase=<PASSWORD_FOR_KEY>
 ```
-and set following properties on your DataSource
+and set following properties on your DataSource:
 ```
 SnowflakeIO.DataSourceConfiguration.create()
         [...]
@@ -45,21 +45,21 @@ SnowflakeIO.DataSourceConfiguration.create()
         .withPrivateKey(PRIVATE_KEY_OBJECT)
         [...]
 ```
-with `PRIVATE_KEY_OBJECT` being an instance of `java.security.PrivateKey` with your key converted to Java object.
+Where `PRIVATE_KEY_OBJECT` is the private key as a Java object, an instance of the `java.security.PrivateKey` class.
 
 
 ### OAuth token
 SnowflakeIO also supports OAuth token.  
 
-**IMPORTANT**: SnowflakeIO requires valid OAuth access token. It will neither be able to refresh the token nor obtain it 
-using web-based flow. Please refer to [Snowflake documentation](https://docs.snowflake.net/manuals/user-guide/oauth-intro.html)
-on how to create an OAuth integration and obtain the token.
+**IMPORTANT**: SnowflakeIO requires a valid OAuth access token. It will neither be able to refresh the token nor obtain 
+it using a web-based flow. For information on configuring an OAuth integration and obtaining the token, see the 
+[Snowflake documentation](https://docs.snowflake.net/manuals/user-guide/oauth-intro.html).
 
 Once you have the token, invoke your pipeline with following Pipeline Options: 
 ```
 --oauthToken=<TOKEN>
 ```
-and set following properties on your DataSource
+and set following properties on your DataSource:
 ```
 SnowflakeIO.DataSourceConfiguration.create()
         [...]
