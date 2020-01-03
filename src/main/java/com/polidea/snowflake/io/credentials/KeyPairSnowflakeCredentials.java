@@ -1,10 +1,14 @@
 package com.polidea.snowflake.io.credentials;
 
 import com.polidea.snowflake.io.SnowflakeIO;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import javax.crypto.EncryptedPrivateKeyInfo;
@@ -46,7 +50,10 @@ public class KeyPairSnowflakeCredentials implements SnowflakeCredentials {
 
       KeyFactory keyFactory = KeyFactory.getInstance("RSA");
       return keyFactory.generatePrivate(encodedKeySpec);
-    } catch (Exception ex) {
+    } catch (IOException
+        | NoSuchAlgorithmException
+        | InvalidKeySpecException
+        | InvalidKeyException ex) {
       throw new RuntimeException("Can't create PrivateKey from options");
     }
   }
