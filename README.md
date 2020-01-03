@@ -11,20 +11,22 @@ All authentication methods available for the Snowflake JDBC Driver are possible 
 * Key pair
 * OAuth token
 
-Passing credentials is done via Pipeline options.
+Passing credentials is done via Pipeline options used to instantiate `SnowflakeIO.DataSourceConfiguration`:
+```
+SnowflakePipelineOptions options = PipelineOptionsFactory
+        .fromArgs(args)
+        .withValidation()
+        .as(SnowflakePipelineOptions.class);
+SnowflakeCredentials credentials = SnowflakeCredentialsFactory.of(options);
+
+SnowflakeIO.DataSourceConfiguration.create(credentials)
+        .(other DataSourceConfiguration options)
+```
 
 ### Username and password
 To use username/password authentication in SnowflakeIO, invoke your pipeline with the following Pipeline options:
 ```
 --username=<USERNAME> --password=<PASSWORD
-```
-and set the following properties on your DataSource:
-```
-SnowflakeIO.DataSourceConfiguration.create()
-        [...]
-        .withUsername(options.getUsername())
-        .withPassword(options.getPassword())
-        [...]
 ```
 
 ### Key pair
@@ -37,16 +39,6 @@ To use key pair authentication with SnowflakeIO, invoke your pipeline with follo
 ```
 --username=<USERNAME> --privateKeyPath=<PATH_TO_P8_FILE> --privateKeyPassphrase=<PASSWORD_FOR_KEY>
 ```
-and set following properties on your DataSource:
-```
-SnowflakeIO.DataSourceConfiguration.create()
-        [...]
-        .withUsername(options.getUsername())
-        .withPrivateKey(PRIVATE_KEY_OBJECT)
-        [...]
-```
-Where `PRIVATE_KEY_OBJECT` is the private key as a Java object, an instance of the `java.security.PrivateKey` class.
-
 
 ### OAuth token
 SnowflakeIO also supports OAuth token.  
@@ -59,10 +51,4 @@ Once you have the token, invoke your pipeline with following Pipeline Options:
 ```
 --oauthToken=<TOKEN>
 ```
-and set following properties on your DataSource:
-```
-SnowflakeIO.DataSourceConfiguration.create()
-        [...]
-        .withOauthToken(options.getOauthToken()) 
-        [...]
-```
+
