@@ -17,7 +17,6 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PDone;
 
 public class ReadPipelineExample {
 
@@ -71,10 +70,9 @@ public class ReadPipelineExample {
                     })
                 .withCoder(KvCoder.of(BigEndianIntegerCoder.of(), StringUtf8Coder.of())));
 
-    PDone printableData =
-        namesAndIds
-            .apply("Find elements to write", ParDo.of(new Parse()))
-            .apply("Write to text file", TextIO.write().to(output));
+    namesAndIds
+        .apply("Find elements to write", ParDo.of(new Parse()))
+        .apply("Write to text file", TextIO.write().to(output));
 
     PipelineResult pipelineResult = pipelineRead.run(options);
     pipelineResult.waitUntilFinish();
