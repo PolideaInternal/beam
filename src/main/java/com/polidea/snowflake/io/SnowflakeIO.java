@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
@@ -20,7 +21,6 @@ import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.io.FileIO;
-import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.WriteFilesResult;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.schemas.NoSuchSchemaException;
@@ -784,12 +784,6 @@ public class SnowflakeIO {
 
     @Override
     public PCollection expand(PCollection<String> input) {
-      class Parse extends DoFn<KV<T, String>, String> {
-        @ProcessElement
-        public void processElement(ProcessContext c) {
-          c.output(c.element().getValue());
-        }
-      }
       checkArgument(getTable() != null, "withTable() is required");
       checkArgument(getCoder() != null, "withCoder() is required");
       checkArgument(
@@ -797,23 +791,17 @@ public class SnowflakeIO {
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
 
       checkArgument(
-          getExternalBucket() != null || getInternalLocation() != null,
+          (getExternalBucket() != null || getInternalLocation() != null),
           "withExternalBucket() or withInternalLocation() is required");
+
+      checkArgument(
+          !(getExternalBucket() != null && getInternalLocation() != null),
+          "withExternalBucket() or withInternalLocation() only one is required");
 
       ValueProvider<String> outputDirectory =
           getExternalBucket() != null ? getExternalBucket() : getInternalLocation();
 
-      WriteFilesResult start =
-          (WriteFilesResult)
-              input.apply(
-                  "Write files to specified location",
-                  FileIO.write().via((FileIO.Sink) TextIO.sink()).to(outputDirectory));
-
-      PCollection files =
-          (PCollection)
-              start
-                  .getPerDestinationOutputFilenames()
-                  .apply("Parse KV filenames to Strings", ParDo.of(new Parse()));
+      PCollection files = writeToFiles(input, outputDirectory);
 
       if (getExternalBucket() == null) {
         files = putFilesToInternalStage(files);
@@ -825,6 +813,29 @@ public class SnowflakeIO {
       PCollection out = (PCollection) files.apply("Copy files to table", copyToExternalStorage());
       out.setCoder(getCoder());
       return out;
+    }
+
+    private PCollection writeToFiles(PCollection input, ValueProvider<String> outputDirectory) {
+      class Parse extends DoFn<KV<T, String>, String> {
+        @ProcessElement
+        public void processElement(ProcessContext c) {
+          c.output(c.element().getValue());
+        }
+      }
+
+      WriteFilesResult filesResult =
+          (WriteFilesResult)
+              input.apply(
+                  "Write files to specified location",
+                  FileIO.write()
+                      .via((FileIO.Sink) new CSVSink(Arrays.asList("name", "id")))
+                      .to(outputDirectory)
+                      .withSuffix(".csv"));
+
+      return (PCollection)
+          filesResult
+              .getPerDestinationOutputFilenames()
+              .apply("Parse KV filenames to Strings", ParDo.of(new Parse()));
     }
 
     private PCollection putFilesToInternalStage(PCollection pcol) {
