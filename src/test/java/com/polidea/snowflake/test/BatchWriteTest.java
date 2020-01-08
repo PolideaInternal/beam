@@ -28,11 +28,22 @@ import org.junit.Rule;
 import org.junit.Test;
 
 /**
- * To run this tests on Dataflow ./gradlew test -DintegrationTestPipelineOptions='["
- * --runner=DataflowRunner", "--project=gcp_project", "--stagingLocation=gs://gcp_location",
- * "--account=snowflake_account", "--username=snowflake_username", "--table=test_table_name",
- * "--snowflakeRegion=ex_us-east-1", "--password=snowflake_password", "--schema=ex_PUBLIC",
- * "--output=gs://..."]'.
+ * To run this tests on Dataflow
+ * ./gradlew test --tests com.polidea.snowflake.test.BatchWriteTest.writeToInternalWithNamedStageTest
+ * -DintegrationTestPipelineOptions='[
+ *    "--runner=DataflowRunner",
+ *    "--project=...",
+ *    "--stagingLocation=gs://...",
+ *    "--serverName=...",
+ *    "--username=...",
+ *    "--password=...",
+ *    "--schema=PUBLIC",
+ *    "--table=...",
+ *    "--database=...",
+ *    "--stage=...",
+ *    "--internalLocation=./test",
+ *    "--maxNumWorkers=5",
+ *    "--appName=internal" ]'
  */
 public class BatchWriteTest {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
@@ -100,11 +111,6 @@ public class BatchWriteTest {
         storage.delete(blob.getBlobId());
       }
     }
-
-    Connection connection = dc.buildDatasource().getConnection();
-    PreparedStatement statement =
-        connection.prepareStatement(String.format("TRUNCATE %s", options.getTable()));
-    statement.executeQuery();
   }
 
   // Uses file name template which default is output*
@@ -183,6 +189,119 @@ public class BatchWriteTest {
                 .withStage(options.getStage())
                 .withExternalBucket(options.getExternalLocation())
                 .withCoder(StringUtf8Coder.of()));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Test
+  @Ignore
+  public void writeToInternalWithWriteTruncateDispositionSuccess() {
+    Connection connection = null;
+    try {
+      connection = dc.buildDatasource().getConnection();
+      PreparedStatement statement =
+          connection.prepareStatement(
+              String.format("CREATE OR REPLACE stage %s;", options.getStage()));
+      statement.executeQuery();
+
+      connection = dc.buildDatasource().getConnection();
+      PreparedStatement statement_insert =
+          connection.prepareStatement(
+              String.format("INSERT INTO %s VALUES ('test')", options.getTable()));
+      statement_insert.executeQuery();
+      connection.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "Copy IO",
+            SnowflakeIO.<String>write()
+                .withDataSourceConfiguration(dc)
+                .withTable(options.getTable())
+                .withStage(options.getStage())
+                .withInternalLocation(options.getInternalLocation())
+                .withFileNameTemplate("output*")
+                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
+                .withParallelization(false)
+                .withCoder(SerializableCoder.of(String.class)));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Test
+  @Ignore
+  public void writeToInternalWithWriteEmptyDispositionWithNotEmptyTableFails() {
+
+    Connection connection = null;
+    try {
+      connection = dc.buildDatasource().getConnection();
+      PreparedStatement statement =
+          connection.prepareStatement(
+              String.format("INSERT INTO %s VALUES ('test')", options.getTable()));
+      statement.executeQuery();
+      connection.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "Copy IO",
+            SnowflakeIO.<String>write()
+                .withDataSourceConfiguration(dc)
+                .withTable(options.getTable())
+                .withStage(options.getStage())
+                .withInternalLocation(options.getInternalLocation())
+                .withFileNameTemplate("output*")
+                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.EMPTY)
+                .withParallelization(false)
+                .withCoder(SerializableCoder.of(String.class)));
+
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Test
+  @Ignore
+  public void writeToInternalWithWriteEmptyDispositionWithEmptyTableSuccess() {
+    Connection connection;
+    try {
+      connection = dc.buildDatasource().getConnection();
+      PreparedStatement statement =
+          connection.prepareStatement(
+              String.format("CREATE OR REPLACE stage %s;", options.getStage()));
+      statement.executeQuery();
+
+      connection = dc.buildDatasource().getConnection();
+      PreparedStatement statement_truncate =
+          connection.prepareStatement(String.format("TRUNCATE %s;", options.getTable()));
+      statement_truncate.executeQuery();
+      connection.close();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "Copy IO",
+            SnowflakeIO.<String>write()
+                .withDataSourceConfiguration(dc)
+                .withTable(options.getTable())
+                .withStage(options.getStage())
+                .withInternalLocation(options.getInternalLocation())
+                .withFileNameTemplate("output*")
+                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.EMPTY)
+                .withParallelization(false)
+                .withCoder(SerializableCoder.of(String.class)));
+
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
   }

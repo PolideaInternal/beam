@@ -755,6 +755,9 @@ public class SnowflakeIO {
     abstract ValueProvider<Boolean> getParallelization();
 
     @Nullable
+    abstract ValueProvider<WriteDisposition> getWriteDisposition();
+
+    @Nullable
     abstract Coder<T> getCoder();
 
     abstract Builder<T> toBuilder();
@@ -777,6 +780,8 @@ public class SnowflakeIO {
       abstract Builder<T> setParallelization(ValueProvider<Boolean> parallelization);
 
       abstract Builder<T> setCoder(Coder<T> coder);
+
+      abstract Builder<T> setWriteDisposition(ValueProvider<WriteDisposition> writeDisposition);
 
       abstract Write<T> build();
     }
@@ -838,8 +843,22 @@ public class SnowflakeIO {
       return withParallelization(ValueProvider.StaticValueProvider.of(parallelization));
     }
 
+    public Write<T> withWriteDisposition(ValueProvider<WriteDisposition> writeDisposition) {
+      return toBuilder().setWriteDisposition(writeDisposition).build();
+    }
+
+    public Write<T> withWriteDisposition(WriteDisposition writeDisposition) {
+      return withWriteDisposition(ValueProvider.StaticValueProvider.of(writeDisposition));
+    }
+
     public Write<T> withCoder(Coder<T> coder) {
       return toBuilder().setCoder(coder).build();
+    }
+
+    public enum WriteDisposition {
+      TRUNCATE,
+      APPEND,
+      EMPTY
     }
 
     @Override
@@ -924,7 +943,11 @@ public class SnowflakeIO {
     private ParDo.SingleOutput<Object, Object> copyToExternalStorage() {
       return ParDo.of(
           new CopyLoadToBucketFn<>(
-              getDataSourceProviderFn(), getTable(), getStage(), getExternalBucket()));
+              getDataSourceProviderFn(),
+              getTable(),
+              getStage(),
+              getExternalBucket(),
+              getWriteDisposition()));
     }
   }
 
@@ -933,6 +956,7 @@ public class SnowflakeIO {
     private final ValueProvider<String> table;
     private final ValueProvider<String> stage;
     private final ValueProvider<String> externalBucket;
+    private final ValueProvider<Write.WriteDisposition> writeDisposition;
 
     private DataSource dataSource;
     private Connection connection;
@@ -941,17 +965,20 @@ public class SnowflakeIO {
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
         ValueProvider<String> table,
         ValueProvider<String> stage,
-        ValueProvider<String> externalBucket) {
+        ValueProvider<String> externalBucket,
+        ValueProvider<Write.WriteDisposition> writeDisposition) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.table = table;
       this.stage = stage;
       this.externalBucket = externalBucket;
+      this.writeDisposition = writeDisposition;
     }
 
     @Setup
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
       connection = dataSource.getConnection();
+      prepareTableAccordingWriteDisposition(connection);
     }
 
     @ProcessElement
@@ -967,12 +994,48 @@ public class SnowflakeIO {
         try (ResultSet resultSet = statement.executeQuery()) {
           context.output((OutputT) "OK");
         }
+      } catch (SQLException e) {
+        throw new SQLException("Unable run COPY " + e);
       }
     }
 
     @Teardown
     public void teardown() throws Exception {
       connection.close();
+    }
+
+    private Connection prepareTableAccordingWriteDisposition(Connection connection)
+        throws SQLException {
+      switch (this.writeDisposition.get()) {
+        case TRUNCATE:
+          String query = String.format("TRUNCATE %s;", this.table);
+          try {
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.executeQuery();
+            return connection;
+          } catch (SQLException e) {
+            throw new SQLException("Unable run COPY with TRUNCATE disposition ", e);
+          }
+        case EMPTY:
+          String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", this.table);
+          try {
+            PreparedStatement statement = connection.prepareStatement(selectQuery);
+            ResultSet resultSet = statement.executeQuery();
+            resultSet.next();
+            int rowCount = resultSet.getInt(1);
+            if (rowCount >= 1) {
+              throw new SQLException("Table is not empty. Aborting COPY with disposition EMPTY");
+              // TODO cleanup stage?
+            } else {
+              return connection;
+            }
+          } catch (SQLException e) {
+            throw new SQLException("Unable run COPY with EMPTY disposition ", e);
+          }
+        case APPEND:
+        default:
+          return connection;
+      }
     }
   }
 
