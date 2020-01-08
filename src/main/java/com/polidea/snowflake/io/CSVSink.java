@@ -19,10 +19,14 @@ public class CSVSink implements FileIO.Sink<String> {
     }
   }
 
+  public CSVSink() {
+    this.header = null;
+  }
+
   @Override
   public void open(WritableByteChannel channel) throws IOException {
     writer = new PrintWriter(Channels.newOutputStream(channel));
-    if (!this.header.equals(null)) {
+    if (this.header != null) {
       writer.println(header);
     }
   }

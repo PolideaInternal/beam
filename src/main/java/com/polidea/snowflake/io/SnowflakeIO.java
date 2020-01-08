@@ -13,7 +13,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
@@ -828,7 +827,7 @@ public class SnowflakeIO {
               input.apply(
                   "Write files to specified location",
                   FileIO.write()
-                      .via((FileIO.Sink) new CSVSink(Arrays.asList("name", "id")))
+                      .via((FileIO.Sink) new CSVSink())
                       .to(outputDirectory)
                       .withSuffix(".csv"));
 

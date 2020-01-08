@@ -10,6 +10,7 @@ import com.polidea.snowflake.io.credentials.SnowflakeCredentialsFactory;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import net.snowflake.client.jdbc.internal.apache.commons.io.FileUtils;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
@@ -20,7 +21,6 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
-import org.apache.beam.sdk.values.POutput;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -110,21 +110,26 @@ public class BatchWriteTest {
   // Uses file name template which default is output*
   @Test
   @Ignore
-  public void writeToInternalWithNamedStageTest() {
-    POutput writeToIO =
-        pipeline
-            .apply(GenerateSequence.from(0).to(1000000))
-            .apply(ParDo.of(new Parse()))
-            .apply(
-                "Copy IO",
-                SnowflakeIO.<String>write()
-                    .withDataSourceConfiguration(dc)
-                    .withTable(options.getTable())
-                    .withStage(options.getStage())
-                    .withInternalLocation(options.getInternalLocation())
-                    .withFileNameTemplate("output*")
-                    .withParallelization(false)
-                    .withCoder(SerializableCoder.of(String.class)));
+  public void writeToInternalWithNamedStageTest() throws SQLException {
+    Connection connection = dc.buildDatasource().getConnection();
+    PreparedStatement statement =
+        connection.prepareStatement(
+            String.format("CREATE OR REPLACE stage %s;", options.getStage()));
+    statement.executeQuery();
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(1000000))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "Copy IO",
+            SnowflakeIO.<String>write()
+                .withDataSourceConfiguration(dc)
+                .withTable(options.getTable())
+                .withStage(options.getStage())
+                .withInternalLocation(options.getInternalLocation())
+                .withFileNameTemplate("output*")
+                .withParallelization(false)
+                .withCoder(SerializableCoder.of(String.class)));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
   }
@@ -132,7 +137,13 @@ public class BatchWriteTest {
   // This is more Beam way test. Parallelization is ON by default
   @Test
   @Ignore
-  public void writeToInternalWithNamedStageAndParalleledTest() {
+  public void writeToInternalWithNamedStageAndParalleledTest() throws SQLException {
+    Connection connection = dc.buildDatasource().getConnection();
+    PreparedStatement statement =
+        connection.prepareStatement(
+            String.format("CREATE OR REPLACE stage %s;", options.getStage()));
+    statement.executeQuery();
+
     pipeline
         .apply(GenerateSequence.from(0).to(1000000))
         .apply(ParDo.of(new Parse()))
@@ -150,7 +161,17 @@ public class BatchWriteTest {
 
   @Test
   @Ignore
-  public void writeToExternalWithStageTest() {
+  public void writeToExternalWithStageTest() throws SQLException {
+    Connection connection = dc.buildDatasource().getConnection();
+    PreparedStatement statement =
+        connection.prepareStatement(
+            String.format(
+                "create or replace stage %s \n"
+                    + "  url = 'gcs://input-test-winter/write/'\n"
+                    + "  storage_integration = google_integration;",
+                options.getStage()));
+    statement.executeQuery();
+
     pipeline
         .apply(GenerateSequence.from(0).to(1000000))
         .apply(ParDo.of(new Parse()))
