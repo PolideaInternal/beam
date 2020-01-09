@@ -4,7 +4,6 @@ import com.polidea.snowflake.io.SnowflakeIO;
 import com.polidea.snowflake.io.SnowflakePipelineOptions;
 import com.polidea.snowflake.io.credentials.SnowflakeCredentialsFactory;
 import java.io.Serializable;
-import java.sql.ResultSet;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.BigEndianIntegerCoder;
@@ -13,6 +12,7 @@ import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.options.Validation;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.KV;
@@ -28,11 +28,29 @@ public class ReadPipelineExample {
   }
 
   public interface ExamplePipelineOptions extends SnowflakePipelineOptions {
+    String QUERY_OR_TABLE_VALIDATION_GROUP = "QUERY_OR_TABLE_VALIDATION_GROUP";
 
-    @Description("Table name to connect to.")
+    @Description("Query to execute.")
+    @Validation.Required(groups = QUERY_OR_TABLE_VALIDATION_GROUP)
+    String getQuery();
+
+    void setQuery(String query);
+
+    @Description("Table to read.")
+    @Validation.Required(groups = QUERY_OR_TABLE_VALIDATION_GROUP)
     String getTable();
 
     void setTable(String table);
+
+    @Description("External location used to copy Snowflake data into.")
+    String getExternalLocation();
+
+    void setExternalLocation(String externalLocation);
+
+    @Description("Snowflake's STORAGE INTEGRATION configured for given External Location.")
+    String getIntegrationName();
+
+    void setIntegrationName(String integrationName);
 
     @Description("Destination of output data.")
     String getOutput();
@@ -45,7 +63,9 @@ public class ReadPipelineExample {
         PipelineOptionsFactory.fromArgs(args).withValidation().as(ExamplePipelineOptions.class);
     Pipeline pipelineRead = Pipeline.create(options);
 
-    String table = options.getTable();
+    String query = options.getQuery();
+    String externalLocation = options.getExternalLocation();
+    String integrationName = options.getIntegrationName();
     String output = options.getOutput();
 
     SnowflakeIO.DataSourceConfiguration dc =
@@ -61,11 +81,15 @@ public class ReadPipelineExample {
             "Read from IO",
             SnowflakeIO.<KV<Integer, String>>read()
                 .withDataSourceConfiguration(dc)
-                .withQuery(String.format("SELECT id, name FROM %s LIMIT 1000;", table))
-                .withRowMapper(
-                    new SnowflakeIO.RowMapper<KV<Integer, String>>() {
-                      public KV<Integer, String> mapRow(ResultSet resultSet) throws Exception {
-                        return KV.of(resultSet.getInt(1), resultSet.getString(2));
+                .fromQuery(query)
+                .withExternalLocation(externalLocation)
+                .withIntegrationName(integrationName)
+                .withCsvMapper(
+                    new SnowflakeIO.CsvMapper<KV<Integer, String>>() {
+                      @Override
+                      public KV<Integer, String> mapRow(String csvLine) throws Exception {
+                        String[] parts = csvLine.split(",");
+                        return KV.of(Integer.valueOf(parts[0]), parts[1]);
                       }
                     })
                 .withCoder(KvCoder.of(BigEndianIntegerCoder.of(), StringUtf8Coder.of())));
