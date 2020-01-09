@@ -11,7 +11,7 @@ import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 
 public class CSVSink implements FileIO.Sink<String> {
   private String header;
-  private PrintWriter writer;
+  private transient PrintWriter writer;
 
   public CSVSink(List<String> colNames) {
     if (!colNames.isEmpty()) {
