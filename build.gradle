@@ -104,5 +104,5 @@ test{
 }
 
 application {
-  mainClassName = 'com.polidea.snowflake.ReadPipelineExample'
+  mainClassName = 'com.polidea.snowflake.examples.ReadPipelineExample'
 }

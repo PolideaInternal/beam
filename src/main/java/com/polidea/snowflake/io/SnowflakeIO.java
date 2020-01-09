@@ -1,5 +1,6 @@
 package com.polidea.snowflake.io;
 
+import static org.apache.beam.sdk.io.TextIO.readFiles;
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
 import com.google.auto.value.AutoValue;
@@ -13,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
@@ -41,33 +43,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SnowflakeIO {
-  private static final long DEFAULT_BATCH_SIZE = 1000L;
-  private static final int DEFAULT_FETCH_SIZE = 50_000;
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeIO.class);
 
-  /** Read data from a JDBC datasource. */
+  /** Read data from a Snowflake using COPY method. */
   public static <T> Read<T> read() {
-    return new AutoValue_SnowflakeIO_Read.Builder<T>()
-        .setFetchSize(DEFAULT_FETCH_SIZE)
-        .setOutputParallelization(true)
-        .build();
+    return new AutoValue_SnowflakeIO_Read.Builder<T>().build();
   }
 
   public static <ParameterT, OutputT> ReadAll<ParameterT, OutputT> readAll() {
-    return new AutoValue_SnowflakeIO_ReadAll.Builder<ParameterT, OutputT>()
-        .setFetchSize(DEFAULT_FETCH_SIZE)
-        .setOutputParallelization(true)
-        .build();
+    return new AutoValue_SnowflakeIO_ReadAll.Builder<ParameterT, OutputT>().build();
   }
 
   @FunctionalInterface
-  public interface RowMapper<T> extends Serializable {
-    T mapRow(ResultSet resultSet) throws Exception;
-  }
-
-  @FunctionalInterface
-  public interface StatementPreparator extends Serializable {
-    void setParameters(PreparedStatement preparedStatement) throws Exception;
+  public interface CsvMapper<T> extends Serializable {
+    T mapRow(String csvLine) throws Exception;
   }
 
   public static <T> Write<T> write() {
@@ -86,17 +75,19 @@ public class SnowflakeIO {
     abstract ValueProvider<String> getQuery();
 
     @Nullable
-    abstract StatementPreparator getStatementPreparator();
+    abstract ValueProvider<String> getTable();
 
     @Nullable
-    abstract RowMapper<T> getRowMapper();
+    abstract ValueProvider<String> getIntegrationName();
+
+    @Nullable
+    abstract ValueProvider<String> getExternalLocation();
+
+    @Nullable
+    abstract CsvMapper<T> getCsvMapper();
 
     @Nullable
     abstract Coder<T> getCoder();
-
-    abstract int getFetchSize();
-
-    abstract boolean getOutputParallelization();
 
     abstract Builder<T> toBuilder();
 
@@ -107,15 +98,15 @@ public class SnowflakeIO {
 
       abstract Builder<T> setQuery(ValueProvider<String> query);
 
-      abstract Builder<T> setStatementPreparator(StatementPreparator statementPreparator);
+      abstract Builder<T> setTable(ValueProvider<String> table);
 
-      abstract Builder<T> setRowMapper(RowMapper<T> rowMapper);
+      abstract Builder<T> setIntegrationName(ValueProvider<String> integrationName);
+
+      abstract Builder<T> setExternalLocation(ValueProvider<String> externalLocation);
+
+      abstract Builder<T> setCsvMapper(CsvMapper<T> csvMapper);
 
       abstract Builder<T> setCoder(Coder<T> coder);
-
-      abstract Builder<T> setFetchSize(int fetchSize);
-
-      abstract Builder<T> setOutputParallelization(boolean outputParallelization);
 
       abstract Read<T> build();
     }
@@ -129,40 +120,56 @@ public class SnowflakeIO {
       return toBuilder().setDataSourceProviderFn(dataSourceProviderFn).build();
     }
 
-    public Read<T> withQuery(String query) {
-      return withQuery(ValueProvider.StaticValueProvider.of(query));
+    public Read<T> fromQuery(String query) {
+      return fromQuery(ValueProvider.StaticValueProvider.of(query));
     }
 
-    public Read<T> withQuery(ValueProvider<String> query) {
+    public Read<T> fromQuery(ValueProvider<String> query) {
       return toBuilder().setQuery(query).build();
     }
 
-    public Read<T> withStatementPreparator(StatementPreparator statementPreparator) {
-      return toBuilder().setStatementPreparator(statementPreparator).build();
+    public Read<T> fromTable(String table) {
+      return fromTable(ValueProvider.StaticValueProvider.of(table));
     }
 
-    public Read<T> withRowMapper(RowMapper<T> rowMapper) {
-      return toBuilder().setRowMapper(rowMapper).build();
+    public Read<T> fromTable(ValueProvider<String> table) {
+      return toBuilder().setTable(table).build();
+    }
+
+    public Read<T> withExternalLocation(String externalLocation) {
+      return withExternalLocation(ValueProvider.StaticValueProvider.of(externalLocation));
+    }
+
+    public Read<T> withExternalLocation(ValueProvider<String> externalLocation) {
+      return toBuilder().setExternalLocation(externalLocation).build();
+    }
+
+    public Read<T> withIntegrationName(String integrationName) {
+      return withIntegrationName(ValueProvider.StaticValueProvider.of(integrationName));
+    }
+
+    public Read<T> withIntegrationName(ValueProvider<String> integrationName) {
+      return toBuilder().setIntegrationName(integrationName).build();
+    }
+
+    public Read<T> withCsvMapper(CsvMapper<T> csvMapper) {
+      return toBuilder().setCsvMapper(csvMapper).build();
     }
 
     public Read<T> withCoder(Coder<T> coder) {
       return toBuilder().setCoder(coder).build();
     }
 
-    public Read<T> withFetchSize(int fetchSize) {
-      checkArgument(fetchSize > 0, "fetch size must be > 0");
-      return toBuilder().setFetchSize(fetchSize).build();
-    }
-
-    public Read<T> withOutputParallelization(boolean outputParallelization) {
-      return toBuilder().setOutputParallelization(outputParallelization).build();
-    }
-
     @Override
     public PCollection<T> expand(PBegin input) {
-      checkArgument(getQuery() != null, "withQuery() is required");
-      checkArgument(getRowMapper() != null, "withRowMapper() is required");
+      // Either table or query is required. If query is present, it's being used, table is used
+      // otherwise
+      checkArgument(
+          getQuery() != null || getTable() != null, "fromTable() or fromQuery() is required");
+      checkArgument(getCsvMapper() != null, "withCsvMapper() is required");
       checkArgument(getCoder() != null, "withCoder() is required");
+      checkArgument(getIntegrationName() != null, "withIntegrationName() is required");
+      checkArgument(getExternalLocation() != null, "withExternalLocation() is required");
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
@@ -172,24 +179,26 @@ public class SnowflakeIO {
           .apply(
               SnowflakeIO.<Void, T>readAll()
                   .withDataSourceProviderFn(getDataSourceProviderFn())
-                  .withQuery(getQuery())
-                  .withCoder(getCoder())
-                  .withRowMapper(getRowMapper())
-                  .withFetchSize(getFetchSize())
-                  .withOutputParallelization(getOutputParallelization())
-                  .withParameterSetter(
-                      (element, preparedStatement) -> {
-                        if (getStatementPreparator() != null) {
-                          getStatementPreparator().setParameters(preparedStatement);
-                        }
-                      }));
+                  .fromQuery(getQuery())
+                  .fromTable(getTable())
+                  .withCsvMapper(getCsvMapper())
+                  .withExternalLocation(getExternalLocation())
+                  .withIntegrationName(getIntegrationName())
+                  .withCoder(getCoder()));
     }
 
     @Override
     public void populateDisplayData(DisplayData.Builder builder) {
       super.populateDisplayData(builder);
-      builder.add(DisplayData.item("query", getQuery()));
-      builder.add(DisplayData.item("rowMapper", getRowMapper().getClass().getName()));
+      if (getQuery() != null && getQuery().get() != null) {
+        builder.add(DisplayData.item("query", getQuery()));
+      }
+      if (getTable() != null && getTable().get() != null) {
+        builder.add(DisplayData.item("table", getTable()));
+      }
+      builder.add(DisplayData.item("integrationName", getIntegrationName()));
+      builder.add(DisplayData.item("externalLocation", getExternalLocation()));
+      builder.add(DisplayData.item("csvMapper", getCsvMapper().getClass().getName()));
       builder.add(DisplayData.item("coder", getCoder().getClass().getName()));
       if (getDataSourceProviderFn() instanceof HasDisplayData) {
         ((HasDisplayData) getDataSourceProviderFn()).populateDisplayData(builder);
@@ -208,17 +217,19 @@ public class SnowflakeIO {
     abstract ValueProvider<String> getQuery();
 
     @Nullable
-    abstract PreparedStatementSetter<ParameterT> getParameterSetter();
+    abstract ValueProvider<String> getTable();
 
     @Nullable
-    abstract RowMapper<OutputT> getRowMapper();
+    abstract ValueProvider<String> getIntegrationName();
+
+    @Nullable
+    abstract ValueProvider<String> getExternalLocation();
+
+    @Nullable
+    abstract CsvMapper<OutputT> getCsvMapper();
 
     @Nullable
     abstract Coder<OutputT> getCoder();
-
-    abstract int getFetchSize();
-
-    abstract boolean getOutputParallelization();
 
     abstract Builder<ParameterT, OutputT> toBuilder();
 
@@ -229,16 +240,17 @@ public class SnowflakeIO {
 
       abstract Builder<ParameterT, OutputT> setQuery(ValueProvider<String> query);
 
-      abstract Builder<ParameterT, OutputT> setParameterSetter(
-          PreparedStatementSetter<ParameterT> parameterSetter);
+      abstract Builder<ParameterT, OutputT> setTable(ValueProvider<String> table);
 
-      abstract Builder<ParameterT, OutputT> setRowMapper(RowMapper<OutputT> rowMapper);
+      abstract Builder<ParameterT, OutputT> setIntegrationName(
+          ValueProvider<String> integrationName);
+
+      abstract Builder<ParameterT, OutputT> setExternalLocation(
+          ValueProvider<String> externalLocation);
+
+      abstract Builder<ParameterT, OutputT> setCsvMapper(CsvMapper<OutputT> csvMapper);
 
       abstract Builder<ParameterT, OutputT> setCoder(Coder<OutputT> coder);
-
-      abstract Builder<ParameterT, OutputT> setFetchSize(int fetchSize);
-
-      abstract Builder<ParameterT, OutputT> setOutputParallelization(boolean outputParallelization);
 
       abstract ReadAll<ParameterT, OutputT> build();
     }
@@ -253,34 +265,56 @@ public class SnowflakeIO {
       return toBuilder().setDataSourceProviderFn(dataSourceProviderFn).build();
     }
 
-    public ReadAll<ParameterT, OutputT> withQuery(String query) {
-      checkArgument(
-          query != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
-      return withQuery(ValueProvider.StaticValueProvider.of(query));
+    public ReadAll<ParameterT, OutputT> fromQuery(String query) {
+      return fromQuery(ValueProvider.StaticValueProvider.of(query));
     }
 
-    public ReadAll<ParameterT, OutputT> withQuery(ValueProvider<String> query) {
-      checkArgument(
-          query != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withQuery(query) called with null query");
+    public ReadAll<ParameterT, OutputT> fromQuery(ValueProvider<String> query) {
       return toBuilder().setQuery(query).build();
     }
 
-    public ReadAll<ParameterT, OutputT> withParameterSetter(
-        PreparedStatementSetter<ParameterT> parameterSetter) {
-      checkArgument(
-          parameterSetter != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withParameterSetter(parameterSetter) called "
-              + "with null statementPreparator");
-      return toBuilder().setParameterSetter(parameterSetter).build();
+    public ReadAll<ParameterT, OutputT> fromTable(String table) {
+      return fromTable(ValueProvider.StaticValueProvider.of(table));
     }
 
-    public ReadAll<ParameterT, OutputT> withRowMapper(RowMapper<OutputT> rowMapper) {
+    public ReadAll<ParameterT, OutputT> fromTable(ValueProvider<String> table) {
+      return toBuilder().setTable(table).build();
+    }
+
+    public ReadAll<ParameterT, OutputT> withIntegrationName(String integrationName) {
       checkArgument(
-          rowMapper != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withRowMapper(rowMapper) called with null rowMapper");
-      return toBuilder().setRowMapper(rowMapper).build();
+          integrationName != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withIntegrationName(integrationName) called with null integrationName");
+      return withIntegrationName(ValueProvider.StaticValueProvider.of(integrationName));
+    }
+
+    public ReadAll<ParameterT, OutputT> withIntegrationName(ValueProvider<String> integrationName) {
+      checkArgument(
+          integrationName != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withIntegrationName(integrationName) called with null integrationName");
+      return toBuilder().setIntegrationName(integrationName).build();
+    }
+
+    public ReadAll<ParameterT, OutputT> withExternalLocation(String externalLocation) {
+      checkArgument(
+          externalLocation != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withExternalLocation(externalLocation) called with null externalLocation");
+      return withExternalLocation(ValueProvider.StaticValueProvider.of(externalLocation));
+    }
+
+    public ReadAll<ParameterT, OutputT> withExternalLocation(
+        ValueProvider<String> externalLocation) {
+      checkArgument(
+          externalLocation != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withExternalLocation(externalLocation) called with null externalLocation");
+      return toBuilder().setExternalLocation(externalLocation).build();
+    }
+
+    public ReadAll<ParameterT, OutputT> withCsvMapper(CsvMapper<OutputT> csvMapper) {
+      checkArgument(
+          csvMapper != null,
+          "com.polidea.snowflake.io.SnowflakeIO.readAll().withCsvMapper(csvMapper) called with null csvMapper");
+      return toBuilder().setCsvMapper(csvMapper).build();
     }
 
     public ReadAll<ParameterT, OutputT> withCoder(Coder<OutputT> coder) {
@@ -290,32 +324,26 @@ public class SnowflakeIO {
       return toBuilder().setCoder(coder).build();
     }
 
-    public ReadAll<ParameterT, OutputT> withFetchSize(int fetchSize) {
-      checkArgument(fetchSize > 0, "fetch size must be >0");
-      return toBuilder().setFetchSize(fetchSize).build();
-    }
-
-    public ReadAll<ParameterT, OutputT> withOutputParallelization(boolean outputParallelization) {
-      return toBuilder().setOutputParallelization(outputParallelization).build();
-    }
-
     @Override
     public PCollection<OutputT> expand(PCollection<ParameterT> input) {
       PCollection<OutputT> output;
-      output =
-          input.apply(
-              ParDo.of(
-                  new ReadFn<>(
-                      getDataSourceProviderFn(),
-                      getQuery(),
-                      getParameterSetter(),
-                      getRowMapper(),
-                      getFetchSize())));
-      output.setCoder(getCoder());
 
-      //      if (getOutputParallelization()) {
-      //        output = output.apply(new Reparallelize<>());
-      //      }
+      output =
+          input
+              .apply(
+                  ParDo.of(
+                      new CopyToExternalLocationFn<>(
+                          getDataSourceProviderFn(),
+                          getQuery(),
+                          getTable(),
+                          getIntegrationName(),
+                          getExternalLocation())))
+              .apply(FileIO.matchAll())
+              .apply(FileIO.readMatches())
+              .apply(readFiles())
+              .apply(ParDo.of(new MapCsvToUserDataFn<>(getCsvMapper())));
+
+      output.setCoder(getCoder());
 
       try {
         TypeDescriptor<OutputT> typeDesc = getCoder().getEncodedTypeDescriptor();
@@ -333,8 +361,15 @@ public class SnowflakeIO {
     @Override
     public void populateDisplayData(DisplayData.Builder builder) {
       super.populateDisplayData(builder);
-      builder.add(DisplayData.item("query", getQuery()));
-      builder.add(DisplayData.item("rowMapper", getRowMapper().getClass().getName()));
+      if (getQuery() != null && getQuery().get() != null) {
+        builder.add(DisplayData.item("query", getQuery()));
+      }
+      if (getTable() != null && getTable().get() != null) {
+        builder.add(DisplayData.item("table", getTable()));
+      }
+      builder.add(DisplayData.item("integrationName", getIntegrationName()));
+      builder.add(DisplayData.item("externalLocation", getExternalLocation()));
+      builder.add(DisplayData.item("csvMapper", getCsvMapper().getClass().getName()));
       builder.add(DisplayData.item("coder", getCoder().getClass().getName()));
       if (getDataSourceProviderFn() instanceof HasDisplayData) {
         ((HasDisplayData) getDataSourceProviderFn()).populateDisplayData(builder);
@@ -342,52 +377,78 @@ public class SnowflakeIO {
     }
   }
 
-  private static class ReadFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
+  private static class MapCsvToUserDataFn<InputT, OutputT> extends DoFn<String, OutputT> {
+    private final CsvMapper<OutputT> csvMapper;
+
+    public MapCsvToUserDataFn(CsvMapper<OutputT> csvMapper) {
+      this.csvMapper = csvMapper;
+    }
+
+    @ProcessElement
+    public void processElement(ProcessContext context) throws Exception {
+      context.output(csvMapper.mapRow(context.element()));
+    }
+  }
+
+  private static class CopyToExternalLocationFn<ParameterT> extends DoFn<ParameterT, String> {
     private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
     private final ValueProvider<String> query;
-    private final PreparedStatementSetter<ParameterT> parameterSetter;
-    private final RowMapper<OutputT> rowMapper;
-    private final int fetchSize;
+    private final ValueProvider<String> table;
+    private final ValueProvider<String> integrationName;
+    private final ValueProvider<String> externalLocation;
 
     private DataSource dataSource;
     private Connection connection;
+    private Statement statement;
 
-    private ReadFn(
+    private CopyToExternalLocationFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
         ValueProvider<String> query,
-        PreparedStatementSetter<ParameterT> parameterSetter,
-        RowMapper<OutputT> rowMapper,
-        int fetchSize) {
+        ValueProvider<String> table,
+        ValueProvider<String> integrationName,
+        ValueProvider<String> externalLocation) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.query = query;
-      this.parameterSetter = parameterSetter;
-      this.rowMapper = rowMapper;
-      this.fetchSize = fetchSize;
+      this.table = table;
+      this.integrationName = integrationName;
+      this.externalLocation = externalLocation;
     }
 
     @Setup
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
       connection = dataSource.getConnection();
+      statement = connection.createStatement();
     }
 
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
-      try (PreparedStatement statement =
-          connection.prepareStatement(
-              query.get(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
-        statement.setFetchSize(fetchSize);
-        parameterSetter.setParameters(context.element(), statement);
-        try (ResultSet resultSet = statement.executeQuery()) {
-          while (resultSet.next()) {
-            context.output(rowMapper.mapRow(resultSet));
-          }
-        }
+
+      String from;
+      if (query != null) {
+        // Query must be surrounded with brackets
+        from = String.format("(%s)", query);
+      } else {
+        from = table.get();
       }
+
+      String copyQuery =
+          String.format(
+              "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP) OVERWRITE=true;",
+              externalLocation, from, integrationName);
+
+      statement.execute(copyQuery);
+
+      // Replace gcs:// schema with gs:// schema
+      String output = externalLocation.get().replace("gcs://", "gs://");
+      // Append * because for MatchAll paths must not end with /
+      output += "*";
+      context.output(output);
     }
 
     @Teardown
     public void teardown() throws Exception {
+      statement.close();
       connection.close();
     }
   }
