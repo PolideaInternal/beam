@@ -52,3 +52,73 @@ Once you have the token, invoke your pipeline with following Pipeline Options:
 --oauthToken=<TOKEN>
 ```
 
+## Example run whole project
+
+### Create .jar
+To create .jar run:
+```./gradlew fatJar```
+
+Then `snowflake-io-all.jar` file will be created in `build/libs/`.
+
+### Using jar
+
+Copy/move file to destination of choice (i.e. `libs/` in the new project).
+To use `.jar` file add to `build.gradle` in your project:
+
+```
+dependencies {
+    compile files('libs/snowflake-io-all.jar')
+}
+```
+To run on pipelines Dataflow add two dependencies:
+```
+dependencies {
+    compile files('libs/snowflake-io-all.jar')
+    compile group: 'org.apache.beam', name: 'beam-runners-google-cloud-dataflow-java', version: '2.16.0'
+}
+```
+
+For creating own pipeline with SnowlakeIO, use operation `read()` or `write()` similarly to following [example](https://gitlab.polidea.com/snowflake-beam/snowflake/blob/master/src/main/java/com/polidea/snowflake/examples/ReadPipelineExample.java).
+
+Then run script using:
+
+```
+./gradle run 
+    --args="
+        --serverName=<SNOWFLAKE SERVER NAME>  
+        --username=<SNOWFLAKE USERNAME> 
+        --password=<SNOWFLAKE PASSWORD>  
+        --database=<SNOWFLAKE DATABASE> 
+        --schema=<SNOWFLAKE SCHEMA> 
+        --table=<SNOWFLAKE TABLE IN DATABASE> 
+        --query=<IF NOT TABLE THEN QUERY> 
+        --integrationName=<SNOWFLAKE INTEGRATION NAME> 
+        --externalLocation=<GCS LOCATION STARTING WITH gcs://...> 
+        --runner=<DirectRunner/DataflowRunner>
+        --project=<FOR DATAFLOW RUNNER: GCP PROJECT NAME> 
+        --tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING WITH gs://...  
+        --region=<FOR DATAFLOW RUNNER: GCP REGION> 
+        --appName=<OPTIONAL: DATAFLOW JOB NAME PREFIX 
+    "
+```
+
+It is possible to add integrationName and externalLocation directly to the Pipeline.
+
+The other option is to create tests directly in this project using JUnit4, similar to [those](https://gitlab.polidea.com/snowflake-beam/snowflake/blob/master/src/test/java/com/polidea/snowflake/test/BatchWriteTest.java).
+Then run:
+```
+./gradlew  test 
+    -DintegrationTestPipelineOptions='[
+        "--serverName=<SNOWFLAKE SERVER NAME>“,  
+        "--username=<SNOWFLAKE USERNAME>", 
+        "--password=<SNOWFLAKE PASSWORD>", 
+        "--output=<INTERNAL OR EXTERNAL LOCATION FOR SAVING OUTPUT FILES>",  
+        "--externalLocation=<GCS LOCATION STARTING WITH gcs://...>", 
+        "--integrationName=<SNOWFLAKE INTEGRATION NAME>", 
+        "--runner=<DirectRunner/DataflowRunner>", 
+        "--project=<FOR DATAFLOW RUNNER: GCP PROJECT NAME>", 
+        "--tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING WITH gs://...",  
+        "--region=<FOR DATAFLOW RUNNER: GCP REGION>", 
+        "--appName=<OPTIONAL: DATAFLOW JOB NAME PREFIX", 
+        ...]' 
+``` 

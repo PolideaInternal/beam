@@ -1,4 +1,3 @@
-
 buildscript {
   repositories {
     maven {
@@ -12,7 +11,7 @@ buildscript {
 }
 
 plugins {
-  id 'java'
+  id 'java-library'
   id 'groovy'
   id 'idea'
   id 'application'
@@ -91,10 +90,10 @@ dependencies {
   testCompile 'com.google.cloud:google-cloud-storage:1.102.0'
 }
 
-test{
+test {
   String pipelineOptions = System.getProperty("integrationTestPipelineOptions")
 
-  if(pipelineOptions) {
+  if (pipelineOptions) {
     def allOptionsList = (new JsonSlurper()).parseText(pipelineOptions)
 
     pipelineOptions = JsonOutput.toJson(allOptionsList)
@@ -105,4 +104,16 @@ test{
 
 application {
   mainClassName = 'com.polidea.snowflake.examples.ReadPipelineExample'
+}
+
+task fatJar(type: Jar) {
+  classifier = 'all'
+  baseName = 'snowflake-io'
+  zip64 = true
+  from {
+    configurations.compile.collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  }
+  with jar
 }
