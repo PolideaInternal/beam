@@ -977,8 +977,9 @@ public class SnowflakeIO {
     @Setup
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
+      prepareTableAccordingWriteDisposition(dataSource);
+
       connection = dataSource.getConnection();
-      prepareTableAccordingWriteDisposition(connection);
     }
 
     @ProcessElement
@@ -1004,38 +1005,66 @@ public class SnowflakeIO {
       connection.close();
     }
 
-    private Connection prepareTableAccordingWriteDisposition(Connection connection)
-        throws SQLException {
+    private void prepareTableAccordingWriteDisposition(DataSource dataSource) throws SQLException {
       switch (this.writeDisposition.get()) {
         case TRUNCATE:
-          String query = String.format("TRUNCATE %s;", this.table);
-          try {
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.executeQuery();
-            return connection;
-          } catch (SQLException e) {
-            throw new SQLException("Unable run COPY with TRUNCATE disposition ", e);
-          }
+          truncateTable(dataSource);
+          break;
         case EMPTY:
-          String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", this.table);
-          try {
-            PreparedStatement statement = connection.prepareStatement(selectQuery);
-            ResultSet resultSet = statement.executeQuery();
-            resultSet.next();
-            int rowCount = resultSet.getInt(1);
-            if (rowCount >= 1) {
-              throw new SQLException("Table is not empty. Aborting COPY with disposition EMPTY");
-              // TODO cleanup stage?
-            } else {
-              return connection;
-            }
-          } catch (SQLException e) {
-            throw new SQLException("Unable run COPY with EMPTY disposition ", e);
-          }
+          checkIfTableIsEmpty(dataSource);
+          break;
         case APPEND:
         default:
-          return connection;
+          break;
       }
+    }
+
+    private void truncateTable(DataSource dataSource) throws SQLException {
+      String query = String.format("TRUNCATE %s;", this.table);
+      try {
+        Connection connection = dataSource.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query);
+        try {
+          boolean result = statement.execute();
+          if (result) {
+            throw new SQLException("Statement returned ResultSet. Check statement. ");
+          }
+        } finally {
+          statement.close();
+          connection.close();
+        }
+      } catch (SQLException e) {
+        throw new SQLException("Unable run COPY with TRUNCATE disposition ", e);
+      }
+    }
+
+    private void checkIfTableIsEmpty(DataSource dataSource) throws SQLException {
+      String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", this.table);
+      try {
+        Connection connection = dataSource.getConnection();
+        PreparedStatement statement = connection.prepareStatement(selectQuery);
+        try {
+          ResultSet resultSet = statement.executeQuery();
+          int columnId = 1;
+          if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
+            throw new SQLException("Table is not empty. Aborting COPY with disposition EMPTY");
+          }
+        } finally {
+          statement.close();
+          connection.close();
+        }
+      } catch (SQLException e) {
+        throw new SQLException("Unable run COPY with EMPTY disposition ", e);
+      }
+    }
+
+    private boolean checkIfTableIsEmpty(ResultSet resultSet, int columnId) throws SQLException {
+      int rowCount = resultSet.getInt(columnId);
+      if (rowCount >= 1) {
+        return false;
+        // TODO cleanup stage?
+      }
+      return true;
     }
   }
 

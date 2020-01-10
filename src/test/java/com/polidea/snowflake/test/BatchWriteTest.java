@@ -28,22 +28,14 @@ import org.junit.Rule;
 import org.junit.Test;
 
 /**
- * To run this tests on Dataflow
- * ./gradlew test --tests com.polidea.snowflake.test.BatchWriteTest.writeToInternalWithNamedStageTest
- * -DintegrationTestPipelineOptions='[
- *    "--runner=DataflowRunner",
- *    "--project=...",
- *    "--stagingLocation=gs://...",
- *    "--serverName=...",
- *    "--username=...",
- *    "--password=...",
- *    "--schema=PUBLIC",
- *    "--table=...",
- *    "--database=...",
- *    "--stage=...",
- *    "--internalLocation=./test",
- *    "--maxNumWorkers=5",
- *    "--appName=internal" ]'
+ * Integration tests that checks batch write operation of SnowflakeIO.
+ *
+ * <p>Example test run: ./gradlew test --tests
+ * com.polidea.snowflake.test.BatchWriteTest.writeToInternalWithNamedStageTest
+ * -DintegrationTestPipelineOptions='[ "--runner=DataflowRunner", "--project=...",
+ * "--stagingLocation=gs://...", "--serverName=...", "--username=...", "--password=...",
+ * "--schema=PUBLIC", "--table=...", "--database=...", "--stage=...", "--internalLocation=./test",
+ * "--maxNumWorkers=5", "--appName=internal" ]'
  */
 public class BatchWriteTest {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
@@ -196,7 +188,7 @@ public class BatchWriteTest {
   @Test
   @Ignore
   public void writeToInternalWithWriteTruncateDispositionSuccess() {
-    Connection connection = null;
+    Connection connection;
     try {
       connection = dc.buildDatasource().getConnection();
       PreparedStatement statement =
@@ -205,10 +197,10 @@ public class BatchWriteTest {
       statement.executeQuery();
 
       connection = dc.buildDatasource().getConnection();
-      PreparedStatement statement_insert =
+      PreparedStatement statementInsert =
           connection.prepareStatement(
               String.format("INSERT INTO %s VALUES ('test')", options.getTable()));
-      statement_insert.executeQuery();
+      statementInsert.executeQuery();
       connection.close();
     } catch (SQLException e) {
       e.printStackTrace();
@@ -235,8 +227,7 @@ public class BatchWriteTest {
   @Test
   @Ignore
   public void writeToInternalWithWriteEmptyDispositionWithNotEmptyTableFails() {
-
-    Connection connection = null;
+    Connection connection;
     try {
       connection = dc.buildDatasource().getConnection();
       PreparedStatement statement =
@@ -279,9 +270,9 @@ public class BatchWriteTest {
       statement.executeQuery();
 
       connection = dc.buildDatasource().getConnection();
-      PreparedStatement statement_truncate =
+      PreparedStatement statementTruncate =
           connection.prepareStatement(String.format("TRUNCATE %s;", options.getTable()));
-      statement_truncate.executeQuery();
+      statementTruncate.executeQuery();
       connection.close();
     } catch (SQLException e) {
       e.printStackTrace();
