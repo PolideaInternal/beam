@@ -25,7 +25,7 @@ This suite contains two tests
 
 By default, tests are using TPCH_SF1_1 dataset. Use `--testSize` pipeline option to modify it.
 
-Once data is read from Snowflake, it saved to GCS as Parquet files using standard Beam FileIO.
+Once data is read from Snowflake, it is saved to GCS as Parquet files using standard Beam FileIO.
 
 To run this test on Dataflow, un-ignore one test and execute following command:
 
