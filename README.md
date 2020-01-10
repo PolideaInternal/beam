@@ -52,7 +52,7 @@ Once you have the token, invoke your pipeline with following Pipeline Options:
 --oauthToken=<TOKEN>
 ```
 
-## Example run whole project
+## Using SnowflakeIO jar
 
 ### Create .jar
 To create .jar run:
