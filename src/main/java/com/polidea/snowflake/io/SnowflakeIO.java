@@ -989,15 +989,9 @@ public class SnowflakeIO {
       files = files.replaceAll(String.valueOf(this.externalBucket), "");
       String query =
           String.format("COPY INTO %s FROM @%s FILES=(%s);", this.table, this.stage, files);
-      try (PreparedStatement statement =
-          connection.prepareStatement(
-              query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
-        try (ResultSet resultSet = statement.executeQuery()) {
-          context.output((OutputT) "OK");
-        }
-      } catch (SQLException e) {
-        throw new SQLException("Unable run COPY " + e);
-      }
+      ResultSet resultSet = runStatement(query, connection);
+      resultSet.close();
+      context.output((OutputT) "OK");
     }
 
     @Teardown
@@ -1021,40 +1015,19 @@ public class SnowflakeIO {
 
     private void truncateTable(DataSource dataSource) throws SQLException {
       String query = String.format("TRUNCATE %s;", this.table);
-      try {
-        Connection connection = dataSource.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query);
-        try {
-          boolean result = statement.execute();
-          if (result) {
-            throw new SQLException("Statement returned ResultSet. Check statement. ");
-          }
-        } finally {
-          statement.close();
-          connection.close();
-        }
-      } catch (SQLException e) {
-        throw new SQLException("Unable run COPY with TRUNCATE disposition ", e);
-      }
+      String exceptionCause = "Unable run COPY with TRUNCATE disposition ";
+      ResultSet resultSet = runConnectionWithStatement(dataSource, query, exceptionCause);
+      resultSet.close();
     }
 
     private void checkIfTableIsEmpty(DataSource dataSource) throws SQLException {
       String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", this.table);
-      try {
-        Connection connection = dataSource.getConnection();
-        PreparedStatement statement = connection.prepareStatement(selectQuery);
-        try {
-          ResultSet resultSet = statement.executeQuery();
-          int columnId = 1;
-          if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
-            throw new SQLException("Table is not empty. Aborting COPY with disposition EMPTY");
-          }
-        } finally {
-          statement.close();
-          connection.close();
-        }
-      } catch (SQLException e) {
-        throw new SQLException("Unable run COPY with EMPTY disposition ", e);
+      String exceptionCause = "Unable run COPY with EMPTY disposition ";
+      ResultSet resultSet = runConnectionWithStatement(dataSource, selectQuery, exceptionCause);
+
+      int columnId = 1;
+      if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
+        throw new SQLException("Table is not empty. Aborting COPY with disposition EMPTY");
       }
     }
 
@@ -1108,20 +1081,37 @@ public class SnowflakeIO {
             String.format(
                 "put file://%s/%s @%s;", this.directory, this.fileNameTemplate, this.stage);
       }
-      try (PreparedStatement statement =
-          connection.prepareStatement(
-              query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
-        try (ResultSet resultSet = statement.executeQuery()) {
-          int indexOfNameOfFile = 2;
-          while (resultSet.next()) {
-            context.output((OutputT) resultSet.getString(indexOfNameOfFile));
-          }
-        }
+
+      ResultSet resultSet = runStatement(query, connection);
+      int indexOfNameOfFile = 2;
+      while (resultSet.next()) {
+        context.output((OutputT) resultSet.getString(indexOfNameOfFile));
       }
     }
 
     @Teardown
     public void teardown() throws Exception {
+      connection.close();
+    }
+  }
+
+  private static ResultSet runConnectionWithStatement(
+      DataSource dataSource, String query, String exceptionCause) throws SQLException {
+    try {
+      Connection connection = dataSource.getConnection();
+      return runStatement(query, connection);
+    } catch (SQLException e) {
+      throw new SQLException(exceptionCause, e);
+    }
+  }
+
+  private static ResultSet runStatement(String query, Connection connection) throws SQLException {
+    PreparedStatement statement =
+        connection.prepareStatement(query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    try {
+      return statement.executeQuery();
+    } finally {
+      statement.close();
       connection.close();
     }
   }
