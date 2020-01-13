@@ -14,7 +14,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
@@ -39,6 +38,7 @@ import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
+import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -399,7 +399,6 @@ public class SnowflakeIO {
 
     private DataSource dataSource;
     private Connection connection;
-    private Statement statement;
 
     private CopyToExternalLocationFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
@@ -418,7 +417,6 @@ public class SnowflakeIO {
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
       connection = dataSource.getConnection();
-      statement = connection.createStatement();
     }
 
     @ProcessElement
@@ -437,7 +435,7 @@ public class SnowflakeIO {
               "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP) OVERWRITE=true;",
               externalLocation, from, integrationName);
 
-      statement.execute(copyQuery);
+      runStatement(copyQuery, connection, null);
 
       // Replace gcs:// schema with gs:// schema
       String output = externalLocation.get().replace("gcs://", "gs://");
@@ -448,7 +446,6 @@ public class SnowflakeIO {
 
     @Teardown
     public void teardown() throws Exception {
-      statement.close();
       connection.close();
     }
   }
@@ -989,8 +986,7 @@ public class SnowflakeIO {
       files = files.replaceAll(String.valueOf(this.externalBucket), "");
       String query =
           String.format("COPY INTO %s FROM @%s FILES=(%s);", this.table, this.stage, files);
-      ResultSet resultSet = runStatement(query, connection);
-      resultSet.close();
+      runStatement(query, connection, null);
       context.output((OutputT) "OK");
     }
 
@@ -1015,23 +1011,34 @@ public class SnowflakeIO {
 
     private void truncateTable(DataSource dataSource) throws SQLException {
       String query = String.format("TRUNCATE %s;", this.table);
-      String exceptionCause = "Unable run COPY with TRUNCATE disposition ";
-      ResultSet resultSet = runConnectionWithStatement(dataSource, query, exceptionCause);
-      resultSet.close();
+      runConnectionWithStatement(dataSource, query, null);
     }
 
     private void checkIfTableIsEmpty(DataSource dataSource) throws SQLException {
       String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", this.table);
-      String exceptionCause = "Unable run COPY with EMPTY disposition ";
-      ResultSet resultSet = runConnectionWithStatement(dataSource, selectQuery, exceptionCause);
+      runConnectionWithStatement(
+          dataSource,
+          selectQuery,
+          resultSet -> {
+            assert resultSet != null;
+            checkIfTableIsEmpty((ResultSet) resultSet);
+            return resultSet;
+          });
+    }
 
+    static void checkIfTableIsEmpty(ResultSet resultSet) {
       int columnId = 1;
-      if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
-        throw new SQLException("Table is not empty. Aborting COPY with disposition EMPTY");
+      try {
+        if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
+          throw new RuntimeException("Table is not empty. Aborting COPY with disposition EMPTY");
+        }
+      } catch (SQLException e) {
+        throw new RuntimeException("Unable run pipeline with EMPTY disposition.", e);
       }
     }
 
-    private boolean checkIfTableIsEmpty(ResultSet resultSet, int columnId) throws SQLException {
+    private static boolean checkIfTableIsEmpty(ResultSet resultSet, int columnId)
+        throws SQLException {
       int rowCount = resultSet.getInt(columnId);
       if (rowCount >= 1) {
         return false;
@@ -1082,10 +1089,24 @@ public class SnowflakeIO {
                 "put file://%s/%s @%s;", this.directory, this.fileNameTemplate, this.stage);
       }
 
-      ResultSet resultSet = runStatement(query, connection);
+      runStatement(
+          query,
+          connection,
+          resultSet -> {
+            assert resultSet != null;
+            getFilenamesFromPutOperation((ResultSet) resultSet, context);
+            return resultSet;
+          });
+    }
+
+    void getFilenamesFromPutOperation(ResultSet resultSet, ProcessContext context) {
       int indexOfNameOfFile = 2;
-      while (resultSet.next()) {
-        context.output((OutputT) resultSet.getString(indexOfNameOfFile));
+      try {
+        while (resultSet.next()) {
+          context.output((OutputT) resultSet.getString(indexOfNameOfFile));
+        }
+      } catch (SQLException e) {
+        throw new RuntimeException("Unable run pipeline with PUT operation.", e);
       }
     }
 
@@ -1095,24 +1116,25 @@ public class SnowflakeIO {
     }
   }
 
-  private static ResultSet runConnectionWithStatement(
-      DataSource dataSource, String query, String exceptionCause) throws SQLException {
-    try {
-      Connection connection = dataSource.getConnection();
-      return runStatement(query, connection);
-    } catch (SQLException e) {
-      throw new SQLException(exceptionCause, e);
-    }
+  private static void runConnectionWithStatement(
+      DataSource dataSource, String query, Function resultSetMethod) throws SQLException {
+    Connection connection = dataSource.getConnection();
+    runStatement(query, connection, resultSetMethod);
+    connection.close();
   }
 
-  private static ResultSet runStatement(String query, Connection connection) throws SQLException {
-    PreparedStatement statement =
-        connection.prepareStatement(query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+  private static void runStatement(String query, Connection connection, Function resultSetMethod)
+      throws SQLException {
+    PreparedStatement statement = connection.prepareStatement(query);
     try {
-      return statement.executeQuery();
+      if (resultSetMethod != null) {
+        ResultSet resultSet = statement.executeQuery();
+        resultSetMethod.apply(resultSet);
+      } else {
+        statement.execute();
+      }
     } finally {
       statement.close();
-      connection.close();
     }
   }
 }

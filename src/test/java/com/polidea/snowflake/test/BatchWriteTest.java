@@ -8,9 +8,8 @@ import com.polidea.snowflake.io.SnowflakeIO;
 import com.polidea.snowflake.io.SnowflakePipelineOptions;
 import com.polidea.snowflake.io.credentials.SnowflakeCredentialsFactory;
 import java.io.File;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 import net.snowflake.client.jdbc.internal.apache.commons.io.FileUtils;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
@@ -26,6 +25,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 /**
  * Integration tests that checks batch write operation of SnowflakeIO.
@@ -39,6 +39,7 @@ import org.junit.Test;
  */
 public class BatchWriteTest {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
+  private static DataSource dataSource;
 
   public interface ExampleTestPipelineOptions extends SnowflakePipelineOptions {
     @Description("Table name to connect to.")
@@ -77,6 +78,8 @@ public class BatchWriteTest {
             .withDatabase(options.getDatabase())
             .withWarehouse(options.getWarehouse())
             .withSchema(options.getSchema());
+
+    dataSource = dc.buildDatasource();
   }
 
   @AfterClass
@@ -103,17 +106,17 @@ public class BatchWriteTest {
         storage.delete(blob.getBlobId());
       }
     }
+
+    TestUtils.runConnectionWithStatement(
+        dataSource, String.format("TRUNCATE %s;", options.getTable()));
   }
 
   // Uses file name template which default is output*
   @Test
   @Ignore
   public void writeToInternalWithNamedStageTest() throws SQLException {
-    Connection connection = dc.buildDatasource().getConnection();
-    PreparedStatement statement =
-        connection.prepareStatement(
-            String.format("CREATE OR REPLACE stage %s;", options.getStage()));
-    statement.executeQuery();
+    String query = String.format("CREATE OR REPLACE stage %s;", options.getStage());
+    TestUtils.runConnectionWithStatement(dataSource, query);
 
     pipeline
         .apply(GenerateSequence.from(0).to(1000000))
@@ -136,11 +139,8 @@ public class BatchWriteTest {
   @Test
   @Ignore
   public void writeToInternalWithNamedStageAndParalleledTest() throws SQLException {
-    Connection connection = dc.buildDatasource().getConnection();
-    PreparedStatement statement =
-        connection.prepareStatement(
-            String.format("CREATE OR REPLACE stage %s;", options.getStage()));
-    statement.executeQuery();
+    String query = String.format("CREATE OR REPLACE stage %s;", options.getStage());
+    TestUtils.runConnectionWithStatement(dataSource, query);
 
     pipeline
         .apply(GenerateSequence.from(0).to(1000000))
@@ -160,15 +160,13 @@ public class BatchWriteTest {
   @Test
   @Ignore
   public void writeToExternalWithStageTest() throws SQLException {
-    Connection connection = dc.buildDatasource().getConnection();
-    PreparedStatement statement =
-        connection.prepareStatement(
-            String.format(
-                "create or replace stage %s \n"
-                    + "  url = 'gcs://input-test-winter/write/'\n"
-                    + "  storage_integration = google_integration;",
-                options.getStage()));
-    statement.executeQuery();
+    String query =
+        String.format(
+            "create or replace stage %s \n"
+                + "  url = 'gcs://input-test-winter/write/'\n"
+                + "  storage_integration = google_integration;",
+            options.getStage());
+    TestUtils.runConnectionWithStatement(dataSource, query);
 
     pipeline
         .apply(GenerateSequence.from(0).to(1000000))
@@ -187,24 +185,12 @@ public class BatchWriteTest {
 
   @Test
   @Ignore
-  public void writeToInternalWithWriteTruncateDispositionSuccess() {
-    Connection connection;
-    try {
-      connection = dc.buildDatasource().getConnection();
-      PreparedStatement statement =
-          connection.prepareStatement(
-              String.format("CREATE OR REPLACE stage %s;", options.getStage()));
-      statement.executeQuery();
+  public void writeToInternalWithWriteTruncateDispositionSuccess() throws SQLException {
+    String query = String.format("CREATE OR REPLACE stage %s;", options.getStage());
+    TestUtils.runConnectionWithStatement(dataSource, query);
 
-      connection = dc.buildDatasource().getConnection();
-      PreparedStatement statementInsert =
-          connection.prepareStatement(
-              String.format("INSERT INTO %s VALUES ('test')", options.getTable()));
-      statementInsert.executeQuery();
-      connection.close();
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
+    query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
+    TestUtils.runConnectionWithStatement(dataSource, query);
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
@@ -224,20 +210,17 @@ public class BatchWriteTest {
     pipelineResult.waitUntilFinish();
   }
 
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
   @Test
   @Ignore
-  public void writeToInternalWithWriteEmptyDispositionWithNotEmptyTableFails() {
-    Connection connection;
-    try {
-      connection = dc.buildDatasource().getConnection();
-      PreparedStatement statement =
-          connection.prepareStatement(
-              String.format("INSERT INTO %s VALUES ('test')", options.getTable()));
-      statement.executeQuery();
-      connection.close();
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
+  public void writeToInternalWithWriteEmptyDispositionWithNotEmptyTableFails() throws SQLException {
+    String query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
+    TestUtils.runConnectionWithStatement(dataSource, query);
+
+    exceptionRule.expect(RuntimeException.class);
+    exceptionRule.expectMessage(
+        "org.apache.beam.sdk.util.UserCodeException: java.lang.RuntimeException: Table is not empty. Aborting COPY with disposition EMPTY");
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
@@ -260,23 +243,12 @@ public class BatchWriteTest {
 
   @Test
   @Ignore
-  public void writeToInternalWithWriteEmptyDispositionWithEmptyTableSuccess() {
-    Connection connection;
-    try {
-      connection = dc.buildDatasource().getConnection();
-      PreparedStatement statement =
-          connection.prepareStatement(
-              String.format("CREATE OR REPLACE stage %s;", options.getStage()));
-      statement.executeQuery();
+  public void writeToInternalWithWriteEmptyDispositionWithEmptyTableSuccess() throws SQLException {
+    String query = String.format("CREATE OR REPLACE stage %s;", options.getStage());
+    TestUtils.runConnectionWithStatement(dataSource, query);
 
-      connection = dc.buildDatasource().getConnection();
-      PreparedStatement statementTruncate =
-          connection.prepareStatement(String.format("TRUNCATE %s;", options.getTable()));
-      statementTruncate.executeQuery();
-      connection.close();
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
+    TestUtils.runConnectionWithStatement(
+        dataSource, String.format("TRUNCATE %s;", options.getTable()));
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
