@@ -14,7 +14,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
@@ -39,6 +38,7 @@ import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
+import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -399,7 +399,6 @@ public class SnowflakeIO {
 
     private DataSource dataSource;
     private Connection connection;
-    private Statement statement;
 
     private CopyToExternalLocationFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
@@ -418,7 +417,6 @@ public class SnowflakeIO {
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
       connection = dataSource.getConnection();
-      statement = connection.createStatement();
     }
 
     @ProcessElement
@@ -437,7 +435,7 @@ public class SnowflakeIO {
               "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP) OVERWRITE=true;",
               externalLocation, from, integrationName);
 
-      statement.execute(copyQuery);
+      runStatement(copyQuery, connection, null);
 
       // Replace gcs:// schema with gs:// schema
       String output = externalLocation.get().replace("gcs://", "gs://");
@@ -448,7 +446,6 @@ public class SnowflakeIO {
 
     @Teardown
     public void teardown() throws Exception {
-      statement.close();
       connection.close();
     }
   }
@@ -755,6 +752,9 @@ public class SnowflakeIO {
     abstract ValueProvider<Boolean> getParallelization();
 
     @Nullable
+    abstract ValueProvider<WriteDisposition> getWriteDisposition();
+
+    @Nullable
     abstract Coder<T> getCoder();
 
     abstract Builder<T> toBuilder();
@@ -777,6 +777,8 @@ public class SnowflakeIO {
       abstract Builder<T> setParallelization(ValueProvider<Boolean> parallelization);
 
       abstract Builder<T> setCoder(Coder<T> coder);
+
+      abstract Builder<T> setWriteDisposition(ValueProvider<WriteDisposition> writeDisposition);
 
       abstract Write<T> build();
     }
@@ -838,8 +840,22 @@ public class SnowflakeIO {
       return withParallelization(ValueProvider.StaticValueProvider.of(parallelization));
     }
 
+    public Write<T> withWriteDisposition(ValueProvider<WriteDisposition> writeDisposition) {
+      return toBuilder().setWriteDisposition(writeDisposition).build();
+    }
+
+    public Write<T> withWriteDisposition(WriteDisposition writeDisposition) {
+      return withWriteDisposition(ValueProvider.StaticValueProvider.of(writeDisposition));
+    }
+
     public Write<T> withCoder(Coder<T> coder) {
       return toBuilder().setCoder(coder).build();
+    }
+
+    public enum WriteDisposition {
+      TRUNCATE,
+      APPEND,
+      EMPTY
     }
 
     @Override
@@ -924,7 +940,11 @@ public class SnowflakeIO {
     private ParDo.SingleOutput<Object, Object> copyToExternalStorage() {
       return ParDo.of(
           new CopyLoadToBucketFn<>(
-              getDataSourceProviderFn(), getTable(), getStage(), getExternalBucket()));
+              getDataSourceProviderFn(),
+              getTable(),
+              getStage(),
+              getExternalBucket(),
+              getWriteDisposition()));
     }
   }
 
@@ -933,6 +953,7 @@ public class SnowflakeIO {
     private final ValueProvider<String> table;
     private final ValueProvider<String> stage;
     private final ValueProvider<String> externalBucket;
+    private final ValueProvider<Write.WriteDisposition> writeDisposition;
 
     private DataSource dataSource;
     private Connection connection;
@@ -941,16 +962,20 @@ public class SnowflakeIO {
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
         ValueProvider<String> table,
         ValueProvider<String> stage,
-        ValueProvider<String> externalBucket) {
+        ValueProvider<String> externalBucket,
+        ValueProvider<Write.WriteDisposition> writeDisposition) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.table = table;
       this.stage = stage;
       this.externalBucket = externalBucket;
+      this.writeDisposition = writeDisposition;
     }
 
     @Setup
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
+      prepareTableAccordingWriteDisposition(dataSource);
+
       connection = dataSource.getConnection();
     }
 
@@ -961,18 +986,65 @@ public class SnowflakeIO {
       files = files.replaceAll(String.valueOf(this.externalBucket), "");
       String query =
           String.format("COPY INTO %s FROM @%s FILES=(%s);", this.table, this.stage, files);
-      try (PreparedStatement statement =
-          connection.prepareStatement(
-              query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
-        try (ResultSet resultSet = statement.executeQuery()) {
-          context.output((OutputT) "OK");
-        }
-      }
+      runStatement(query, connection, null);
+      context.output((OutputT) "OK");
     }
 
     @Teardown
     public void teardown() throws Exception {
       connection.close();
+    }
+
+    private void prepareTableAccordingWriteDisposition(DataSource dataSource) throws SQLException {
+      switch (this.writeDisposition.get()) {
+        case TRUNCATE:
+          truncateTable(dataSource);
+          break;
+        case EMPTY:
+          checkIfTableIsEmpty(dataSource);
+          break;
+        case APPEND:
+        default:
+          break;
+      }
+    }
+
+    private void truncateTable(DataSource dataSource) throws SQLException {
+      String query = String.format("TRUNCATE %s;", this.table);
+      runConnectionWithStatement(dataSource, query, null);
+    }
+
+    private void checkIfTableIsEmpty(DataSource dataSource) throws SQLException {
+      String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", this.table);
+      runConnectionWithStatement(
+          dataSource,
+          selectQuery,
+          resultSet -> {
+            assert resultSet != null;
+            checkIfTableIsEmpty((ResultSet) resultSet);
+            return resultSet;
+          });
+    }
+
+    static void checkIfTableIsEmpty(ResultSet resultSet) {
+      int columnId = 1;
+      try {
+        if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
+          throw new RuntimeException("Table is not empty. Aborting COPY with disposition EMPTY");
+        }
+      } catch (SQLException e) {
+        throw new RuntimeException("Unable run pipeline with EMPTY disposition.", e);
+      }
+    }
+
+    private static boolean checkIfTableIsEmpty(ResultSet resultSet, int columnId)
+        throws SQLException {
+      int rowCount = resultSet.getInt(columnId);
+      if (rowCount >= 1) {
+        return false;
+        // TODO cleanup stage?
+      }
+      return true;
     }
   }
 
@@ -1016,21 +1088,53 @@ public class SnowflakeIO {
             String.format(
                 "put file://%s/%s @%s;", this.directory, this.fileNameTemplate, this.stage);
       }
-      try (PreparedStatement statement =
-          connection.prepareStatement(
-              query, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
-        try (ResultSet resultSet = statement.executeQuery()) {
-          int indexOfNameOfFile = 2;
-          while (resultSet.next()) {
-            context.output((OutputT) resultSet.getString(indexOfNameOfFile));
-          }
+
+      runStatement(
+          query,
+          connection,
+          resultSet -> {
+            assert resultSet != null;
+            getFilenamesFromPutOperation((ResultSet) resultSet, context);
+            return resultSet;
+          });
+    }
+
+    void getFilenamesFromPutOperation(ResultSet resultSet, ProcessContext context) {
+      int indexOfNameOfFile = 2;
+      try {
+        while (resultSet.next()) {
+          context.output((OutputT) resultSet.getString(indexOfNameOfFile));
         }
+      } catch (SQLException e) {
+        throw new RuntimeException("Unable run pipeline with PUT operation.", e);
       }
     }
 
     @Teardown
     public void teardown() throws Exception {
       connection.close();
+    }
+  }
+
+  private static void runConnectionWithStatement(
+      DataSource dataSource, String query, Function resultSetMethod) throws SQLException {
+    Connection connection = dataSource.getConnection();
+    runStatement(query, connection, resultSetMethod);
+    connection.close();
+  }
+
+  private static void runStatement(String query, Connection connection, Function resultSetMethod)
+      throws SQLException {
+    PreparedStatement statement = connection.prepareStatement(query);
+    try {
+      if (resultSetMethod != null) {
+        ResultSet resultSet = statement.executeQuery();
+        resultSetMethod.apply(resultSet);
+      } else {
+        statement.execute();
+      }
+    } finally {
+      statement.close();
     }
   }
 }
