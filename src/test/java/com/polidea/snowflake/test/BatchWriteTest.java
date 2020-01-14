@@ -13,13 +13,13 @@ import javax.sql.DataSource;
 import net.snowflake.client.jdbc.internal.apache.commons.io.FileUtils;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
-import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.values.KV;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -61,6 +61,11 @@ public class BatchWriteTest {
     String getInternalLocation();
 
     void setInternalLocation(String internalLocation);
+
+    @Description("Integration")
+    String getIntegration();
+
+    void setIntegration(String integration);
   }
 
   static ExampleTestPipelineOptions options;
@@ -159,7 +164,7 @@ public class BatchWriteTest {
 
   @Test
   @Ignore
-  public void writeToExternalWithStageTest() throws SQLException {
+  public void writeToExternalWithStageWithMapperTest() throws SQLException {
     String query =
         String.format(
             "create or replace stage %s \n"
@@ -169,16 +174,42 @@ public class BatchWriteTest {
     TestUtils.runConnectionWithStatement(dataSource, query);
 
     pipeline
-        .apply(GenerateSequence.from(0).to(1000000))
-        .apply(ParDo.of(new Parse()))
+        .apply(GenerateSequence.from(0).to(10))
         .apply(
             "External text write IO",
-            SnowflakeIO.<String>write()
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
+                .withUserDataMapper(getCsvMapper())
+                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.APPEND)
                 .withTable(options.getTable())
                 .withStage(options.getStage())
-                .withExternalBucket(options.getExternalLocation())
-                .withCoder(StringUtf8Coder.of()));
+                .withExternalBucket(options.getExternalLocation()));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Test
+  @Ignore
+  public void writeToExternalWithStageKVInput() throws SQLException {
+    String query =
+        String.format(
+            "create or replace stage %s \n"
+                + "  url = 'gcs://input-test-winter/write/'\n"
+                + "  storage_integration = google_integration;",
+            options.getStage());
+    TestUtils.runConnectionWithStatement(dataSource, query);
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(10))
+        .apply(ParDo.of(new ParseToKv()))
+        .apply(
+            "External text write IO",
+            SnowflakeIO.<KV<String, Integer>>write()
+                .withDataSourceConfiguration(dc)
+                .withUserDataMapper(getCsvMapperKV())
+                .withTable(options.getTable())
+                .withStage(options.getStage())
+                .withExternalBucket(options.getExternalLocation()));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
   }
@@ -269,10 +300,30 @@ public class BatchWriteTest {
     pipelineResult.waitUntilFinish();
   }
 
-  public static class Parse extends DoFn<Long, String> {
+  static SnowflakeIO.UserDataMapper<Long> getCsvMapper() {
+    return (SnowflakeIO.UserDataMapper<Long>)
+        recordLine -> {
+          return recordLine.toString();
+        };
+  }
+
+  static SnowflakeIO.UserDataMapper<KV<String, Integer>> getCsvMapperKV() {
+    return (SnowflakeIO.UserDataMapper<KV<String, Integer>>)
+        recordLine -> String.format("%s, %s", recordLine.getKey(), recordLine.getValue());
+  }
+
+  static class Parse extends DoFn<Long, String> {
     @ProcessElement
     public void processElement(ProcessContext c) {
       c.output(c.element().toString());
+    }
+  }
+
+  static class ParseToKv extends DoFn<Long, KV<String, Integer>> {
+    @ProcessElement
+    public void processElement(ProcessContext c) {
+      KV stringIntKV = KV.of(c.element().toString(), c.element().intValue());
+      c.output(stringIntKV);
     }
   }
 }
