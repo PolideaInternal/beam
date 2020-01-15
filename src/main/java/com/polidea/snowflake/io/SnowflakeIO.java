@@ -914,15 +914,17 @@ public class SnowflakeIO {
         }
       }
 
-      PCollection mappedUserData =
-          (PCollection)
-              input.apply("Map user data", ParDo.of(new MapUserDataToCsvFn(getUserDataMapper())));
+      if (getUserDataMapper() != null) {
+        input =
+            (PCollection)
+                input.apply("Map user data", ParDo.of(new MapUserDataToCsvFn(getUserDataMapper())));
 
-      mappedUserData.setCoder(StringUtf8Coder.of());
+        input.setCoder(StringUtf8Coder.of());
+      }
 
       WriteFilesResult filesResult =
           (WriteFilesResult)
-              mappedUserData.apply(
+              input.apply(
                   "Write files to specified location",
                   FileIO.write()
                       .via((FileIO.Sink) new CSVSink())
