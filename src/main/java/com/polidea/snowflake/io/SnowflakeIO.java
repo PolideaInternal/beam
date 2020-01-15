@@ -915,7 +915,8 @@ public class SnowflakeIO {
       }
 
       PCollection mappedUserData =
-          (PCollection) input.apply("Map user data", ParDo.of(new MapUserDataToCsvFn(getUserDataMapper())));
+          (PCollection)
+              input.apply("Map user data", ParDo.of(new MapUserDataToCsvFn(getUserDataMapper())));
 
       mappedUserData.setCoder(StringUtf8Coder.of());
 
