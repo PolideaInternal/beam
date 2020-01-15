@@ -1010,8 +1010,6 @@ public class SnowflakeIO {
     @Setup
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
-      prepareTableAccordingWriteDisposition(dataSource);
-
       connection = dataSource.getConnection();
     }
 
@@ -1020,6 +1018,9 @@ public class SnowflakeIO {
       List<String> filesList = (List<String>) context.element();
       String files = String.join(", ", filesList);
       files = files.replaceAll(String.valueOf(this.externalBucket), "");
+
+      prepareTableAccordingWriteDisposition(dataSource);
+
       String query =
           String.format("COPY INTO %s FROM @%s FILES=(%s);", this.table, this.stage, files);
       runStatement(query, connection, null);
