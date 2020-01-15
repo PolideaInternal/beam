@@ -163,6 +163,7 @@ public class BatchWriteTest {
   }
 
   @Test
+  @Ignore
   public void writeToExternalWithStageWithMapperTest() throws SQLException {
     String query =
         String.format(
