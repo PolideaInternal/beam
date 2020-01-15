@@ -876,7 +876,7 @@ public class SnowflakeIO {
     @Override
     public PCollection expand(PCollection<T> input) {
       checkArgument(getTable() != null, "withTable() is required");
-      //      checkArgument(getCoder() != null, "withCoder() is required");
+
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
@@ -927,12 +927,13 @@ public class SnowflakeIO {
         }
       }
 
-      PCollection t =
-          (PCollection) input.apply(ParDo.of(new MapCsvToUserDataFn(getUserDataMapper())));
+      PCollection mappedUserData =
+          (PCollection)
+              input.apply("Map user data", ParDo.of(new MapCsvToUserDataFn(getUserDataMapper())));
 
       WriteFilesResult filesResult =
           (WriteFilesResult)
-              t.apply(
+              mappedUserData.apply(
                   "Write files to specified location",
                   FileIO.write()
                       .via((FileIO.Sink) new CSVSink())
