@@ -37,8 +37,7 @@ class TpchTestUtils implements Serializable {
 
   static SnowflakeIO.CsvMapper<GenericRecord> getCsvMapper() {
     return (SnowflakeIO.CsvMapper<GenericRecord>)
-        csvLine -> {
-          String[] parts = csvLine.split(",");
+        parts -> {
           return new GenericRecordBuilder(getSchema())
               .set("orderKey", Long.valueOf(parts[0]))
               .set("partKey", Long.valueOf(parts[1]))

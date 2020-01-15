@@ -4,17 +4,21 @@ import static org.apache.beam.sdk.io.TextIO.readFiles;
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
 import com.google.auto.value.AutoValue;
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
 import com.polidea.snowflake.io.credentials.KeyPairSnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.OAuthTokenSnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.SnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.UsernamePasswordSnowflakeCredentials;
 import com.polidea.snowflake.io.locations.Location;
+import java.io.IOException;
 import java.io.Serializable;
 import java.security.PrivateKey;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
@@ -42,11 +46,15 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Function;
+import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SnowflakeIO {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeIO.class);
+
+  private static final String CSV_QUOTE_CHAR = "'";
+  private static final String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
   /** Read data from a Snowflake using COPY method. */
   public static <T> Read<T> read() {
@@ -59,12 +67,12 @@ public class SnowflakeIO {
 
   @FunctionalInterface
   public interface CsvMapper<T> extends Serializable {
-    T mapRow(String csvLine) throws Exception;
+    T mapRow(String[] parts) throws Exception;
   }
 
   @FunctionalInterface
   public interface UserDataMapper<T> extends Serializable {
-    String mapRow(T element);
+    Object[] mapRow(T element);
   }
 
   public static <T> Write<T> write() {
@@ -350,7 +358,8 @@ public class SnowflakeIO {
               .apply(FileIO.matchAll())
               .apply(FileIO.readMatches())
               .apply(readFiles())
-              .apply(ParDo.of(new MapCsvToUserDataFn<>(getCsvMapper())));
+              .apply(ParDo.of(new MapCsvToStringArrayFn()))
+              .apply(ParDo.of(new MapStringArrayToUserDataFn<>(getCsvMapper())));
 
       output.setCoder(getCoder());
 
@@ -386,10 +395,20 @@ public class SnowflakeIO {
     }
   }
 
-  private static class MapCsvToUserDataFn<InputT, OutputT> extends DoFn<String, OutputT> {
+  public static class MapCsvToStringArrayFn extends DoFn<String, String[]> {
+    @ProcessElement
+    public void processElement(ProcessContext c) throws IOException {
+      String csvLine = c.element();
+      CSVParser parser = new CSVParserBuilder().withQuoteChar(CSV_QUOTE_CHAR.charAt(0)).build();
+      String[] parts = parser.parseLine(csvLine);
+      c.output(parts);
+    }
+  }
+
+  private static class MapStringArrayToUserDataFn<InputT, OutputT> extends DoFn<String[], OutputT> {
     private final CsvMapper<OutputT> csvMapper;
 
-    public MapCsvToUserDataFn(CsvMapper<OutputT> csvMapper) {
+    public MapStringArrayToUserDataFn(CsvMapper<OutputT> csvMapper) {
       this.csvMapper = csvMapper;
     }
 
@@ -441,8 +460,8 @@ public class SnowflakeIO {
 
       String copyQuery =
           String.format(
-              "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP) OVERWRITE=true;",
-              externalLocation, from, integrationName);
+              "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
+              externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
 
       runStatement(copyQuery, connection, null);
 
@@ -896,7 +915,7 @@ public class SnowflakeIO {
       return PDone.in(out.getPipeline());
     }
 
-    private PCollection writeToFiles(PCollection input, String outputDirectory) {
+    private PCollection writeToFiles(PCollection<T> input, String outputDirectory) {
       class Parse extends DoFn<KV<T, String>, String> {
         @ProcessElement
         public void processElement(ProcessContext c) {
@@ -904,17 +923,17 @@ public class SnowflakeIO {
         }
       }
 
-      if (getUserDataMapper() != null) {
-        input =
-            (PCollection)
-                input.apply("Map user data", ParDo.of(new MapUserDataToCsvFn(getUserDataMapper())));
-
-        input.setCoder(StringUtf8Coder.of());
-      }
+      PCollection mappedUserData =
+          input
+              .apply(
+                  "Map user data to Objects array",
+                  ParDo.of(new MapUserDataObjectsArrayFn<T>(getUserDataMapper())))
+              .apply("Map Objects array to CSV lines", ParDo.of(new MapObjecsArrayToCsvFn()))
+              .setCoder(StringUtf8Coder.of());
 
       WriteFilesResult filesResult =
           (WriteFilesResult)
-              input.apply(
+              mappedUserData.apply(
                   "Write files to specified location",
                   FileIO.write()
                       .via((FileIO.Sink) new CSVSink())
@@ -957,16 +976,32 @@ public class SnowflakeIO {
     }
   }
 
-  private static class MapUserDataToCsvFn<InputT, OutputT> extends DoFn<InputT, String> {
-    private final UserDataMapper csvMapper;
+  private static class MapUserDataObjectsArrayFn<T> extends DoFn<T, Object[]> {
+    private final UserDataMapper<T> csvMapper;
 
-    public MapUserDataToCsvFn(UserDataMapper csvMapper) {
+    public MapUserDataObjectsArrayFn(UserDataMapper<T> csvMapper) {
       this.csvMapper = csvMapper;
     }
 
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
       context.output(csvMapper.mapRow(context.element()));
+    }
+  }
+
+  private static class MapObjecsArrayToCsvFn extends DoFn<Object[], String> {
+
+    @ProcessElement
+    public void processElement(ProcessContext context) throws Exception {
+      List<Object> csvItems = new ArrayList<>();
+      for (Object o : context.element()) {
+        if (o instanceof String) {
+          csvItems.add(String.format("%s%s%s", CSV_QUOTE_CHAR, o, CSV_QUOTE_CHAR));
+        } else {
+          csvItems.add(o);
+        }
+      }
+      context.output(Joiner.on(",").join(csvItems));
     }
   }
 
@@ -1022,10 +1057,13 @@ public class SnowflakeIO {
         String integration = this.location.getIntegration();
         query =
             String.format(
-                "COPY INTO %s FROM %s FILES=(%s) STORAGE_INTEGRATION=%s;",
-                this.table, this.source, files, integration);
+                "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s') STORAGE_INTEGRATION=%s;",
+                this.table, this.source, files, CSV_QUOTE_CHAR_FOR_COPY, integration);
       } else {
-        query = String.format("COPY INTO %s FROM %s FILES=(%s);", this.table, this.source, files);
+        query =
+            String.format(
+                "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
+                this.table, this.source, files, CSV_QUOTE_CHAR_FOR_COPY);
       }
 
       runStatement(query, connection, null);

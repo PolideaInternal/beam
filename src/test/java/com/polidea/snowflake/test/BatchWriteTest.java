@@ -423,15 +423,12 @@ public class BatchWriteTest {
   }
 
   static SnowflakeIO.UserDataMapper<Long> getCsvMapper() {
-    return (SnowflakeIO.UserDataMapper<Long>)
-        recordLine -> {
-          return recordLine.toString();
-        };
+    return (SnowflakeIO.UserDataMapper<Long>) recordLine -> new String[] {recordLine.toString()};
   }
 
   static SnowflakeIO.UserDataMapper<KV<String, Integer>> getCsvMapperKV() {
     return (SnowflakeIO.UserDataMapper<KV<String, Integer>>)
-        recordLine -> String.format("%s, %s", recordLine.getKey(), recordLine.getValue());
+        recordLine -> new String[] {recordLine.getKey(), String.valueOf(recordLine.getValue())};
   }
 
   static class Parse extends DoFn<Long, String> {
