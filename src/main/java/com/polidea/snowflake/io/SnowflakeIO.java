@@ -914,22 +914,10 @@ public class SnowflakeIO {
         }
       }
 
-      class MapCsvToUserDataFn extends DoFn<T, String> {
-        private final UserDataMapper<T> csvMapper;
-
-        public MapCsvToUserDataFn(UserDataMapper<T> csvMapper) {
-          this.csvMapper = csvMapper;
-        }
-
-        @ProcessElement
-        public void processElement(ProcessContext context) throws Exception {
-          context.output(csvMapper.mapRow(context.element()));
-        }
-      }
-
       PCollection mappedUserData =
-          (PCollection)
-              input.apply("Map user data", ParDo.of(new MapUserDataToCsvFn(getUserDataMapper())));
+          (PCollection) input.apply("Map user data", ParDo.of(new MapUserDataToCsvFn(getUserDataMapper())));
+
+      mappedUserData.setCoder(StringUtf8Coder.of());
 
       WriteFilesResult filesResult =
           (WriteFilesResult)
@@ -980,16 +968,16 @@ public class SnowflakeIO {
     }
   }
 
-  private static class MapUserDataToCsvFn<InputT, OutputT> extends DoFn<String, OutputT> {
-    private final CsvMapper<OutputT> csvMapper;
+  private static class MapUserDataToCsvFn<T, String> extends DoFn<T, String> {
+    private final UserDataMapper<T> csvMapper;
 
-    public MapUserDataToCsvFn(UserDataMapper csvMapper) {
-      this.csvMapper = (CsvMapper<OutputT>) csvMapper;
+    public MapUserDataToCsvFn(UserDataMapper<T> csvMapper) {
+      this.csvMapper = csvMapper;
     }
 
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
-      context.output(csvMapper.mapRow(context.element()));
+      context.output((String) csvMapper.mapRow(context.element()));
     }
   }
 
