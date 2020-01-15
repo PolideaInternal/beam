@@ -929,7 +929,7 @@ public class SnowflakeIO {
 
       PCollection mappedUserData =
           (PCollection)
-              input.apply("Map user data", ParDo.of(new MapCsvToUserDataFn(getUserDataMapper())));
+              input.apply("Map user data", ParDo.of(new MapUserDataToCsvFn(getUserDataMapper())));
 
       WriteFilesResult filesResult =
           (WriteFilesResult)
@@ -983,8 +983,8 @@ public class SnowflakeIO {
   private static class MapUserDataToCsvFn<InputT, OutputT> extends DoFn<String, OutputT> {
     private final CsvMapper<OutputT> csvMapper;
 
-    public MapUserDataToCsvFn(CsvMapper<OutputT> csvMapper) {
-      this.csvMapper = csvMapper;
+    public MapUserDataToCsvFn(UserDataMapper csvMapper) {
+      this.csvMapper = (CsvMapper<OutputT>) csvMapper;
     }
 
     @ProcessElement
