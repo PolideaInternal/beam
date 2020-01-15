@@ -969,16 +969,16 @@ public class SnowflakeIO {
     }
   }
 
-  private static class MapUserDataToCsvFn<T, String> extends DoFn<T, String> {
-    private final UserDataMapper<T> csvMapper;
+  private static class MapUserDataToCsvFn<InputT, OutputT> extends DoFn<InputT, String> {
+    private final UserDataMapper csvMapper;
 
-    public MapUserDataToCsvFn(UserDataMapper<T> csvMapper) {
+    public MapUserDataToCsvFn(UserDataMapper csvMapper) {
       this.csvMapper = csvMapper;
     }
 
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
-      context.output((String) csvMapper.mapRow(context.element()));
+      context.output(csvMapper.mapRow(context.element()));
     }
   }
 
