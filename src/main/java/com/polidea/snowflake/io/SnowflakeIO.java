@@ -20,6 +20,7 @@ import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import org.apache.beam.sdk.coders.Coder;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.WriteFilesResult;
 import org.apache.beam.sdk.options.ValueProvider;
@@ -57,6 +58,11 @@ public class SnowflakeIO {
   @FunctionalInterface
   public interface CsvMapper<T> extends Serializable {
     T mapRow(String csvLine) throws Exception;
+  }
+
+  @FunctionalInterface
+  public interface UserDataMapper<T> extends Serializable {
+    String mapRow(T element);
   }
 
   public static <T> Write<T> write() {
@@ -729,7 +735,7 @@ public class SnowflakeIO {
   }
 
   @AutoValue
-  public abstract static class Write<T> extends PTransform<PCollection<String>, PCollection> {
+  public abstract static class Write<T> extends PTransform<PCollection<T>, PCollection> {
     @Nullable
     abstract SerializableFunction<Void, DataSource> getDataSourceProviderFn();
 
@@ -755,6 +761,9 @@ public class SnowflakeIO {
     abstract ValueProvider<WriteDisposition> getWriteDisposition();
 
     @Nullable
+    abstract UserDataMapper getUserDataMapper();
+
+    @Nullable
     abstract Coder<T> getCoder();
 
     abstract Builder<T> toBuilder();
@@ -775,6 +784,8 @@ public class SnowflakeIO {
       abstract Builder<T> setFileNameTemplate(ValueProvider<String> fileNameTemplate);
 
       abstract Builder<T> setParallelization(ValueProvider<Boolean> parallelization);
+
+      abstract Builder<T> setUserDataMapper(UserDataMapper userDataMapper);
 
       abstract Builder<T> setCoder(Coder<T> coder);
 
@@ -840,6 +851,10 @@ public class SnowflakeIO {
       return withParallelization(ValueProvider.StaticValueProvider.of(parallelization));
     }
 
+    public Write<T> withUserDataMapper(UserDataMapper userDataMapper) {
+      return toBuilder().setUserDataMapper(userDataMapper).build();
+    }
+
     public Write<T> withWriteDisposition(ValueProvider<WriteDisposition> writeDisposition) {
       return toBuilder().setWriteDisposition(writeDisposition).build();
     }
@@ -859,9 +874,9 @@ public class SnowflakeIO {
     }
 
     @Override
-    public PCollection expand(PCollection<String> input) {
+    public PCollection expand(PCollection<T> input) {
       checkArgument(getTable() != null, "withTable() is required");
-      checkArgument(getCoder() != null, "withCoder() is required");
+
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
@@ -887,7 +902,7 @@ public class SnowflakeIO {
           (PCollection)
               files.apply("Create list of files to copy", Combine.globally(new Concatenate()));
       PCollection out = (PCollection) files.apply("Copy files to table", copyToExternalStorage());
-      out.setCoder(getCoder());
+      out.setCoder(StringUtf8Coder.of());
       return out;
     }
 
@@ -899,9 +914,26 @@ public class SnowflakeIO {
         }
       }
 
+      class MapCsvToUserDataFn extends DoFn<T, String> {
+        private final UserDataMapper<T> csvMapper;
+
+        public MapCsvToUserDataFn(UserDataMapper<T> csvMapper) {
+          this.csvMapper = csvMapper;
+        }
+
+        @ProcessElement
+        public void processElement(ProcessContext context) throws Exception {
+          context.output(csvMapper.mapRow(context.element()));
+        }
+      }
+
+      PCollection mappedUserData =
+          (PCollection)
+              input.apply("Map user data", ParDo.of(new MapCsvToUserDataFn(getUserDataMapper())));
+
       WriteFilesResult filesResult =
           (WriteFilesResult)
-              input.apply(
+              mappedUserData.apply(
                   "Write files to specified location",
                   FileIO.write()
                       .via((FileIO.Sink) new CSVSink())
@@ -923,7 +955,7 @@ public class SnowflakeIO {
 
       pcol = (PCollection) pcol.apply("Put files on stage", putToInternalStage());
 
-      pcol.setCoder(getCoder());
+      pcol.setCoder(StringUtf8Coder.of());
       return pcol;
     }
 
@@ -945,6 +977,19 @@ public class SnowflakeIO {
               getStage(),
               getExternalBucket(),
               getWriteDisposition()));
+    }
+  }
+
+  private static class MapUserDataToCsvFn<InputT, OutputT> extends DoFn<String, OutputT> {
+    private final CsvMapper<OutputT> csvMapper;
+
+    public MapUserDataToCsvFn(CsvMapper<OutputT> csvMapper) {
+      this.csvMapper = csvMapper;
+    }
+
+    @ProcessElement
+    public void processElement(ProcessContext context) throws Exception {
+      context.output(csvMapper.mapRow(context.element()));
     }
   }
 
