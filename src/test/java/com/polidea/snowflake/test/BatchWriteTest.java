@@ -241,6 +241,30 @@ public class BatchWriteTest {
     pipelineResult.waitUntilFinish();
   }
 
+  @Test
+  @Ignore
+  public void writeToExternalWithWriteTruncateDispositionSuccess() throws SQLException {
+    String query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
+    TestUtils.runConnectionWithStatement(dataSource, query);
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "Copy IO",
+            SnowflakeIO.<String>write()
+                .withDataSourceConfiguration(dc)
+                .withTable(options.getTable())
+                .withStage(options.getStage())
+                .withExternalBucket(options.getExternalLocation())
+                .withFileNameTemplate("output*")
+                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
+                .withParallelization(false)
+                .withCoder(SerializableCoder.of(String.class)));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Test
