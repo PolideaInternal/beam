@@ -94,4 +94,25 @@ public interface SnowflakePipelineOptions extends PipelineOptions, DataflowPipel
   String getLoginTimeout();
 
   void setLoginTimeout(String loginTimeout);
+
+  @Description("External location name to connect to.")
+  String getExternalLocation();
+
+  void setExternalLocation(String externalLocation);
+
+  @Description("Internal (local) location name to connect to.")
+  String getInternalLocation();
+
+  void setInternalLocation(String internalLocation);
+
+  @Description("Integration name - required in case the external stage is not specified.")
+  String getIntegration();
+
+  void setIntegration(String integration);
+
+  @Description("Stage name. Optional.")
+  @Default.String("")
+  String getStage();
+
+  void setStage(String stage);
 }

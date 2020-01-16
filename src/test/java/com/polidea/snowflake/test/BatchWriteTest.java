@@ -7,12 +7,15 @@ import com.google.cloud.storage.StorageOptions;
 import com.polidea.snowflake.io.SnowflakeIO;
 import com.polidea.snowflake.io.SnowflakePipelineOptions;
 import com.polidea.snowflake.io.credentials.SnowflakeCredentialsFactory;
+import com.polidea.snowflake.io.locations.Location;
+import com.polidea.snowflake.io.locations.LocationFactory;
 import java.io.File;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import net.snowflake.client.jdbc.internal.apache.commons.io.FileUtils;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -46,30 +49,11 @@ public class BatchWriteTest {
     String getTable();
 
     void setTable(String table);
-
-    @Description("Stage name to connect to.")
-    String getStage();
-
-    void setStage(String stage);
-
-    @Description("External location name to connect to.")
-    String getExternalLocation();
-
-    void setExternalLocation(String externalLocation);
-
-    @Description("Internal (local) location name to connect to.")
-    String getInternalLocation();
-
-    void setInternalLocation(String internalLocation);
-
-    @Description("Integration")
-    String getIntegration();
-
-    void setIntegration(String integration);
   }
 
   static ExampleTestPipelineOptions options;
   static SnowflakeIO.DataSourceConfiguration dc;
+  static Location locationSpec;
 
   @BeforeClass
   public static void setup() throws Exception {
@@ -85,16 +69,17 @@ public class BatchWriteTest {
             .withSchema(options.getSchema());
 
     dataSource = dc.buildDatasource();
+    locationSpec = LocationFactory.of(options);
   }
 
   @AfterClass
   public static void tearDown() throws Exception {
-    if (options.getInternalLocation() != null) {
+    if (locationSpec.isInternal()) {
       File directory = new File(options.getInternalLocation());
       FileUtils.deleteDirectory(directory);
     }
 
-    if (options.getExternalLocation() != null) {
+    if (!locationSpec.isInternal()) {
       String storageName = options.getExternalLocation();
       storageName = storageName.replaceAll("gs://", "");
       String[] splitted = storageName.split("/", 2);
@@ -129,10 +114,9 @@ public class BatchWriteTest {
         .apply(
             "Copy IO",
             SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
                 .withDataSourceConfiguration(dc)
-                .withTable(options.getTable())
-                .withStage(options.getStage())
-                .withInternalLocation(options.getInternalLocation())
                 .withFileNameTemplate("output*")
                 .withParallelization(false)
                 .withCoder(SerializableCoder.of(String.class)));
@@ -153,10 +137,9 @@ public class BatchWriteTest {
         .apply(
             "Copy IO",
             SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
                 .withDataSourceConfiguration(dc)
-                .withTable(options.getTable())
-                .withStage(options.getStage())
-                .withInternalLocation(options.getInternalLocation())
                 .withCoder(SerializableCoder.of(String.class)));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
@@ -173,17 +156,94 @@ public class BatchWriteTest {
             options.getStage());
     TestUtils.runConnectionWithStatement(dataSource, query);
 
+    locationSpec =
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
+
     pipeline
-        .apply(GenerateSequence.from(0).to(10))
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "External text write IO",
+            SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
+                .withDataSourceConfiguration(dc)
+                .withCoder(StringUtf8Coder.of()));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Test
+  @Ignore
+  public void writeToExternalWithIntegrationTest() throws SQLException {
+
+    String query =
+        String.format(
+            "create or replace stage %s \n"
+                + "  url = 'gcs://input-test-winter/write/'\n"
+                + "  storage_integration = google_integration;",
+            options.getStage());
+    TestUtils.runConnectionWithStatement(dataSource, query);
+
+    locationSpec =
+        LocationFactory.getExternalLocationWithIntegration(
+            options.getIntegration(), options.getExternalLocation());
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "External text write IO",
+            SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
+                .withDataSourceConfiguration(dc)
+                .withCoder(StringUtf8Coder.of()));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Test
+  @Ignore
+  public void writeToExternalWithIntegrationFailsWithoutStage() {
+    locationSpec =
+        LocationFactory.getExternalLocationWithIntegration(
+            options.getIntegration(), options.getExternalLocation());
+
+    String query = "select t.$1 from @%s t";
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
         .apply(
             "External text write IO",
             SnowflakeIO.<Long>write()
-                .withDataSourceConfiguration(dc)
+                .to(options.getTable())
+                .via(locationSpec)
                 .withUserDataMapper(getCsvMapper())
+                .withQueryTransformation(query)
                 .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.APPEND)
-                .withTable(options.getTable())
-                .withStage(options.getStage())
-                .withExternalBucket(options.getExternalLocation()));
+                .withDataSourceConfiguration(dc));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Test
+  @Ignore
+  public void writeToInternalWithTransformationTest() {
+    locationSpec =
+        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+
+    String query = "select t.$1 from @%s t";
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "External text write IO",
+            SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
+                .withDataSourceConfiguration(dc)
+                .withQueryTransformation(query)
+                .withCoder(StringUtf8Coder.of()));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
   }
@@ -191,6 +251,9 @@ public class BatchWriteTest {
   @Test
   @Ignore
   public void writeToExternalWithStageKVInput() throws SQLException {
+    locationSpec =
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
+
     String query =
         String.format(
             "create or replace stage %s \n"
@@ -207,9 +270,38 @@ public class BatchWriteTest {
             SnowflakeIO.<KV<String, Integer>>write()
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(getCsvMapperKV())
-                .withTable(options.getTable())
-                .withStage(options.getStage())
-                .withExternalBucket(options.getExternalLocation()));
+                .to(options.getTable())
+                .via(locationSpec));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Test
+  @Ignore
+  public void writeToExternalWithTransformationTest() throws SQLException {
+    locationSpec =
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
+
+    String prepareQuery =
+        String.format(
+            "create or replace stage %s \n"
+                + "  url = 'gcs://input-test-winter/write/'\n"
+                + "  storage_integration = google_integration;",
+            options.getStage());
+    TestUtils.runConnectionWithStatement(dataSource, prepareQuery);
+
+    String query = "select t.$1 from @%s t";
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new Parse()))
+        .apply(
+            "External text write IO",
+            SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
+                .withDataSourceConfiguration(dc)
+                .withQueryTransformation(query)
+                .withCoder(StringUtf8Coder.of()));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
   }
@@ -223,6 +315,9 @@ public class BatchWriteTest {
     query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
     TestUtils.runConnectionWithStatement(dataSource, query);
 
+    locationSpec =
+        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(ParDo.of(new Parse()))
@@ -230,9 +325,8 @@ public class BatchWriteTest {
             "Copy IO",
             SnowflakeIO.<String>write()
                 .withDataSourceConfiguration(dc)
-                .withTable(options.getTable())
-                .withStage(options.getStage())
-                .withInternalLocation(options.getInternalLocation())
+                .to(options.getTable())
+                .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
                 .withParallelization(false)
@@ -247,16 +341,18 @@ public class BatchWriteTest {
     String query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
     TestUtils.runConnectionWithStatement(dataSource, query);
 
+    locationSpec =
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
+
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(ParDo.of(new Parse()))
         .apply(
             "Copy IO",
             SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
                 .withDataSourceConfiguration(dc)
-                .withTable(options.getTable())
-                .withStage(options.getStage())
-                .withExternalBucket(options.getExternalLocation())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
                 .withParallelization(false)
@@ -277,16 +373,17 @@ public class BatchWriteTest {
     exceptionRule.expectMessage(
         "org.apache.beam.sdk.util.UserCodeException: java.lang.RuntimeException: Table is not empty. Aborting COPY with disposition EMPTY");
 
+    locationSpec =
+        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(ParDo.of(new Parse()))
         .apply(
             "Copy IO",
             SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
                 .withDataSourceConfiguration(dc)
-                .withTable(options.getTable())
-                .withStage(options.getStage())
-                .withInternalLocation(options.getInternalLocation())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.EMPTY)
                 .withParallelization(false)
@@ -305,16 +402,17 @@ public class BatchWriteTest {
     TestUtils.runConnectionWithStatement(
         dataSource, String.format("TRUNCATE %s;", options.getTable()));
 
+    locationSpec =
+        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(ParDo.of(new Parse()))
         .apply(
             "Copy IO",
             SnowflakeIO.<String>write()
+                .to(options.getTable())
+                .via(locationSpec)
                 .withDataSourceConfiguration(dc)
-                .withTable(options.getTable())
-                .withStage(options.getStage())
-                .withInternalLocation(options.getInternalLocation())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.EMPTY)
                 .withParallelization(false)
