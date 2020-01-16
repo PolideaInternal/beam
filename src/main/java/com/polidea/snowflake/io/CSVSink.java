@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
-import java.util.Collections;
 import java.util.List;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
@@ -33,7 +32,7 @@ public class CSVSink implements FileIO.Sink<String> {
 
   @Override
   public void write(String element) throws IOException {
-    writer.println(Joiner.on(",").join(Collections.singleton(element)));
+    writer.println(element);
   }
 
   @Override

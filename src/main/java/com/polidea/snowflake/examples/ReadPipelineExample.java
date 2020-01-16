@@ -87,8 +87,7 @@ public class ReadPipelineExample {
                 .withCsvMapper(
                     new SnowflakeIO.CsvMapper<KV<Integer, String>>() {
                       @Override
-                      public KV<Integer, String> mapRow(String csvLine) throws Exception {
-                        String[] parts = csvLine.split(",");
+                      public KV<Integer, String> mapRow(String[] parts) throws Exception {
                         return KV.of(Integer.valueOf(parts[0]), parts[1]);
                       }
                     })
