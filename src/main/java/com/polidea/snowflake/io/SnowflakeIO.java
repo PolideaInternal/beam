@@ -8,6 +8,7 @@ import com.polidea.snowflake.io.credentials.KeyPairSnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.OAuthTokenSnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.SnowflakeCredentials;
 import com.polidea.snowflake.io.credentials.UsernamePasswordSnowflakeCredentials;
+import com.polidea.snowflake.io.locations.Location;
 import java.io.Serializable;
 import java.security.PrivateKey;
 import java.sql.Connection;
@@ -38,6 +39,7 @@ import org.apache.beam.sdk.transforms.display.HasDisplayData;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Function;
 import org.slf4j.Logger;
@@ -69,6 +71,7 @@ public class SnowflakeIO {
     return new AutoValue_SnowflakeIO_Write.Builder<T>()
         .setFileNameTemplate(ValueProvider.StaticValueProvider.of("output*"))
         .setParallelization(ValueProvider.StaticValueProvider.of(true))
+        .setWriteDisposition(ValueProvider.StaticValueProvider.of(Write.WriteDisposition.APPEND))
         .build();
   }
 
@@ -735,21 +738,18 @@ public class SnowflakeIO {
   }
 
   @AutoValue
-  public abstract static class Write<T> extends PTransform<PCollection<T>, PCollection> {
+  public abstract static class Write<T> extends PTransform<PCollection<T>, PDone> {
     @Nullable
     abstract SerializableFunction<Void, DataSource> getDataSourceProviderFn();
-
-    @Nullable
-    abstract ValueProvider<String> getStage();
 
     @Nullable
     abstract ValueProvider<String> getTable();
 
     @Nullable
-    abstract ValueProvider<String> getInternalLocation();
+    abstract ValueProvider<String> getQuery();
 
     @Nullable
-    abstract ValueProvider<String> getExternalBucket();
+    abstract ValueProvider<Location> getLocation();
 
     @Nullable
     abstract ValueProvider<String> getFileNameTemplate();
@@ -773,13 +773,11 @@ public class SnowflakeIO {
       abstract Builder<T> setDataSourceProviderFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn);
 
-      abstract Builder<T> setStage(ValueProvider<String> stage);
-
       abstract Builder<T> setTable(ValueProvider<String> table);
 
-      abstract Builder<T> setInternalLocation(ValueProvider<String> filesLocation);
+      abstract Builder<T> setQuery(ValueProvider<String> query);
 
-      abstract Builder<T> setExternalBucket(ValueProvider<String> externalBucket);
+      abstract Builder<T> setLocation(ValueProvider<Location> location);
 
       abstract Builder<T> setFileNameTemplate(ValueProvider<String> fileNameTemplate);
 
@@ -803,36 +801,28 @@ public class SnowflakeIO {
       return toBuilder().setDataSourceProviderFn(dataSourceProviderFn).build();
     }
 
-    public Write<T> withStage(String stage) {
-      return withStage(ValueProvider.StaticValueProvider.of(stage));
+    public Write<T> to(String table) {
+      return to(ValueProvider.StaticValueProvider.of(table));
     }
 
-    public Write<T> withStage(ValueProvider<String> stage) {
-      return toBuilder().setStage(stage).build();
-    }
-
-    public Write<T> withTable(String table) {
-      return withTable(ValueProvider.StaticValueProvider.of(table));
-    }
-
-    public Write<T> withTable(ValueProvider<String> table) {
+    public Write<T> to(ValueProvider<String> table) {
       return toBuilder().setTable(table).build();
     }
 
-    public Write<T> withExternalBucket(String externalBucket) {
-      return withExternalBucket(ValueProvider.StaticValueProvider.of(externalBucket));
+    public Write<T> withQueryTransformation(String query) {
+      return withQueryTransformation(ValueProvider.StaticValueProvider.of(query));
     }
 
-    public Write<T> withExternalBucket(ValueProvider<String> externalBucket) {
-      return toBuilder().setExternalBucket(externalBucket).build();
+    public Write<T> withQueryTransformation(ValueProvider<String> query) {
+      return toBuilder().setQuery(query).build();
     }
 
-    public Write<T> withInternalLocation(String filesLocation) {
-      return withInternalLocation(ValueProvider.StaticValueProvider.of(filesLocation));
+    public Write<T> via(Location location) {
+      return via(ValueProvider.StaticValueProvider.of(location));
     }
 
-    public Write<T> withInternalLocation(ValueProvider<String> filesLocation) {
-      return toBuilder().setInternalLocation(filesLocation).build();
+    public Write<T> via(ValueProvider<Location> location) {
+      return toBuilder().setLocation(location).build();
     }
 
     public Write<T> withFileNameTemplate(ValueProvider<String> fileNameTemplate) {
@@ -874,39 +864,39 @@ public class SnowflakeIO {
     }
 
     @Override
-    public PCollection expand(PCollection<T> input) {
+    public PDone expand(PCollection<T> input) {
+      checkArgument((getLocation() != null), "withLocation() is required");
       checkArgument(getTable() != null, "withTable() is required");
+
+      if (getQuery() != null) {
+        checkArgument(
+            (getLocation().get().getStage() != null), "withQuery() requires stage in location");
+      }
 
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
 
-      checkArgument(
-          (getExternalBucket() != null || getInternalLocation() != null),
-          "withExternalBucket() or withInternalLocation() is required");
+      checkArgument(getLocation() != null, "withLocation() is required");
 
-      checkArgument(
-          !(getExternalBucket() != null && getInternalLocation() != null),
-          "withExternalBucket() or withInternalLocation() only one is required");
+      Location location = getLocation().get();
 
-      ValueProvider<String> outputDirectory =
-          getExternalBucket() != null ? getExternalBucket() : getInternalLocation();
+      PCollection files = writeToFiles(input, location.getFilesPath());
 
-      PCollection files = writeToFiles(input, outputDirectory);
-
-      if (getExternalBucket() == null) {
-        files = putFilesToInternalStage(files);
+      if (location.isInternal()) {
+        files = putFilesToInternalStage(files, location);
       }
 
       files =
           (PCollection)
               files.apply("Create list of files to copy", Combine.globally(new Concatenate()));
-      PCollection out = (PCollection) files.apply("Copy files to table", copyToExternalStorage());
+      PCollection out = (PCollection) files.apply("Copy files to table", copyToTable(location));
       out.setCoder(StringUtf8Coder.of());
-      return out;
+
+      return PDone.in(out.getPipeline());
     }
 
-    private PCollection writeToFiles(PCollection input, ValueProvider<String> outputDirectory) {
+    private PCollection writeToFiles(PCollection input, String outputDirectory) {
       class Parse extends DoFn<KV<T, String>, String> {
         @ProcessElement
         public void processElement(ProcessContext c) {
@@ -937,37 +927,33 @@ public class SnowflakeIO {
               .apply("Parse KV filenames to Strings", ParDo.of(new Parse()));
     }
 
-    private PCollection putFilesToInternalStage(PCollection pcol) {
+    private PCollection putFilesToInternalStage(PCollection pcol, Location location) {
       if (!getParallelization().get()) {
         pcol =
             (PCollection)
                 pcol.apply("Combine all files into one flow", Combine.globally(new Concatenate()));
       }
 
-      pcol = (PCollection) pcol.apply("Put files on stage", putToInternalStage());
+      pcol = (PCollection) pcol.apply("Put files on stage", putToInternalStage(location));
 
       pcol.setCoder(StringUtf8Coder.of());
       return pcol;
     }
 
-    private ParDo.SingleOutput<Object, Object> putToInternalStage() {
+    private ParDo.SingleOutput<Object, Object> putToInternalStage(Location location) {
       return ParDo.of(
           new PutFn<>(
               getDataSourceProviderFn(),
-              getStage(),
-              getInternalLocation(),
+              location.getFilesLocationForCopy(),
+              location.getFilesPath(),
               getFileNameTemplate(),
               getParallelization()));
     }
 
-    private ParDo.SingleOutput<Object, Object> copyToExternalStorage() {
+    private ParDo.SingleOutput<Object, Object> copyToTable(Location location) {
       return ParDo.of(
-          new CopyLoadToBucketFn<>(
-              getDataSourceProviderFn(),
-              getTable(),
-              getStage(),
-              getExternalBucket(),
-              getWriteDisposition()));
+          new CopyToTableFn<>(
+              getDataSourceProviderFn(), getTable(), getQuery(), location, getWriteDisposition()));
     }
   }
 
@@ -984,32 +970,42 @@ public class SnowflakeIO {
     }
   }
 
-  private static class CopyLoadToBucketFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
+  private static class CopyToTableFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
     private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
-    private final ValueProvider<String> table;
-    private final ValueProvider<String> stage;
-    private final ValueProvider<String> externalBucket;
+    private final String source;
+    private final String filesPath;
+    private final Location location;
+    private final String table;
     private final ValueProvider<Write.WriteDisposition> writeDisposition;
 
     private DataSource dataSource;
     private Connection connection;
 
-    CopyLoadToBucketFn(
+    CopyToTableFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
         ValueProvider<String> table,
-        ValueProvider<String> stage,
-        ValueProvider<String> externalBucket,
+        ValueProvider<String> query,
+        Location location,
         ValueProvider<Write.WriteDisposition> writeDisposition) {
       this.dataSourceProviderFn = dataSourceProviderFn;
-      this.table = table;
-      this.stage = stage;
-      this.externalBucket = externalBucket;
+      this.table = table.get();
+      this.location = location;
+      if (query != null) {
+        String formattedQuery = String.format(query.get(), location.getFilesLocationForCopy());
+        this.source = String.format("(%s)", formattedQuery);
+      } else {
+        String directory = location.getFilesLocationForCopy();
+        this.source = directory.replace("gs://", "gcs://");
+      }
+
+      this.filesPath = location.getFilesPath();
       this.writeDisposition = writeDisposition;
     }
 
     @Setup
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
+      prepareTableAccordingWriteDisposition(dataSource);
       connection = dataSource.getConnection();
     }
 
@@ -1017,19 +1013,29 @@ public class SnowflakeIO {
     public void processElement(ProcessContext context) throws Exception {
       List<String> filesList = (List<String>) context.element();
       String files = String.join(", ", filesList);
-      files = files.replaceAll(String.valueOf(this.externalBucket), "");
+      files = files.replaceAll(String.valueOf(this.filesPath), "");
 
       prepareTableAccordingWriteDisposition(dataSource);
 
-      String query =
-          String.format("COPY INTO %s FROM @%s FILES=(%s);", this.table, this.stage, files);
+      String query;
+      if (location.isUsingIntegration()) {
+        String integration = this.location.getIntegration();
+        query =
+            String.format(
+                "COPY INTO %s FROM %s FILES=(%s) STORAGE_INTEGRATION=%s;",
+                this.table, this.source, files, integration);
+      } else {
+        query = String.format("COPY INTO %s FROM %s FILES=(%s);", this.table, this.source, files);
+      }
+
       runStatement(query, connection, null);
-      context.output((OutputT) "OK");
     }
 
     @Teardown
     public void teardown() throws Exception {
-      connection.close();
+      if (connection != null) {
+        connection.close();
+      }
     }
 
     private void prepareTableAccordingWriteDisposition(DataSource dataSource) throws SQLException {
@@ -1087,8 +1093,8 @@ public class SnowflakeIO {
 
   private static class PutFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
     private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
-    private final ValueProvider<String> stage;
-    private final ValueProvider<String> directory;
+    private final String stage;
+    private final String directory;
     private final ValueProvider<String> fileNameTemplate;
     private final ValueProvider<Boolean> parallelization;
 
@@ -1097,8 +1103,8 @@ public class SnowflakeIO {
 
     PutFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
-        ValueProvider<String> stage,
-        ValueProvider<String> file,
+        String stage,
+        String file,
         ValueProvider<String> fileNameTemplate,
         ValueProvider<Boolean> parallelization) {
       this.dataSourceProviderFn = dataSourceProviderFn;
