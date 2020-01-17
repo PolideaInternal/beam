@@ -1,5 +1,6 @@
 package com.polidea.snowflake.test;
 
+import com.polidea.snowflake.io.SnowflakeIO;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,5 +23,9 @@ public class TestUtils {
       statement.close();
       connection.close();
     }
+  }
+
+  public static SnowflakeIO.UserDataMapper<Long> getCsvMapper() {
+    return (SnowflakeIO.UserDataMapper<Long>) recordLine -> new String[] {recordLine.toString()};
   }
 }

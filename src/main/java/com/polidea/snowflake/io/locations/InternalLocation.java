@@ -19,7 +19,7 @@ public class InternalLocation implements Location, Serializable {
 
   @Override
   public String getFilesLocationForCopy() {
-    return this.stage;
+    return String.format("@%s", stage);
   }
 
   @Override
