@@ -114,7 +114,7 @@ public class BatchWriteExternalLocationTest {
   public void writeToExternalWithIntegrationTest() {
     locationSpec =
         LocationFactory.getExternalLocationWithIntegration(
-            options.getIntegration(), options.getExternalLocation());
+            options.getStorageIntegration(), options.getExternalLocation());
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
@@ -177,7 +177,7 @@ public class BatchWriteExternalLocationTest {
   public void writeToExternalWithIntegrationWithoutStageFails() {
     locationSpec =
         LocationFactory.getExternalLocationWithIntegration(
-            options.getIntegration(), options.getExternalLocation());
+            options.getStorageIntegration(), options.getExternalLocation());
 
     exceptionRule.expect(IllegalArgumentException.class);
     exceptionRule.expectMessage("withQuery() requires stage as location");

@@ -105,10 +105,10 @@ public interface SnowflakePipelineOptions extends PipelineOptions, DataflowPipel
 
   void setInternalLocation(String internalLocation);
 
-  @Description("Integration name - required in case the external stage is not specified.")
-  String getIntegration();
+  @Description("Storage integration - required in case the external stage is not specified.")
+  String getStorageIntegration();
 
-  void setIntegration(String integration);
+  void setStorageIntegration(String integration);
 
   @Description("Stage name. Optional.")
   String getStage();

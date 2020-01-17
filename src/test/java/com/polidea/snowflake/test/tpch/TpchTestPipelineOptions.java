@@ -5,17 +5,6 @@ import org.apache.beam.sdk.options.Default;
 import org.apache.beam.sdk.options.Description;
 
 public interface TpchTestPipelineOptions extends SnowflakePipelineOptions {
-
-  @Description("External location used to copy Snowflake data into.")
-  String getExternalLocation();
-
-  void setExternalLocation(String externalLocation);
-
-  @Description("Snowflake's STORAGE INTEGRATION configured for given External Location.")
-  String getIntegrationName();
-
-  void setIntegrationName(String integrationName);
-
   @Description("Destination of output data.")
   String getOutput();
 

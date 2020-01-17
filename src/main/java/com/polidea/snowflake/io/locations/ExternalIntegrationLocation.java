@@ -8,7 +8,7 @@ public class ExternalIntegrationLocation implements Location, Serializable {
   String bucketPath;
 
   public ExternalIntegrationLocation(SnowflakePipelineOptions options) {
-    this.integration = options.getIntegration();
+    this.integration = options.getStorageIntegration();
     this.bucketPath = options.getExternalLocation();
   }
 

@@ -42,16 +42,6 @@ public class ReadPipelineExample {
 
     void setTable(String table);
 
-    @Description("External location used to copy Snowflake data into.")
-    String getExternalLocation();
-
-    void setExternalLocation(String externalLocation);
-
-    @Description("Snowflake's STORAGE INTEGRATION configured for given External Location.")
-    String getIntegrationName();
-
-    void setIntegrationName(String integrationName);
-
     @Description("Destination of output data.")
     String getOutput();
 
@@ -65,7 +55,7 @@ public class ReadPipelineExample {
 
     String query = options.getQuery();
     String externalLocation = options.getExternalLocation();
-    String integrationName = options.getIntegrationName();
+    String integrationName = options.getStorageIntegration();
     String output = options.getOutput();
 
     SnowflakeIO.DataSourceConfiguration dc =

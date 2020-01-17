@@ -53,7 +53,7 @@ public class TpchReadTest {
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
     externalLocation = options.getExternalLocation();
-    integrationName = options.getIntegrationName();
+    integrationName = options.getStorageIntegration();
     output = options.getOutput();
 
     dataSourceConfiguration =
