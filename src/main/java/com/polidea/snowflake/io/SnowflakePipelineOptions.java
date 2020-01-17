@@ -111,7 +111,6 @@ public interface SnowflakePipelineOptions extends PipelineOptions, DataflowPipel
   void setIntegration(String integration);
 
   @Description("Stage name. Optional.")
-  @Default.String("")
   String getStage();
 
   void setStage(String stage);

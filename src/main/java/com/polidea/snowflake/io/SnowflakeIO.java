@@ -79,6 +79,8 @@ public class SnowflakeIO {
     return new AutoValue_SnowflakeIO_Write.Builder<T>()
         .setFileNameTemplate(ValueProvider.StaticValueProvider.of("output*"))
         .setParallelization(ValueProvider.StaticValueProvider.of(true))
+        .setCreateDisposition(
+            ValueProvider.StaticValueProvider.of(Write.CreateDisposition.CREATE_IF_NEEDED))
         .setWriteDisposition(ValueProvider.StaticValueProvider.of(Write.WriteDisposition.APPEND))
         .build();
   }
@@ -780,10 +782,13 @@ public class SnowflakeIO {
     abstract ValueProvider<WriteDisposition> getWriteDisposition();
 
     @Nullable
+    abstract ValueProvider<CreateDisposition> getCreateDisposition();
+
+    @Nullable
     abstract UserDataMapper getUserDataMapper();
 
     @Nullable
-    abstract Coder<T> getCoder();
+    abstract ValueProvider<String> getTableSchema();
 
     abstract Builder<T> toBuilder();
 
@@ -804,9 +809,11 @@ public class SnowflakeIO {
 
       abstract Builder<T> setUserDataMapper(UserDataMapper userDataMapper);
 
-      abstract Builder<T> setCoder(Coder<T> coder);
-
       abstract Builder<T> setWriteDisposition(ValueProvider<WriteDisposition> writeDisposition);
+
+      abstract Builder<T> setCreateDisposition(ValueProvider<CreateDisposition> createDisposition);
+
+      abstract Builder<T> setTableSchema(ValueProvider<String> tableSchema);
 
       abstract Write<T> build();
     }
@@ -872,8 +879,20 @@ public class SnowflakeIO {
       return withWriteDisposition(ValueProvider.StaticValueProvider.of(writeDisposition));
     }
 
-    public Write<T> withCoder(Coder<T> coder) {
-      return toBuilder().setCoder(coder).build();
+    public Write<T> withCreateDisposition(ValueProvider<CreateDisposition> createDisposition) {
+      return toBuilder().setCreateDisposition(createDisposition).build();
+    }
+
+    public Write<T> withCreateDisposition(CreateDisposition createDisposition) {
+      return withCreateDisposition(ValueProvider.StaticValueProvider.of(createDisposition));
+    }
+
+    public Write<T> withTableSchema(ValueProvider<String> tableSchema) {
+      return toBuilder().setTableSchema(tableSchema).build();
+    }
+
+    public Write<T> withTableSchema(String tableSchema) {
+      return withTableSchema(ValueProvider.StaticValueProvider.of(tableSchema));
     }
 
     public enum WriteDisposition {
@@ -882,14 +901,22 @@ public class SnowflakeIO {
       EMPTY
     }
 
+    public enum CreateDisposition {
+      CREATE_IF_NEEDED,
+      CREATE_NEVER
+    }
+
     @Override
     public PDone expand(PCollection<T> input) {
       checkArgument((getLocation() != null), "withLocation() is required");
+
+      checkArgument((getUserDataMapper() != null), "withUserDataMapper() is required");
+
       checkArgument(getTable() != null, "withTable() is required");
 
       if (getQuery() != null) {
         checkArgument(
-            (getLocation().get().getStage() != null), "withQuery() requires stage in location");
+            (getLocation().get().getStage() != null), "withQuery() requires stage as location");
       }
 
       checkArgument(
@@ -972,7 +999,13 @@ public class SnowflakeIO {
     private ParDo.SingleOutput<Object, Object> copyToTable(Location location) {
       return ParDo.of(
           new CopyToTableFn<>(
-              getDataSourceProviderFn(), getTable(), getQuery(), location, getWriteDisposition()));
+              getDataSourceProviderFn(),
+              getTable(),
+              getQuery(),
+              location,
+              getCreateDisposition(),
+              getWriteDisposition(),
+              getTableSchema()));
     }
   }
 
@@ -1011,7 +1044,9 @@ public class SnowflakeIO {
     private final String filesPath;
     private final Location location;
     private final String table;
+    private final ValueProvider<String> tableSchema;
     private final ValueProvider<Write.WriteDisposition> writeDisposition;
+    private final ValueProvider<Write.CreateDisposition> createDisposition;
 
     private DataSource dataSource;
     private Connection connection;
@@ -1021,9 +1056,12 @@ public class SnowflakeIO {
         ValueProvider<String> table,
         ValueProvider<String> query,
         Location location,
-        ValueProvider<Write.WriteDisposition> writeDisposition) {
+        ValueProvider<Write.CreateDisposition> createDisposition,
+        ValueProvider<Write.WriteDisposition> writeDisposition,
+        ValueProvider<String> tableSchema) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.table = table.get();
+      this.tableSchema = tableSchema;
       this.location = location;
       if (query != null) {
         String formattedQuery = String.format(query.get(), location.getFilesLocationForCopy());
@@ -1034,13 +1072,13 @@ public class SnowflakeIO {
       }
 
       this.filesPath = location.getFilesPath();
+      this.createDisposition = createDisposition;
       this.writeDisposition = writeDisposition;
     }
 
     @Setup
     public void setup() throws Exception {
       dataSource = dataSourceProviderFn.apply(null);
-      prepareTableAccordingWriteDisposition(dataSource);
       connection = dataSource.getConnection();
     }
 
@@ -1050,6 +1088,7 @@ public class SnowflakeIO {
       String files = String.join(", ", filesList);
       files = files.replaceAll(String.valueOf(this.filesPath), "");
 
+      prepareTableAccordingCreateDisposition(dataSource);
       prepareTableAccordingWriteDisposition(dataSource);
 
       String query;
@@ -1074,6 +1113,63 @@ public class SnowflakeIO {
       if (connection != null) {
         connection.close();
       }
+    }
+
+    private void prepareTableAccordingCreateDisposition(DataSource dataSource) throws SQLException {
+      switch (this.createDisposition.get()) {
+        case CREATE_NEVER:
+          break;
+        case CREATE_IF_NEEDED:
+          createTableIfNotExists(dataSource);
+          break;
+      }
+    }
+
+    private void createTableIfNotExists(DataSource dataSource) throws SQLException {
+      String query =
+          String.format(
+              "SELECT EXISTS (SELECT 1 FROM  information_schema.tables  WHERE  table_name = '%s');",
+              table.toUpperCase());
+
+      runConnectionWithStatement(
+          dataSource,
+          query,
+          resultSet -> {
+            assert resultSet != null;
+            if (!checkResultIfTableExists((ResultSet) resultSet)) {
+              try {
+                createTable(dataSource);
+              } catch (SQLException e) {
+                throw new RuntimeException("Unable to create table.", e);
+              }
+            }
+            return resultSet;
+          });
+    }
+
+    static boolean checkResultIfTableExists(ResultSet resultSet) {
+      try {
+        if (resultSet.next()) {
+          return checkIfResultIsTrue(resultSet);
+        } else {
+          throw new RuntimeException("Unable run pipeline with CREATE IF NEEDED - no response.");
+        }
+      } catch (SQLException e) {
+        throw new RuntimeException("Unable run pipeline with CREATE IF NEEDED disposition.", e);
+      }
+    }
+
+    void createTable(DataSource dataSource) throws SQLException {
+      checkArgument(
+          this.tableSchema != null,
+          "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
+      String query = String.format("CREATE TABLE %s (%s);", this.table, this.tableSchema);
+      runConnectionWithStatement(dataSource, query, null);
+    }
+
+    static boolean checkIfResultIsTrue(ResultSet resultSet) throws SQLException {
+      int columnId = 1;
+      return resultSet.getBoolean(columnId);
     }
 
     private void prepareTableAccordingWriteDisposition(DataSource dataSource) throws SQLException {
@@ -1163,11 +1259,11 @@ public class SnowflakeIO {
     public void processElement(ProcessContext context) throws Exception {
       String query;
       if (parallelization.get()) {
-        query = String.format("put file://%s @%s;", context.element().toString(), this.stage);
+        query = String.format("put file://%s %s;", context.element().toString(), this.stage);
       } else {
         query =
             String.format(
-                "put file://%s/%s @%s;", this.directory, this.fileNameTemplate, this.stage);
+                "put file://%s/%s %s;", this.directory, this.fileNameTemplate, this.stage);
       }
 
       runStatement(
