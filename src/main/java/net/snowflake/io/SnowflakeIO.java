@@ -460,15 +460,15 @@ public class SnowflakeIO {
         from = table.get();
       }
 
+      String sfExternalLocation = externalLocation.get().replace("gs://", "gcs://");
       String copyQuery =
           String.format(
               "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
-              externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
+              sfExternalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
 
       runStatement(copyQuery, connection, null);
 
-      // Replace gcs:// schema with gs:// schema
-      String output = externalLocation.get().replace("gcs://", "gs://");
+      String output = externalLocation.get();
       // Append * because for MatchAll paths must not end with /
       output += "*";
       context.output(output);
