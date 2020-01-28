@@ -11,6 +11,9 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import net.snowflake.io.SnowflakeIO;
 import net.snowflake.io.credentials.SnowflakeCredentialsFactory;
+import net.snowflake.io.data.SFColumn;
+import net.snowflake.io.data.SFTableSchema;
+import net.snowflake.io.data.text.SFVarchar;
 import net.snowflake.io.locations.Location;
 import net.snowflake.io.locations.LocationFactory;
 import net.snowflake.test.TestUtils;
@@ -137,7 +140,8 @@ public class CreateDispositionWriteExternalLocationTest {
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
-    String schema = "id VARCHAR";
+    SFTableSchema tableSchema = new SFTableSchema(SFColumn.of("id", new SFVarchar()));
+
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
@@ -145,7 +149,7 @@ public class CreateDispositionWriteExternalLocationTest {
             SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to("test_example_success")
-                .withTableSchema(schema)
+                .withTableSchema(tableSchema)
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())

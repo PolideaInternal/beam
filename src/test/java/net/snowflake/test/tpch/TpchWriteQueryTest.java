@@ -2,6 +2,10 @@ package net.snowflake.test.tpch;
 
 import net.snowflake.io.SnowflakeIO;
 import net.snowflake.io.credentials.SnowflakeCredentialsFactory;
+import net.snowflake.io.data.SFColumn;
+import net.snowflake.io.data.SFTableSchema;
+import net.snowflake.io.data.numeric.SFNumber;
+import net.snowflake.io.data.text.SFVarchar;
 import net.snowflake.io.locations.LocationFactory;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.PipelineResult;
@@ -45,6 +49,11 @@ public class TpchWriteQueryTest {
 
   @Test
   public void tpchWriteTestForTable() {
+    SFTableSchema tableSchema = SFTableSchema.of(
+            SFColumn.of("L_ORDERKEY", SFNumber.of()),
+            SFColumn.of("L_SUPPKEY", SFNumber.of()),
+            SFColumn.of("L_COMMENT", SFVarchar.of(44))
+    );
 
     PCollection<GenericRecord> items =
         pipeline.apply(ParquetIO.read(TpchTestUtils.getSchema()).from(parquetFilesLocation));
@@ -54,7 +63,8 @@ public class TpchWriteQueryTest {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .to(table)
             .withQueryTransformation(QUERY_TRANSFORMATION)
-            .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
+            .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+            .withTableSchema(tableSchema)
             .via(LocationFactory.of(options))
             .withUserDataMapper(TpchTestUtils.getUserDataMapper()));
 

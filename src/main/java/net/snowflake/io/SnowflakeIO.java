@@ -23,6 +23,7 @@ import net.snowflake.io.credentials.KeyPairSnowflakeCredentials;
 import net.snowflake.io.credentials.OAuthTokenSnowflakeCredentials;
 import net.snowflake.io.credentials.SnowflakeCredentials;
 import net.snowflake.io.credentials.UsernamePasswordSnowflakeCredentials;
+import net.snowflake.io.data.SFTableSchema;
 import net.snowflake.io.locations.Location;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
@@ -790,7 +791,7 @@ public class SnowflakeIO {
     abstract UserDataMapper getUserDataMapper();
 
     @Nullable
-    abstract ValueProvider<String> getTableSchema();
+    abstract ValueProvider<SFTableSchema> getTableSchema();
 
     abstract Builder<T> toBuilder();
 
@@ -815,7 +816,7 @@ public class SnowflakeIO {
 
       abstract Builder<T> setCreateDisposition(ValueProvider<CreateDisposition> createDisposition);
 
-      abstract Builder<T> setTableSchema(ValueProvider<String> tableSchema);
+      abstract Builder<T> setTableSchema(ValueProvider<SFTableSchema> tableSchema);
 
       abstract Write<T> build();
     }
@@ -889,12 +890,12 @@ public class SnowflakeIO {
       return withCreateDisposition(ValueProvider.StaticValueProvider.of(createDisposition));
     }
 
-    public Write<T> withTableSchema(ValueProvider<String> tableSchema) {
-      return toBuilder().setTableSchema(tableSchema).build();
-    }
+      public Write<T> withTableSchema(SFTableSchema tableSchema) {
+          return withTableSchema(ValueProvider.StaticValueProvider.of(tableSchema));
+      }
 
-    public Write<T> withTableSchema(String tableSchema) {
-      return withTableSchema(ValueProvider.StaticValueProvider.of(tableSchema));
+    public Write<T> withTableSchema(ValueProvider<SFTableSchema> tableSchema) {
+      return toBuilder().setTableSchema(tableSchema).build();
     }
 
     public enum WriteDisposition {
@@ -1059,7 +1060,7 @@ public class SnowflakeIO {
     private final String filesPath;
     private final Location location;
     private final String table;
-    private final ValueProvider<String> tableSchema;
+    private final ValueProvider<SFTableSchema> tableSchema;
     private final ValueProvider<Write.WriteDisposition> writeDisposition;
     private final ValueProvider<Write.CreateDisposition> createDisposition;
 
@@ -1073,7 +1074,7 @@ public class SnowflakeIO {
         Location location,
         ValueProvider<Write.CreateDisposition> createDisposition,
         ValueProvider<Write.WriteDisposition> writeDisposition,
-        ValueProvider<String> tableSchema) {
+        ValueProvider<SFTableSchema> tableSchema) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.table = table.get();
       this.tableSchema = tableSchema;
@@ -1178,7 +1179,7 @@ public class SnowflakeIO {
       checkArgument(
           this.tableSchema != null,
           "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
-      String query = String.format("CREATE TABLE %s (%s);", this.table, this.tableSchema);
+      String query = String.format("CREATE TABLE %s (%s);", this.table, this.tableSchema.get().sql());
       runConnectionWithStatement(dataSource, query, null);
     }
 
