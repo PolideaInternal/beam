@@ -303,21 +303,21 @@ public class SnowflakeIO {
     public ReadAll<ParameterT, OutputT> withIntegrationName(String integrationName) {
       checkArgument(
           integrationName != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withIntegrationName(integrationName) called with null integrationName");
+          "net.snowflake.io.SnowflakeIO.readAll().withIntegrationName(integrationName) called with null integrationName");
       return withIntegrationName(ValueProvider.StaticValueProvider.of(integrationName));
     }
 
     public ReadAll<ParameterT, OutputT> withIntegrationName(ValueProvider<String> integrationName) {
       checkArgument(
           integrationName != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withIntegrationName(integrationName) called with null integrationName");
+          "net.snowflake.io.SnowflakeIO.readAll().withIntegrationName(integrationName) called with null integrationName");
       return toBuilder().setIntegrationName(integrationName).build();
     }
 
     public ReadAll<ParameterT, OutputT> withExternalLocation(String externalLocation) {
       checkArgument(
           externalLocation != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withExternalLocation(externalLocation) called with null externalLocation");
+          "net.snowflake.io.SnowflakeIO.readAll().withExternalLocation(externalLocation) called with null externalLocation");
       return withExternalLocation(ValueProvider.StaticValueProvider.of(externalLocation));
     }
 
@@ -325,21 +325,21 @@ public class SnowflakeIO {
         ValueProvider<String> externalLocation) {
       checkArgument(
           externalLocation != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withExternalLocation(externalLocation) called with null externalLocation");
+          "net.snowflake.io.SnowflakeIO.readAll().withExternalLocation(externalLocation) called with null externalLocation");
       return toBuilder().setExternalLocation(externalLocation).build();
     }
 
     public ReadAll<ParameterT, OutputT> withCsvMapper(CsvMapper<OutputT> csvMapper) {
       checkArgument(
           csvMapper != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withCsvMapper(csvMapper) called with null csvMapper");
+          "net.snowflake.io.SnowflakeIO.readAll().withCsvMapper(csvMapper) called with null csvMapper");
       return toBuilder().setCsvMapper(csvMapper).build();
     }
 
     public ReadAll<ParameterT, OutputT> withCoder(Coder<OutputT> coder) {
       checkArgument(
           coder != null,
-          "com.polidea.snowflake.io.SnowflakeIO.readAll().withCoder(coder) called with null coder");
+          "net.snowflake.io.SnowflakeIO.readAll().withCoder(coder) called with null coder");
       return toBuilder().setCoder(coder).build();
     }
 

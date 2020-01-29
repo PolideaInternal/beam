@@ -33,7 +33,7 @@ import org.junit.rules.ExpectedException;
  * Integration tests that checks batch write operation of SnowflakeIO.
  *
  * <p>Example test run: ./gradlew test --tests
- * com.polidea.snowflake.test.BatchWriteTest.writeToInternalWithNamedStageTest
+ * net.snowflake.test.BatchWriteTest.writeToInternalWithNamedStageTest
  * -DintegrationTestPipelineOptions='[ "--runner=DataflowRunner", "--project=...",
  * "--stagingLocation=gs://...", "--serverName=...", "--username=...", "--password=...",
  * "--schema=PUBLIC", "--table=...", "--database=...", "--stage=...", "--internalLocation=./test",
