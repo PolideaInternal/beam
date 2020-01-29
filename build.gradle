@@ -104,7 +104,7 @@ test {
 }
 
 application {
-  mainClassName = 'com.polidea.snowflake.examples.ReadPipelineExample'
+  mainClassName = 'net.snowflake.examples.ReadPipelineExample'
 }
 
 task fatJar(type: Jar) {
