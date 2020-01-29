@@ -93,7 +93,7 @@ Then run script using:
         --table=<SNOWFLAKE TABLE IN DATABASE> 
         --query=<IF NOT TABLE THEN QUERY> 
         --integrationName=<SNOWFLAKE INTEGRATION NAME> 
-        --externalLocation=<GCS LOCATION STARTING WITH gcs://...> 
+        --externalLocation=<GCS LOCATION STARTING WITH gs://...> 
         --runner=<DirectRunner/DataflowRunner>
         --project=<FOR DATAFLOW RUNNER: GCP PROJECT NAME> 
         --tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING WITH gs://...  
@@ -113,7 +113,7 @@ Then run:
         "--username=<SNOWFLAKE USERNAME>", 
         "--password=<SNOWFLAKE PASSWORD>", 
         "--output=<INTERNAL OR EXTERNAL LOCATION FOR SAVING OUTPUT FILES>",  
-        "--externalLocation=<GCS LOCATION STARTING WITH gcs://...>", 
+        "--externalLocation=<GCS LOCATION STARTING WITH gs://...>", 
         "--integrationName=<SNOWFLAKE INTEGRATION NAME>", 
         "--runner=<DirectRunner/DataflowRunner>", 
         "--project=<FOR DATAFLOW RUNNER: GCP PROJECT NAME>", 
