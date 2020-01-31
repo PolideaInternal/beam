@@ -4,7 +4,13 @@ and writing data to [Snowflake](https://www.snowflake.com/) tables. The Snowflak
 [Snowflake JDBC Driver](https://github.com/snowflakedb/snowflake-jdbc).
 
 For more information about Snowflake, see the [Snowflake documentation](https://docs.snowflake.net/manuals/index.html).
- 
+
+# Table of contents
+* [Authentication](#authentication)
+* [DataSource Configuration](#datasource-configuration)
+* [Reading from Snowflake](#reading-from-snowflake)
+* [Using SnowflakeIO jar](#using-snowflakeio-jar)
+
 ## Authentication
 All authentication methods available for the Snowflake JDBC Driver are possible to use with the IO transforms:
 * Username and password
@@ -50,6 +56,99 @@ it using a web-based flow. For information on configuring an OAuth integration a
 Once you have the token, invoke your pipeline with following Pipeline Options: 
 ```
 --oauthToken=<TOKEN>
+```
+
+## DataSource Configuration
+
+DataSource configuration is required in both read and write object for configuring Snowflake connection properties 
+for IO purposes.
+
+###General usage
+Create the DataSource configuration::
+```
+       SnowflakeIO.DataSourceConfiguration
+            .create(SnowflakeCredentialsFactory.of(options))
+            .withUrl(options.getUrl())
+            .withServerName(options.getServerName())
+            .withDatabase(options.getDatabase())
+            .withWarehouse(options.getWarehouse())
+            .withSchema(options.getSchema());
+```
+Where parameters can be:
+
+* `.withUrl(...)` 
+JDBC-like URL for your Snowflake account, including account name and region, without any parameters.
+* `.withServerName(...)`
+Server Name - full server name with account, zone and domain.
+* `.withDatabase(...)`
+Name of the Snowflake database to use. 
+* `.withWarehouse(...)`
+Name of the Snowflake warehouse to use. This parameter is optional. If no warehouse name is specified, the default 
+warehouse for the user is used.
+* `.withSchema(...)`
+Name of the schema in the database to use. This parameter is optional.
+
+**Note** - either `.withUrl(...)` or `.withServerName(...)` is required.
+
+
+## Reading from Snowflake
+One of the functions of SnowflakeIO is reading Snowflake tables - either full tables via table name or custom data 
+via query. Output of the read transform is a [PCollection](https://beam.apache.org/releases/javadoc/2.17.0/org/apache/beam/sdk/values/PCollection.html) 
+of user-defined data type.
+
+###General usage
+The basic `.read()` operation usage:
+
+```
+PCollection<USER_DATA_TYPE> items = pipeline.apply(
+   SnowflakeIO.<USER_DATA_TYPE>read()
+       .withDataSourceConfiguration(dc)
+       .fromTable("MY_TABLE") // or .fromQuery("QUERY")
+       .withExternalLocation("GSC PATH")
+       .withIntegrationName("STORAGE INTEGRATION NAME")
+       .withCsvMapper(MAPPER_TO_USER_DATA_TYPE)
+       .withCoder(BEAM_CODER_FOR_USER_DATA_TYPE));
+)
+```
+
+Where all below parameters are required:
+* `.withDataSourceConfiguration(...)` 
+accepts a [DataSourceConfiguration](#datasource-configuration) object.
+* `.fromTable(...)` or `.fromQuery(...)`
+specifies a Snowflake table name or custom SQL query.
+* `.withExternalLocation(...)`
+accepts the path to a Google Cloud Storage bucket. 
+* `.withIntegrationName(...)`
+accepts the name of a Snowflake storage integration object configured for the GCS bucket specified in the  
+ `.withExternalLocation` parameter.
+* `.withCsvMapper(mapper)`
+accepts a [CSVMapper](#csvmapper) instance for mapping `String[]` to USER_DATA_TYPE.
+* `withCoder(coder)`
+accepts the [Coder](https://beam.apache.org/releases/javadoc/2.0.0/org/apache/beam/sdk/coders/Coder.html) 
+for USER_DATA_TYPE.
+
+####CSVMapper
+SnowflakeIO uses a [COPY INTO <location>](https://docs.snowflake.net/manuals/sql-reference/sql/copy-into-location.html) 
+statement to move data from a Snowflake table to Google Cloud Storage as CSV files. These files are then downloaded 
+via [FileIO](https://beam.apache.org/releases/javadoc/2.3.0/index.html?org/apache/beam/sdk/io/FileIO.html) and 
+processed line by line. Each line is split into an array of Strings using the [OpenCSV](http://opencsv.sourceforge.net/)
+library. 
+
+The CSVMapper’s job is to give the user the possibility to convert the array of Strings to a user-defined type, ie. GenericRecord for Avro or Parquet files, or custom POJO.
+
+Example implementation of CSVMapper for GenericRecord:
+
+```
+static SnowflakeIO.CsvMapper<GenericRecord> getCsvMapper() {
+   return (SnowflakeIO.CsvMapper<GenericRecord>)
+           parts -> {
+               return new GenericRecordBuilder(PARQUET_SCHEMA)
+                       .set("ID", Long.valueOf(parts[0]))
+                       .set("NAME", parts[1])
+                       [...]
+                       .build();
+           };
+}
 ```
 
 ## Using SnowflakeIO jar
