@@ -63,7 +63,7 @@ Once you have the token, invoke your pipeline with following Pipeline Options:
 DataSource configuration is required in both read and write object for configuring Snowflake connection properties 
 for IO purposes.
 
-###General usage
+### General usage
 Create the DataSource configuration::
 ```
        SnowflakeIO.DataSourceConfiguration
@@ -96,7 +96,7 @@ One of the functions of SnowflakeIO is reading Snowflake tables - either full ta
 via query. Output of the read transform is a [PCollection](https://beam.apache.org/releases/javadoc/2.17.0/org/apache/beam/sdk/values/PCollection.html) 
 of user-defined data type.
 
-###General usage
+### General usage
 The basic `.read()` operation usage:
 
 ```
@@ -127,7 +127,7 @@ accepts a [CSVMapper](#csvmapper) instance for mapping `String[]` to USER_DATA_T
 accepts the [Coder](https://beam.apache.org/releases/javadoc/2.0.0/org/apache/beam/sdk/coders/Coder.html) 
 for USER_DATA_TYPE.
 
-####CSVMapper
+#### CSVMapper
 SnowflakeIO uses a [COPY INTO <location>](https://docs.snowflake.net/manuals/sql-reference/sql/copy-into-location.html) 
 statement to move data from a Snowflake table to Google Cloud Storage as CSV files. These files are then downloaded 
 via [FileIO](https://beam.apache.org/releases/javadoc/2.3.0/index.html?org/apache/beam/sdk/io/FileIO.html) and 
