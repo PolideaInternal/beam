@@ -1027,16 +1027,28 @@ public class SnowflakeIO {
   private static class MapObjecsArrayToCsvFn extends DoFn<Object[], String> {
 
     @ProcessElement
-    public void processElement(ProcessContext context) throws Exception {
+    public void processElement(ProcessContext context) {
       List<Object> csvItems = new ArrayList<>();
       for (Object o : context.element()) {
         if (o instanceof String) {
-          csvItems.add(String.format("%s%s%s", CSV_QUOTE_CHAR, o, CSV_QUOTE_CHAR));
+          String field = (String) o;
+          field = field.replace("'", "''");
+          field = quoteField(field);
+
+          csvItems.add(field);
         } else {
           csvItems.add(o);
         }
       }
       context.output(Joiner.on(",").join(csvItems));
+    }
+
+    private String quoteField(String field) {
+      return quoteField(field, CSV_QUOTE_CHAR);
+    }
+
+    private String quoteField(String field, String quotation) {
+      return String.format("%s%s%s", quotation, field, quotation);
     }
   }
 
