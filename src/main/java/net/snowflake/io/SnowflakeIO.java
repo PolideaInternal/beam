@@ -26,6 +26,7 @@ import net.snowflake.io.credentials.UsernamePasswordSnowflakeCredentials;
 import net.snowflake.io.locations.Location;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
+import org.apache.beam.sdk.io.Compression;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.WriteFilesResult;
 import org.apache.beam.sdk.options.ValueProvider;
@@ -965,7 +966,8 @@ public class SnowflakeIO {
                   FileIO.write()
                       .via((FileIO.Sink) new CSVSink())
                       .to(outputDirectory)
-                      .withSuffix(".csv"));
+                      .withSuffix(".csv")
+                      .withCompression(Compression.GZIP));
 
       return (PCollection)
           filesResult
@@ -1096,12 +1098,12 @@ public class SnowflakeIO {
         String integration = this.location.getIntegration();
         query =
             String.format(
-                "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s') STORAGE_INTEGRATION=%s;",
+                "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP) STORAGE_INTEGRATION=%s;",
                 this.table, this.source, files, CSV_QUOTE_CHAR_FOR_COPY, integration);
       } else {
         query =
             String.format(
-                "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
+                "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP);",
                 this.table, this.source, files, CSV_QUOTE_CHAR_FOR_COPY);
       }
 
