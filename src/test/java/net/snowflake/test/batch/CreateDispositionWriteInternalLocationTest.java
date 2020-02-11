@@ -43,7 +43,6 @@ public class CreateDispositionWriteInternalLocationTest {
 
     dc =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
-            .withUrl(options.getUrl())
             .withServerName(options.getServerName())
             .withDatabase(options.getDatabase())
             .withWarehouse(options.getWarehouse())

@@ -64,7 +64,7 @@ tasks.withType(com.github.spotbugs.SpotBugsTask) {
 }
 
 ext {
-  beamVersion = '2.17.0'
+  beamVersion = '2.18.0'
 }
 
 dependencies {
