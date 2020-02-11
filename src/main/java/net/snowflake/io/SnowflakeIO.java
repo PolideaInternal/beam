@@ -132,6 +132,11 @@ public class SnowflakeIO {
     }
 
     public Read<T> withDataSourceConfiguration(final DataSourceConfiguration config) {
+      try {
+        config.buildDatasource().getConnection();
+      } catch (SQLException e) {
+        throw new IllegalArgumentException("Invalid DataSourceConfiguration. Underlying cause: " + e);
+      }
       return withDataSourceProviderFn(new DataSourceProviderFromDataSourceConfiguration(config));
     }
 
@@ -601,6 +606,8 @@ public class SnowflakeIO {
     }
 
     public DataSourceConfiguration withUrl(ValueProvider<String> url) {
+      checkArgument(url.get().startsWith("jdbc:snowflake://"), "url must have format: jdbc:snowflake://<account_name>.snowflakecomputing.com");
+      checkArgument(url.get().endsWith("snowflakecomputing.com"), "url must have format: jdbc:snowflake://<account_name>.snowflakecomputing.com");
       return builder().setUrl(url).build();
     }
 
@@ -633,6 +640,7 @@ public class SnowflakeIO {
     }
 
     public DataSourceConfiguration withServerName(ValueProvider<String> withServerName) {
+      checkArgument(withServerName.get().endsWith("snowflakecomputing.com"), "serverName must be in format <account_name>.snowflakecomputing.com");
       return builder().setServerName(withServerName).build();
     }
 
