@@ -49,11 +49,11 @@ public class TpchWriteQueryTest {
 
   @Test
   public void tpchWriteTestForTable() {
-    SFTableSchema tableSchema = SFTableSchema.of(
+    SFTableSchema tableSchema =
+        SFTableSchema.of(
             SFColumn.of("L_ORDERKEY", SFNumber.of()),
             SFColumn.of("L_SUPPKEY", SFNumber.of()),
-            SFColumn.of("L_COMMENT", SFVarchar.of(44))
-    );
+            SFColumn.of("L_COMMENT", SFVarchar.of(44)));
 
     PCollection<GenericRecord> items =
         pipeline.apply(ParquetIO.read(TpchTestUtils.getSchema()).from(parquetFilesLocation));

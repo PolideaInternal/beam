@@ -6,22 +6,22 @@ import java.util.List;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 
 public class SFTableSchema implements Serializable {
-    private SFColumn[] columns;
+  private SFColumn[] columns;
 
-    public static SFTableSchema of(SFColumn... columns){
-        return new SFTableSchema(columns);
+  public static SFTableSchema of(SFColumn... columns) {
+    return new SFTableSchema(columns);
+  }
+
+  public SFTableSchema(SFColumn... columns) {
+    this.columns = columns;
+  }
+
+  public String sql() {
+    List<String> columnsSqls = new ArrayList<>();
+    for (SFColumn column : columns) {
+      columnsSqls.add(column.sql());
     }
 
-    public SFTableSchema(SFColumn... columns) {
-        this.columns = columns;
-    }
-
-    public String sql() {
-        List<String> columnsSqls = new ArrayList<>();
-        for (SFColumn column : columns) {
-            columnsSqls.add(column.sql());
-        }
-
-        return Joiner.on(", ").join(columnsSqls);
-    }
+    return Joiner.on(", ").join(columnsSqls);
+  }
 }

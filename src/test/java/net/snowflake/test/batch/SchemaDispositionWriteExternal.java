@@ -1,5 +1,9 @@
 package net.snowflake.test.batch;
 
+import static org.junit.Assume.assumeNotNull;
+
+import java.sql.SQLException;
+import javax.sql.DataSource;
 import net.snowflake.io.SnowflakeIO;
 import net.snowflake.io.credentials.SnowflakeCredentialsFactory;
 import net.snowflake.io.data.SFColumn;
@@ -20,27 +24,21 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
-import static org.junit.Assume.assumeNotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import javax.sql.DataSource;
-import java.sql.SQLException;
-
 public class SchemaDispositionWriteExternal {
-  @Rule
-  public final transient TestPipeline pipeline = TestPipeline.create();
+  @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static DataSource dataSource;
 
   static BatchTestPipelineOptions options;
   static SnowflakeIO.DataSourceConfiguration dc;
   static Location locationSpec;
 
-  @Rule
-  public ExpectedException exceptionRule = ExpectedException.none();
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @BeforeClass
   public static void setupAll() {
@@ -72,7 +70,7 @@ public class SchemaDispositionWriteExternal {
       String datetime = "2014-01-01 16:00:00";
       String time = "00:02:03";
 
-      String[] listOfDates = {date, datetime, time, datetime, datetime, datetime, datetime};
+      String[] listOfDates = {date, datetime, time, datetime, datetime, datetime, datetime, null};
       c.output(listOfDates);
     }
   }
@@ -83,15 +81,15 @@ public class SchemaDispositionWriteExternal {
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
-    SFTableSchema tableSchema = new SFTableSchema(
-        SFColumn.of("date", new SFDate()),
-        SFColumn.of("datetime", new SFDateTime()),
-        SFColumn.of("time", new SFTime()),
-        SFColumn.of("timestamp", new SFTimestamp()),
-        SFColumn.of("timestamp_ntz", new SFTimestampNTZ()),
-        SFColumn.of("timestamp_ltz", new SFTimestampLTZ()),
-        SFColumn.of("timestamp_tz", new SFTimestampTZ())
-    );
+    SFTableSchema tableSchema =
+        new SFTableSchema(
+            SFColumn.of("date", new SFDate()),
+            SFColumn.of("datetime", new SFDateTime()),
+            SFColumn.of("time", new SFTime()),
+            SFColumn.of("timestamp", new SFTimestamp()),
+            SFColumn.of("timestamp_ntz", new SFTimestampNTZ()),
+            SFColumn.of("timestamp_ltz", new SFTimestampLTZ()),
+            SFColumn.of("timestamp_tz", new SFTimestampTZ()));
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))

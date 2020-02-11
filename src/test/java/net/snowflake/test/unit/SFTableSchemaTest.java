@@ -7,21 +7,18 @@ import net.snowflake.io.data.text.SFVarchar;
 import org.junit.Test;
 
 public class SFTableSchemaTest {
-    @Test
-    public void testOneColumn() {
-        SFTableSchema schema = new SFTableSchema(SFColumn.of("id", SFVarchar.of()));
+  @Test
+  public void testOneColumn() {
+    SFTableSchema schema = new SFTableSchema(SFColumn.of("id", SFVarchar.of()));
 
-        assert schema.sql().equals("id VARCHAR");
-    }
+    assert schema.sql().equals("id VARCHAR");
+  }
 
-    @Test
-    public void testTwoColumns() {
-        SFTableSchema schema = new SFTableSchema(
-                SFColumn.of("id", new SFVarchar()),
-                SFColumn.of("tax", new SFDouble())
-        );
+  @Test
+  public void testTwoColumns() {
+    SFTableSchema schema =
+        new SFTableSchema(SFColumn.of("id", new SFVarchar()), SFColumn.of("tax", new SFDouble()));
 
-        assert schema.sql().equals("id VARCHAR, tax FLOAT");
-    }
-
+    assert schema.sql().equals("id VARCHAR, tax FLOAT");
+  }
 }

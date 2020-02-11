@@ -890,9 +890,9 @@ public class SnowflakeIO {
       return withCreateDisposition(ValueProvider.StaticValueProvider.of(createDisposition));
     }
 
-      public Write<T> withTableSchema(SFTableSchema tableSchema) {
-          return withTableSchema(ValueProvider.StaticValueProvider.of(tableSchema));
-      }
+    public Write<T> withTableSchema(SFTableSchema tableSchema) {
+      return withTableSchema(ValueProvider.StaticValueProvider.of(tableSchema));
+    }
 
     public Write<T> withTableSchema(ValueProvider<SFTableSchema> tableSchema) {
       return toBuilder().setTableSchema(tableSchema).build();
@@ -1179,7 +1179,8 @@ public class SnowflakeIO {
       checkArgument(
           this.tableSchema != null,
           "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
-      String query = String.format("CREATE TABLE %s (%s);", this.table, this.tableSchema.get().sql());
+      String query =
+          String.format("CREATE TABLE %s (%s);", this.table, this.tableSchema.get().sql());
       runConnectionWithStatement(dataSource, query, null);
     }
 

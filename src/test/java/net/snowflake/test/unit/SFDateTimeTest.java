@@ -58,5 +58,4 @@ public class SFDateTimeTest {
 
     assert timestamp.sql().equals("TIMESTAMP_TZ");
   }
-
 }

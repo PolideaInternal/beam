@@ -1,4 +1,3 @@
 package net.snowflake.io.data.numeric;
 
-public class SFReal extends SFFloat {
-}
+public class SFReal extends SFFloat {}

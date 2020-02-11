@@ -3,12 +3,10 @@ package net.snowflake.io.data.logical;
 import net.snowflake.io.data.SFDataType;
 
 public class SFBoolean implements SFDataType {
-    public SFBoolean() {
-    }
+  public SFBoolean() {}
 
-    @Override
-    public String sql() {
-        return "BOOLEAN";
-    }
-
+  @Override
+  public String sql() {
+    return "BOOLEAN";
+  }
 }
