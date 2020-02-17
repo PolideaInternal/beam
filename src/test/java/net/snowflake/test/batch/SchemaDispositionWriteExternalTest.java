@@ -1,6 +1,5 @@
 package net.snowflake.test.batch;
 
-import org.junit.After;
 import static org.junit.Assume.assumeNotNull;
 
 import com.google.api.gax.paging.Page;
@@ -33,9 +32,9 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
