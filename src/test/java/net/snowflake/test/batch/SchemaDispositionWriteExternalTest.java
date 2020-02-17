@@ -2,6 +2,10 @@ package net.snowflake.test.batch;
 
 import static org.junit.Assume.assumeNotNull;
 
+import com.google.api.gax.paging.Page;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import net.snowflake.io.SnowflakeIO;
@@ -27,14 +31,14 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-public class SchemaDispositionWriteExternal {
+public class SchemaDispositionWriteExternalTest {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static DataSource dataSource;
 
@@ -67,6 +71,27 @@ public class SchemaDispositionWriteExternal {
     assumeNotNull(options.getExternalLocation());
   }
 
+  @After
+  public void tearDown() throws Exception {
+    if (options.getExternalLocation() != null) {
+      String storageName = options.getExternalLocation();
+      storageName = storageName.replaceAll("gs://", "");
+      String[] splitted = storageName.split("/", 2);
+      String bucketName = splitted[0];
+      String path = splitted[1];
+      Storage storage = StorageOptions.getDefaultInstance().getService();
+      Page<Blob> blobs =
+          storage.list(
+              bucketName,
+              Storage.BlobListOption.currentDirectory(),
+              Storage.BlobListOption.prefix(path));
+
+      for (Blob blob : blobs.iterateAll()) {
+        storage.delete(blob.getBlobId());
+      }
+    }
+  }
+
   static class GenerateDates extends DoFn<Long, String[]> {
     @ProcessElement
     public void processElement(ProcessContext c) {
@@ -74,7 +99,7 @@ public class SchemaDispositionWriteExternal {
       String datetime = "2014-01-01 16:00:00";
       String time = "00:02:03";
 
-      String[] listOfDates = {date, datetime, time, datetime, datetime, datetime, datetime, null};
+      String[] listOfDates = {date, datetime, time, datetime, datetime, datetime, datetime};
       c.output(listOfDates);
     }
   }
@@ -82,18 +107,14 @@ public class SchemaDispositionWriteExternal {
   static class GenerateStructuredData extends DoFn<Long, String[]> {
     @ProcessElement
     public void processElement(ProcessContext c) {
-      String array = "(\"1\", \"2\", \"3\")";
-      String json = "{ \"key1\": \"value1\", \"key2\": \"value2\" }";
-      String object =
-          "{ \"outer_key1\": { \"inner_key1A\": \"1a\", \"inner_key1B\": \"1b\" },  \"outer_key2\": { \"inner_key2\": 2 } } ";
-
-      String[] listOfDates = {json, object, array};
+      String json = "{ \"key1\": 1, \"key2\": {\"inner_key\": \"value2\", \"inner_key2\":18} }";
+      String array = "[1,2,3]";
+      String[] listOfDates = {array, json, json};
       c.output(listOfDates);
     }
   }
 
   @Test
-  @Ignore
   public void writeToExternalWithCreatedTableWithDatetimeSchemaSuccess() throws SQLException {
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
@@ -137,9 +158,9 @@ public class SchemaDispositionWriteExternal {
 
     SFTableSchema tableSchema =
         new SFTableSchema(
-            SFColumn.of("variant", new SFVariant()),
+            SFColumn.of("variant", new SFArray()),
             SFColumn.of("object", new SFObject()),
-            SFColumn.of("array", new SFArray()));
+            SFColumn.of("array", new SFVariant()));
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
@@ -159,8 +180,8 @@ public class SchemaDispositionWriteExternal {
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
 
-    //    TestUtils.runConnectionWithStatement(
-    //        dataSource, String.format("DROP TABLE IF EXISTS test_example_success;"));
+    TestUtils.runConnectionWithStatement(
+        dataSource, String.format("DROP TABLE IF EXISTS test_example_success_objects;"));
   }
 
   public static SnowflakeIO.UserDataMapper<String[]> getCsvMapper() {
