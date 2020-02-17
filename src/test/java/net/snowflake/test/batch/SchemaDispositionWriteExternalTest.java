@@ -1,5 +1,6 @@
 package net.snowflake.test.batch;
 
+import org.junit.After;
 import static org.junit.Assume.assumeNotNull;
 
 import com.google.api.gax.paging.Page;
@@ -72,7 +73,7 @@ public class SchemaDispositionWriteExternalTest {
     assumeNotNull(options.getExternalLocation());
   }
 
-  //  @After
+  @After
   public void tearDown() throws Exception {
     if (options.getExternalLocation() != null) {
       String storageName = options.getExternalLocation();
@@ -125,7 +126,6 @@ public class SchemaDispositionWriteExternalTest {
   }
 
   @Test
-  @Ignore
   public void writeToExternalWithCreatedTableWithDatetimeSchemaSuccess() throws SQLException {
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
@@ -192,11 +192,10 @@ public class SchemaDispositionWriteExternalTest {
     pipelineResult.waitUntilFinish();
 
     TestUtils.runConnectionWithStatement(
-        dataSource, String.format("DROP TABLE IF EXISTS test_example_success;"));
+        dataSource, String.format("DROP TABLE IF EXISTS test_example_nulls_success;"));
   }
 
   @Test
-  @Ignore
   public void writeToExternalWithCreatedTableWithStructuredDataSchemaSuccess() throws SQLException {
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
