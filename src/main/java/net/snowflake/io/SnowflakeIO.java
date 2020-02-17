@@ -1042,7 +1042,7 @@ public class SnowflakeIO {
           csvItems.add(o);
         }
       }
-      context.output(Joiner.on(",").join(csvItems));
+      context.output(Joiner.on(",").useForNull("").join(csvItems));
     }
 
     private String quoteField(String field) {

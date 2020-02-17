@@ -11,6 +11,10 @@ public class SFColumn implements Serializable {
     return new SFColumn(name, dataType);
   }
 
+  public static SFColumn of(String name, SFDataType dataType, boolean isNull) {
+    return new SFColumn(name, dataType, isNull);
+  }
+
   public SFColumn(String name, SFDataType dataType) {
     this.name = name;
     this.dataType = dataType;

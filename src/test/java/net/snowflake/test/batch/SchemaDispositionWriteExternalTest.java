@@ -22,6 +22,7 @@ import net.snowflake.io.data.datetime.SFTimestampTZ;
 import net.snowflake.io.data.structured.SFArray;
 import net.snowflake.io.data.structured.SFObject;
 import net.snowflake.io.data.structured.SFVariant;
+import net.snowflake.io.data.text.SFText;
 import net.snowflake.io.locations.Location;
 import net.snowflake.io.locations.LocationFactory;
 import net.snowflake.test.TestUtils;
@@ -31,9 +32,9 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -71,7 +72,7 @@ public class SchemaDispositionWriteExternalTest {
     assumeNotNull(options.getExternalLocation());
   }
 
-  @After
+  //  @After
   public void tearDown() throws Exception {
     if (options.getExternalLocation() != null) {
       String storageName = options.getExternalLocation();
@@ -104,6 +105,15 @@ public class SchemaDispositionWriteExternalTest {
     }
   }
 
+  static class GenerateNulls extends DoFn<Long, String[]> {
+    @ProcessElement
+    public void processElement(ProcessContext c) {
+
+      String[] listOfDates = {null, null, null};
+      c.output(listOfDates);
+    }
+  }
+
   static class GenerateStructuredData extends DoFn<Long, String[]> {
     @ProcessElement
     public void processElement(ProcessContext c) {
@@ -115,6 +125,7 @@ public class SchemaDispositionWriteExternalTest {
   }
 
   @Test
+  @Ignore
   public void writeToExternalWithCreatedTableWithDatetimeSchemaSuccess() throws SQLException {
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
@@ -152,6 +163,40 @@ public class SchemaDispositionWriteExternalTest {
   }
 
   @Test
+  public void writeToExternalWithCreatedTableWithNullValuesInSchemaSuccess() throws SQLException {
+    locationSpec =
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
+
+    SFTableSchema tableSchema =
+        new SFTableSchema(
+            SFColumn.of("date", new SFDate(), true),
+            new SFColumn("datetime", new SFDateTime(), true),
+            SFColumn.of("text", new SFText(), true));
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(ParDo.of(new GenerateNulls()))
+        .apply(
+            "Copy IO",
+            SnowflakeIO.<String[]>write()
+                .withDataSourceConfiguration(dc)
+                .to("test_example_nulls_success")
+                .withTableSchema(tableSchema)
+                .via(locationSpec)
+                .withFileNameTemplate("output*")
+                .withUserDataMapper(getCsvMapper())
+                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withParallelization(false));
+
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+
+    TestUtils.runConnectionWithStatement(
+        dataSource, String.format("DROP TABLE IF EXISTS test_example_success;"));
+  }
+
+  @Test
+  @Ignore
   public void writeToExternalWithCreatedTableWithStructuredDataSchemaSuccess() throws SQLException {
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
