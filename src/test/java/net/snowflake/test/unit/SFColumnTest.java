@@ -11,4 +11,11 @@ public class SFColumnTest {
 
     assert column.sql().equals("id VARCHAR");
   }
+
+  @Test
+  public void testNullColumn() {
+    SFColumn column = SFColumn.of("id", SFVarchar.of(), true);
+
+    assert column.sql().equals("id VARCHAR NULL");
+  }
 }

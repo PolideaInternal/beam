@@ -11,7 +11,7 @@ public class SFBinary implements SFDataType {
   public SFBinary() {}
 
   public SFBinary(long size) {
-    if (size < MAX_SIZE) {
+    if (size > MAX_SIZE) {
       throw new IllegalArgumentException();
     }
     this.size = size;
