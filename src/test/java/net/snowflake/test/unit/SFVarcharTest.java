@@ -60,8 +60,8 @@ public class SFVarcharTest {
     assert binary.sql().equals("BINARY(100)");
   }
 
-  @Rule
-  public ExpectedException exceptionRule = ExpectedException.none();
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
   @Test
   public void testBinaryReachesLimit() {
     exceptionRule.expect(IllegalArgumentException.class);

@@ -1,6 +1,5 @@
 package net.snowflake.test.unit;
 
-import net.snowflake.io.data.SFColumn;
 import net.snowflake.io.data.datetime.SFDate;
 import net.snowflake.io.data.datetime.SFDateTime;
 import net.snowflake.io.data.datetime.SFTime;
