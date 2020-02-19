@@ -131,13 +131,13 @@ public class SchemaDispositionWriteExternalTest {
 
     SFTableSchema tableSchema =
         new SFTableSchema(
-            SFColumn.of("date", new SFDate()),
-            SFColumn.of("datetime", new SFDateTime()),
-            SFColumn.of("time", new SFTime()),
-            SFColumn.of("timestamp", new SFTimestamp()),
-            SFColumn.of("timestamp_ntz", new SFTimestampNTZ()),
-            SFColumn.of("timestamp_ltz", new SFTimestampLTZ()),
-            SFColumn.of("timestamp_tz", new SFTimestampTZ()));
+            SFColumn.of("date", SFDate.of()),
+            SFColumn.of("datetime", SFDateTime.of()),
+            SFColumn.of("time", SFTime.of()),
+            SFColumn.of("timestamp", SFTimestamp.of()),
+            SFColumn.of("timestamp_ntz", SFTimestampNTZ.of()),
+            SFColumn.of("timestamp_ltz", SFTimestampLTZ.of()),
+            SFColumn.of("timestamp_tz", SFTimestampTZ.of()));
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
@@ -168,9 +168,9 @@ public class SchemaDispositionWriteExternalTest {
 
     SFTableSchema tableSchema =
         new SFTableSchema(
-            SFColumn.of("date", new SFDate(), true),
-            new SFColumn("datetime", new SFDateTime(), true),
-            SFColumn.of("text", new SFText(), true));
+            SFColumn.of("date", SFDate.of(), true),
+            new SFColumn("datetime", SFDateTime.of(), true),
+            SFColumn.of("text", SFText.of(), true));
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
@@ -201,9 +201,9 @@ public class SchemaDispositionWriteExternalTest {
 
     SFTableSchema tableSchema =
         new SFTableSchema(
-            SFColumn.of("variant", new SFArray()),
-            SFColumn.of("object", new SFObject()),
-            SFColumn.of("array", new SFVariant()));
+            SFColumn.of("variant", SFArray.of()),
+            SFColumn.of("object", SFObject.of()),
+            SFColumn.of("array", SFVariant.of()));
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))

@@ -12,28 +12,28 @@ import org.junit.Test;
 public class SFNumericTest {
   @Test
   public void testDecimal() {
-    SFDecimal decimal = new SFDecimal(20, 1);
+    SFDecimal decimal = SFDecimal.of(20, 1);
 
     assert decimal.sql().equals("NUMBER(20,1)");
   }
 
   @Test
   public void testDouble() {
-    SFDouble sfDouble = new SFDouble();
+    SFDouble sfDouble = SFDouble.of();
 
     assert sfDouble.sql().equals("FLOAT");
   }
 
   @Test
   public void testFloat() {
-    SFFloat sfFloat = new SFFloat();
+    SFFloat sfFloat = SFFloat.of();
 
     assert sfFloat.sql().equals("FLOAT");
   }
 
   @Test
   public void testInteger() {
-    SFInteger sfInteger = new SFInteger();
+    SFInteger sfInteger = SFInteger.of();
 
     assert sfInteger.sql().equals("NUMBER(38,0)");
   }
@@ -47,14 +47,14 @@ public class SFNumericTest {
 
   @Test
   public void testNumeric() {
-    SFNumeric sfNumeric = new SFNumeric(33, 2);
+    SFNumeric sfNumeric = SFNumeric.of(33, 2);
 
     assert sfNumeric.sql().equals("NUMBER(33,2)");
   }
 
   @Test
   public void testReal() {
-    SFReal sfReal = new SFReal();
+    SFReal sfReal = SFReal.of();
 
     assert sfReal.sql().equals("FLOAT");
   }

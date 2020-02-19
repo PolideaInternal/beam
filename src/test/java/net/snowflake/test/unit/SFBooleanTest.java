@@ -6,7 +6,7 @@ import org.junit.Test;
 public class SFBooleanTest {
   @Test
   public void testBoolean() {
-    SFBoolean sfBoolean = new SFBoolean();
+    SFBoolean sfBoolean = SFBoolean.of();
 
     assert sfBoolean.sql().equals("BOOLEAN");
   }

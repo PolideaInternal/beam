@@ -10,6 +10,14 @@ public class SFBinary implements SFDataType {
 
   public SFBinary() {}
 
+  public static SFBinary of() {
+    return new SFBinary();
+  }
+
+  public static SFBinary of(long size) {
+    return new SFBinary(size);
+  }
+
   public SFBinary(long size) {
     if (size > MAX_SIZE) {
       throw new IllegalArgumentException();

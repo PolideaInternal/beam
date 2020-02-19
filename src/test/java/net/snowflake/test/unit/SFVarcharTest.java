@@ -27,35 +27,35 @@ public class SFVarcharTest {
 
   @Test
   public void testString() {
-    SFString str = new SFString();
+    SFString str = SFString.of();
 
     assert str.sql().equals("VARCHAR");
   }
 
   @Test
   public void testText() {
-    SFText text = new SFText();
+    SFText text = SFText.of();
 
     assert text.sql().equals("VARCHAR");
   }
 
   @Test
   public void testBinary() {
-    SFBinary binary = new SFBinary();
+    SFBinary binary = SFBinary.of();
 
     assert binary.sql().equals("BINARY");
   }
 
   @Test
   public void testVarBinary() {
-    SFVarBinary binary = new SFVarBinary();
+    SFVarBinary binary = SFVarBinary.of();
 
     assert binary.sql().equals("BINARY");
   }
 
   @Test
   public void testBinaryWithLimit() {
-    SFBinary binary = new SFBinary(100);
+    SFBinary binary = SFBinary.of(100);
 
     assert binary.sql().equals("BINARY(100)");
   }
@@ -65,13 +65,13 @@ public class SFVarcharTest {
   @Test
   public void testBinaryReachesLimit() {
     exceptionRule.expect(IllegalArgumentException.class);
-    SFBinary binary = new SFBinary(8388609L);
+    SFBinary.of(8388609L);
   }
 
   @Test
   public void testChar() {
-    SFChar chartext = new SFChar();
+    SFChar sfChar = SFChar.of();
 
-    assert chartext.sql().equals("VARCHAR(1)");
+    assert sfChar.sql().equals("VARCHAR(1)");
   }
 }

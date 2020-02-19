@@ -8,21 +8,21 @@ import org.junit.Test;
 public class SFStructuredDataTest {
   @Test
   public void testVariant() {
-    SFVariant variant = new SFVariant();
+    SFVariant variant = SFVariant.of();
 
     assert variant.sql().equals("VARIANT");
   }
 
   @Test
   public void testArray() {
-    SFArray array = new SFArray();
+    SFArray array = SFArray.of();
 
     assert array.sql().equals("ARRAY");
   }
 
   @Test
   public void testObject() {
-    SFObject object = new SFObject();
+    SFObject object = SFObject.of();
 
     assert object.sql().equals("OBJECT");
   }
