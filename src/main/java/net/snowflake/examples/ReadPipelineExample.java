@@ -72,7 +72,7 @@ public class ReadPipelineExample {
             SnowflakeIO.<KV<Integer, String>>read()
                 .withDataSourceConfiguration(dc)
                 .fromQuery(query)
-                .withExternalLocation(externalLocation)
+                .withStagingBucketName(externalLocation)
                 .withIntegrationName(integrationName)
                 .withCsvMapper(
                     new SnowflakeIO.CsvMapper<KV<Integer, String>>() {

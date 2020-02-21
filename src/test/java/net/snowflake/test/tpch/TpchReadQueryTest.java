@@ -22,7 +22,7 @@ public class TpchReadQueryTest {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
-  private static String externalLocation;
+  private static String stagingBucketName;
   private static String integrationName;
   private static String output;
 
@@ -30,7 +30,7 @@ public class TpchReadQueryTest {
   public static void setup() {
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
-    externalLocation = options.getExternalLocation();
+    stagingBucketName = options.getStagingBucketName();
     integrationName = options.getStorageIntegration();
     output = options.getParquetFilesLocation();
     String testSize = options.getTestSize();
@@ -39,7 +39,6 @@ public class TpchReadQueryTest {
 
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
-            .withUrl(options.getUrl())
             .withServerName(options.getServerName())
             .withWarehouse(options.getWarehouse())
             .withDatabase(DATABASE)
@@ -53,7 +52,7 @@ public class TpchReadQueryTest {
             SnowflakeIO.<GenericRecord>read()
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromQuery(QUERY)
-                .withExternalLocation(externalLocation)
+                .withStagingBucketName(stagingBucketName)
                 .withIntegrationName(integrationName)
                 .withCsvMapper(TpchTestUtils.getCsvMapper())
                 .withCoder(AvroCoder.of(TpchTestUtils.getSchema())));

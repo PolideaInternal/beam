@@ -13,8 +13,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
@@ -98,7 +101,7 @@ public class SnowflakeIO {
     abstract ValueProvider<String> getIntegrationName();
 
     @Nullable
-    abstract ValueProvider<String> getExternalLocation();
+    abstract ValueProvider<String> getStagingBucketName();
 
     @Nullable
     abstract CsvMapper<T> getCsvMapper();
@@ -119,7 +122,7 @@ public class SnowflakeIO {
 
       abstract Builder<T> setIntegrationName(ValueProvider<String> integrationName);
 
-      abstract Builder<T> setExternalLocation(ValueProvider<String> externalLocation);
+      abstract Builder<T> setStagingBucketName(ValueProvider<String> stagingBucketName);
 
       abstract Builder<T> setCsvMapper(CsvMapper<T> csvMapper);
 
@@ -159,12 +162,12 @@ public class SnowflakeIO {
       return toBuilder().setTable(table).build();
     }
 
-    public Read<T> withExternalLocation(String externalLocation) {
-      return withExternalLocation(ValueProvider.StaticValueProvider.of(externalLocation));
+    public Read<T> withStagingBucketName(String stagingBucketName) {
+      return withStagingBucketName(ValueProvider.StaticValueProvider.of(stagingBucketName));
     }
 
-    public Read<T> withExternalLocation(ValueProvider<String> externalLocation) {
-      return toBuilder().setExternalLocation(externalLocation).build();
+    public Read<T> withStagingBucketName(ValueProvider<String> stagingBucketName) {
+      return toBuilder().setStagingBucketName(stagingBucketName).build();
     }
 
     public Read<T> withIntegrationName(String integrationName) {
@@ -192,7 +195,7 @@ public class SnowflakeIO {
       checkArgument(getCsvMapper() != null, "withCsvMapper() is required");
       checkArgument(getCoder() != null, "withCoder() is required");
       checkArgument(getIntegrationName() != null, "withIntegrationName() is required");
-      checkArgument(getExternalLocation() != null, "withExternalLocation() is required");
+      checkArgument(getStagingBucketName() != null, "withStagingBucketName() is required");
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
@@ -205,7 +208,7 @@ public class SnowflakeIO {
                   .fromQuery(getQuery())
                   .fromTable(getTable())
                   .withCsvMapper(getCsvMapper())
-                  .withExternalLocation(getExternalLocation())
+                  .withStagingBucketName(getStagingBucketName())
                   .withIntegrationName(getIntegrationName())
                   .withCoder(getCoder()));
     }
@@ -220,7 +223,7 @@ public class SnowflakeIO {
         builder.add(DisplayData.item("table", getTable()));
       }
       builder.add(DisplayData.item("integrationName", getIntegrationName()));
-      builder.add(DisplayData.item("externalLocation", getExternalLocation()));
+      builder.add(DisplayData.item("stagingBucketName", getStagingBucketName()));
       builder.add(DisplayData.item("csvMapper", getCsvMapper().getClass().getName()));
       builder.add(DisplayData.item("coder", getCoder().getClass().getName()));
       if (getDataSourceProviderFn() instanceof HasDisplayData) {
@@ -246,7 +249,7 @@ public class SnowflakeIO {
     abstract ValueProvider<String> getIntegrationName();
 
     @Nullable
-    abstract ValueProvider<String> getExternalLocation();
+    abstract ValueProvider<String> getStagingBucketName();
 
     @Nullable
     abstract CsvMapper<OutputT> getCsvMapper();
@@ -268,8 +271,8 @@ public class SnowflakeIO {
       abstract Builder<ParameterT, OutputT> setIntegrationName(
           ValueProvider<String> integrationName);
 
-      abstract Builder<ParameterT, OutputT> setExternalLocation(
-          ValueProvider<String> externalLocation);
+      abstract Builder<ParameterT, OutputT> setStagingBucketName(
+          ValueProvider<String> stagingBucketName);
 
       abstract Builder<ParameterT, OutputT> setCsvMapper(CsvMapper<OutputT> csvMapper);
 
@@ -318,19 +321,19 @@ public class SnowflakeIO {
       return toBuilder().setIntegrationName(integrationName).build();
     }
 
-    public ReadAll<ParameterT, OutputT> withExternalLocation(String externalLocation) {
+    public ReadAll<ParameterT, OutputT> withStagingBucketName(String stagingBucketName) {
       checkArgument(
-          externalLocation != null,
-          "net.snowflake.io.SnowflakeIO.readAll().withExternalLocation(externalLocation) called with null externalLocation");
-      return withExternalLocation(ValueProvider.StaticValueProvider.of(externalLocation));
+          stagingBucketName != null,
+          "net.snowflake.io.SnowflakeIO.readAll().withStagingBucketName(stagingBucketName) called with null stagingBucketName");
+      return withStagingBucketName(ValueProvider.StaticValueProvider.of(stagingBucketName));
     }
 
-    public ReadAll<ParameterT, OutputT> withExternalLocation(
-        ValueProvider<String> externalLocation) {
+    public ReadAll<ParameterT, OutputT> withStagingBucketName(
+        ValueProvider<String> stagingBucketName) {
       checkArgument(
-          externalLocation != null,
-          "net.snowflake.io.SnowflakeIO.readAll().withExternalLocation(externalLocation) called with null externalLocation");
-      return toBuilder().setExternalLocation(externalLocation).build();
+          stagingBucketName != null,
+          "net.snowflake.io.SnowflakeIO.readAll().withStagingBucketName(stagingBucketName) called with null stagingBucketName");
+      return toBuilder().setStagingBucketName(stagingBucketName).build();
     }
 
     public ReadAll<ParameterT, OutputT> withCsvMapper(CsvMapper<OutputT> csvMapper) {
@@ -360,7 +363,7 @@ public class SnowflakeIO {
                           getQuery(),
                           getTable(),
                           getIntegrationName(),
-                          getExternalLocation())))
+                          getStagingBucketName())))
               .apply(FileIO.matchAll())
               .apply(FileIO.readMatches())
               .apply(readFiles())
@@ -382,7 +385,7 @@ public class SnowflakeIO {
         builder.add(DisplayData.item("table", getTable()));
       }
       builder.add(DisplayData.item("integrationName", getIntegrationName()));
-      builder.add(DisplayData.item("externalLocation", getExternalLocation()));
+      builder.add(DisplayData.item("stagingBucketName", getStagingBucketName()));
       builder.add(DisplayData.item("csvMapper", getCsvMapper().getClass().getName()));
       builder.add(DisplayData.item("coder", getCoder().getClass().getName()));
       if (getDataSourceProviderFn() instanceof HasDisplayData) {
@@ -419,7 +422,8 @@ public class SnowflakeIO {
     private final ValueProvider<String> query;
     private final ValueProvider<String> table;
     private final ValueProvider<String> integrationName;
-    private final ValueProvider<String> externalLocation;
+    private final ValueProvider<String> stagingBucketName;
+    private final String tmpDirName;
 
     private DataSource dataSource;
     private Connection connection;
@@ -429,12 +433,22 @@ public class SnowflakeIO {
         ValueProvider<String> query,
         ValueProvider<String> table,
         ValueProvider<String> integrationName,
-        ValueProvider<String> externalLocation) {
+        ValueProvider<String> stagingBucketName) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.query = query;
       this.table = table;
       this.integrationName = integrationName;
-      this.externalLocation = externalLocation;
+      this.stagingBucketName = stagingBucketName;
+      this.tmpDirName = makeTmpDirName();
+    }
+
+    private String makeTmpDirName() {
+
+      return String.format(
+          "sf_copy_csv_%s_%s",
+          new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()),
+          UUID.randomUUID().toString().subSequence(0, 8) // first 8 chars of UUID should be enough
+          );
     }
 
     @Setup
@@ -454,17 +468,15 @@ public class SnowflakeIO {
         from = table.get();
       }
 
-      String sfExternalLocation = externalLocation.get().replace("gs://", "gcs://");
+      String externalLocation = String.format("gcs://%s/%s/", stagingBucketName.get(), tmpDirName);
       String copyQuery =
           String.format(
               "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
-              sfExternalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
+              externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
 
       runStatement(copyQuery, connection, null);
 
-      String output = externalLocation.get();
-      // Append * because for MatchAll paths must not end with /
-      output += "*";
+      String output = String.format("gs://%s/%s/*", stagingBucketName.get(), tmpDirName);
       context.output(output);
     }
 

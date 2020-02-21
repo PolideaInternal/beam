@@ -106,7 +106,7 @@ PCollection<USER_DATA_TYPE> items = pipeline.apply(
    SnowflakeIO.<USER_DATA_TYPE>read()
        .withDataSourceConfiguration(dc)
        .fromTable("MY_TABLE") // or .fromQuery("QUERY")
-       .withExternalLocation("GSC PATH")
+       .withStagingBucketName("GSC BUCKET NAME")
        .withIntegrationName("STORAGE INTEGRATION NAME")
        .withCsvMapper(MAPPER_TO_USER_DATA_TYPE)
        .withCoder(BEAM_CODER_FOR_USER_DATA_TYPE));
@@ -118,8 +118,10 @@ Where all below parameters are required:
 accepts a [DataSourceConfiguration](#datasource-configuration) object.
 * `.fromTable(...)` or `.fromQuery(...)`
 specifies a Snowflake table name or custom SQL query.
-* `.withExternalLocation(...)`
-accepts the path to a Google Cloud Storage bucket. 
+* `.withStagingBucketName(...)`
+accepts name of the Google Cloud Storage bucket. It will be used as temporary location for storing CSV files. Those 
+temporary directories will be named `sf_copy_csv_DATE_TIME_RANDOMSUFFIX`. **Note** Those directories will not be 
+deleted automatically - this feature is in progress.  
 * `.withIntegrationName(...)`
 accepts the name of a Snowflake storage integration object configured for the GCS bucket specified in the  
  `.withExternalLocation` parameter.
@@ -127,7 +129,7 @@ accepts the name of a Snowflake storage integration object configured for the GC
 accepts a [CSVMapper](#csvmapper) instance for mapping `String[]` to USER_DATA_TYPE.
 * `withCoder(coder)`
 accepts the [Coder](https://beam.apache.org/releases/javadoc/2.0.0/org/apache/beam/sdk/coders/Coder.html) 
-for USER_DATA_TYPE.
+for USER_DATA_TYPE. 
 
 #### CSVMapper
 SnowflakeIO uses a [COPY INTO <location>](https://docs.snowflake.net/manuals/sql-reference/sql/copy-into-location.html) 
