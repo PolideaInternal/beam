@@ -106,11 +106,6 @@ run the test
 
 ## Running Write Query test
 
-Prepare target table in the same schema:
-```sql
-CREATE TABLE "<DATABASE>"."<SCHEMA>".<TABLE_NAME> ("L_ORDERKEY" NUMBER (38, 0), "L_SUPPKEY" NUMBER(38,0), "L_COMMENT" VARCHAR(44));
-```
-
 Prepare stage:
 ```
 CREATE STAGE <STAGE NAME> 
@@ -119,6 +114,7 @@ CREATE STAGE <STAGE NAME>
 ```
 Please note that `URL` has the `gcs` prefix for creating stage.
 
+No need to prepare table, it will be automatically created.
 
 run the test
 ```shell script
