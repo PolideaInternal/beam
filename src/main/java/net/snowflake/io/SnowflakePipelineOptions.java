@@ -100,6 +100,11 @@ public interface SnowflakePipelineOptions extends PipelineOptions, DataflowPipel
 
   void setExternalLocation(String externalLocation);
 
+  @Description("Temporary GCS bucket name")
+  String getStagingBucketName();
+
+  void setStagingBucketName(String stagingBucketName);
+
   @Description("Internal (local) location name to connect to.")
   String getInternalLocation();
 
