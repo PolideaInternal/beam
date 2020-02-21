@@ -1,8 +1,9 @@
 package net.snowflake.io.data.text;
 
+import java.io.Serializable;
 import net.snowflake.io.data.SFDataType;
 
-public class SFBinary implements SFDataType {
+public class SFBinary implements SFDataType, Serializable {
 
   private static final Long MAX_SIZE = 8388608L;
 
