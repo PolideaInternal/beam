@@ -294,7 +294,6 @@ SFTableSchema tableSchema =
         new SFColumn("id", new SFNumber()),
         SFColumn.of("name", new SFText(), true));
 
-String schema = “id number, name varchar”;
 data.apply(
    SnowflakeIO.<~>write()
        .withDataSourceConfiguration(dc)
