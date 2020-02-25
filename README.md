@@ -120,8 +120,8 @@ accepts a [DataSourceConfiguration](#datasource-configuration) object.
 specifies a Snowflake table name or custom SQL query.
 * `.withStagingBucketName(...)`
 accepts name of the Google Cloud Storage bucket. It will be used as temporary location for storing CSV files. Those 
-temporary directories will be named `sf_copy_csv_DATE_TIME_RANDOMSUFFIX`. **Note** Those directories will not be 
-deleted automatically - this feature is in progress.  
+temporary directories will be named `sf_copy_csv_DATE_TIME_RANDOMSUFFIX` and they will be removed automatically once 
+Read operation finishes.
 * `.withIntegrationName(...)`
 accepts the name of a Snowflake storage integration object configured for the GCS bucket specified in the  
  `.withExternalLocation` parameter.
