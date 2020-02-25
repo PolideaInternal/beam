@@ -3,7 +3,11 @@ package net.snowflake.io;
 import static org.apache.beam.sdk.io.TextIO.readFiles;
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
+import com.google.api.gax.paging.Page;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import java.io.IOException;
@@ -353,6 +357,7 @@ public class SnowflakeIO {
     @Override
     public PCollection<OutputT> expand(PCollection<ParameterT> input) {
       PCollection<OutputT> output;
+      ValueProvider<String> gcpTmpDirName = ValueProvider.StaticValueProvider.of(makeTmpDirName());
 
       output =
           input
@@ -363,7 +368,8 @@ public class SnowflakeIO {
                           getQuery(),
                           getTable(),
                           getIntegrationName(),
-                          getStagingBucketName())))
+                          getStagingBucketName(),
+                          gcpTmpDirName)))
               .apply(FileIO.matchAll())
               .apply(FileIO.readMatches())
               .apply(readFiles())
@@ -392,6 +398,14 @@ public class SnowflakeIO {
         ((HasDisplayData) getDataSourceProviderFn()).populateDisplayData(builder);
       }
     }
+
+    private String makeTmpDirName() {
+      return String.format(
+          "sf_copy_csv_%s_%s",
+          new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()),
+          UUID.randomUUID().toString().subSequence(0, 8) // first 8 chars of UUID should be enough
+          );
+    }
   }
 
   public static class MapCsvToStringArrayFn extends DoFn<String, String[]> {
@@ -401,6 +415,27 @@ public class SnowflakeIO {
       CSVParser parser = new CSVParserBuilder().withQuoteChar(CSV_QUOTE_CHAR.charAt(0)).build();
       String[] parts = parser.parseLine(csvLine);
       c.output(parts);
+    }
+  }
+
+  public static class CleanTmpFilesFromGcsFn extends DoFn<Object, Object> {
+    private final ValueProvider<String> bucketName;
+    private final ValueProvider<String> bucketPath;
+
+    public CleanTmpFilesFromGcsFn(
+        ValueProvider<String> bucketName, ValueProvider<String> bucketPath) {
+      this.bucketName = bucketName;
+      this.bucketPath = bucketPath;
+    }
+
+    @ProcessElement
+    public void processElement(ProcessContext c) {
+      Storage storage = StorageOptions.getDefaultInstance().getService();
+      Page<Blob> blobs =
+          storage.list(bucketName.get(), Storage.BlobListOption.prefix(bucketPath.get()));
+      for (Blob blob : blobs.iterateAll()) {
+        storage.delete(blob.getBlobId());
+      }
     }
   }
 
@@ -423,7 +458,7 @@ public class SnowflakeIO {
     private final ValueProvider<String> table;
     private final ValueProvider<String> integrationName;
     private final ValueProvider<String> stagingBucketName;
-    private final String tmpDirName;
+    private final ValueProvider<String> tmpDirName;
 
     private DataSource dataSource;
     private Connection connection;
@@ -433,22 +468,14 @@ public class SnowflakeIO {
         ValueProvider<String> query,
         ValueProvider<String> table,
         ValueProvider<String> integrationName,
-        ValueProvider<String> stagingBucketName) {
+        ValueProvider<String> stagingBucketName,
+        ValueProvider<String> tmpDirName) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.query = query;
       this.table = table;
       this.integrationName = integrationName;
       this.stagingBucketName = stagingBucketName;
-      this.tmpDirName = makeTmpDirName();
-    }
-
-    private String makeTmpDirName() {
-
-      return String.format(
-          "sf_copy_csv_%s_%s",
-          new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()),
-          UUID.randomUUID().toString().subSequence(0, 8) // first 8 chars of UUID should be enough
-          );
+      this.tmpDirName = tmpDirName;
     }
 
     @Setup
@@ -468,7 +495,8 @@ public class SnowflakeIO {
         from = table.get();
       }
 
-      String externalLocation = String.format("gcs://%s/%s/", stagingBucketName.get(), tmpDirName);
+      String externalLocation =
+          String.format("gcs://%s/%s/", stagingBucketName.get(), tmpDirName.get());
       String copyQuery =
           String.format(
               "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
