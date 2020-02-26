@@ -107,10 +107,6 @@ test {
   systemProperties.beamTestPipelineOptions = pipelineOptions
 }
 
-application {
-  mainClassName = 'net.snowflake.examples.ReadPipelineExample'
-}
-
 task fatJar(type: Jar) {
   classifier = 'all'
   baseName = 'snowflake-io'
