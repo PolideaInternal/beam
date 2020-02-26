@@ -44,6 +44,7 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.apache.beam.sdk.transforms.Wait;
 import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.sdk.transforms.display.HasDisplayData;
 import org.apache.beam.sdk.values.KV;
@@ -377,6 +378,10 @@ public class SnowflakeIO {
               .apply(ParDo.of(new MapStringArrayToUserDataFn<>(getCsvMapper())));
 
       output.setCoder(getCoder());
+
+      input
+          .apply(Wait.on(output))
+          .apply(ParDo.of(new CleanTmpFilesFromGcsFn(getStagingBucketName(), gcpTmpDirName)));
 
       return output;
     }
