@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.unit;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.beam.sdk.io.snowflake.data.text.SFBinary;
 import org.apache.beam.sdk.io.snowflake.data.text.SFChar;
 import org.apache.beam.sdk.io.snowflake.data.text.SFString;
@@ -32,49 +34,49 @@ public class SFVarcharTest {
   public void testSingleVarchar() {
     SFVarchar varchar = SFVarchar.of();
 
-    assert varchar.sql().equals("VARCHAR");
+    assertEquals("VARCHAR", varchar.sql());
   }
 
   @Test
   public void testSingleVarcharWithLimit() {
     SFVarchar varchar = SFVarchar.of(100);
 
-    assert varchar.sql().equals("VARCHAR(100)");
+    assertEquals("VARCHAR(100)", varchar.sql());
   }
 
   @Test
   public void testString() {
     SFString str = SFString.of();
 
-    assert str.sql().equals("VARCHAR");
+    assertEquals("VARCHAR", str.sql());
   }
 
   @Test
   public void testText() {
     SFText text = SFText.of();
 
-    assert text.sql().equals("VARCHAR");
+    assertEquals("VARCHAR", text.sql());
   }
 
   @Test
   public void testBinary() {
     SFBinary binary = SFBinary.of();
 
-    assert binary.sql().equals("BINARY");
+    assertEquals("BINARY", binary.sql());
   }
 
   @Test
   public void testVarBinary() {
     SFVarBinary binary = SFVarBinary.of();
 
-    assert binary.sql().equals("BINARY");
+    assertEquals("BINARY", binary.sql());
   }
 
   @Test
   public void testBinaryWithLimit() {
     SFBinary binary = SFBinary.of(100);
 
-    assert binary.sql().equals("BINARY(100)");
+    assertEquals("BINARY(100)", binary.sql());
   }
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
@@ -89,6 +91,6 @@ public class SFVarcharTest {
   public void testChar() {
     SFChar sfChar = SFChar.of();
 
-    assert sfChar.sql().equals("VARCHAR(1)");
+    assertEquals("VARCHAR(1)", sfChar.sql());
   }
 }

@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.unit;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.beam.sdk.io.snowflake.data.structured.SFArray;
 import org.apache.beam.sdk.io.snowflake.data.structured.SFObject;
 import org.apache.beam.sdk.io.snowflake.data.structured.SFVariant;
@@ -27,20 +29,20 @@ public class SFStructuredDataTest {
   public void testVariant() {
     SFVariant variant = SFVariant.of();
 
-    assert variant.sql().equals("VARIANT");
+    assertEquals("VARIANT", variant.sql());
   }
 
   @Test
   public void testArray() {
     SFArray array = SFArray.of();
 
-    assert array.sql().equals("ARRAY");
+    assertEquals("ARRAY", array.sql());
   }
 
   @Test
   public void testObject() {
     SFObject object = SFObject.of();
 
-    assert object.sql().equals("OBJECT");
+    assertEquals("OBJECT", object.sql());
   }
 }

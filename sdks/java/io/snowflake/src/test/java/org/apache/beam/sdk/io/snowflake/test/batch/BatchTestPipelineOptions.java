@@ -26,18 +26,13 @@ public interface BatchTestPipelineOptions extends SnowflakePipelineOptions {
 
   void setTable(String table);
 
-  @Description("Stage name to connect to.")
-  String getStage();
-
-  void setStage(String stage);
-
-  @Description("External location name to connect to.")
-  String getExternalLocation();
-
-  void setExternalLocation(String externalLocation);
-
-  @Description("Internal (local) location name to connect to.")
-  String getInternalLocation();
-
-  void setInternalLocation(String internalLocation);
+  //  @Description("External location name to connect to.")
+  //  String getExternalLocation();
+  //
+  //  void setExternalLocation(String externalLocation);
+  //
+  //  @Description("Internal (local) location name to connect to.")
+  //  String getInternalLocation();
+  //
+  //  void setInternalLocation(String internalLocation);
 }

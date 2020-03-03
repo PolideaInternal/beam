@@ -32,6 +32,8 @@ dependencies {
 
   provided library.java.hadoop_client
   testCompile project(path: ":sdks:java:core", configuration: "shadowTest")
+  testCompile project(path: ":sdks:java:io:parquet")
+  testCompile library.java.avro
   testCompile library.java.junit
   testCompile library.java.hamcrest_core
   testCompile library.java.hamcrest_library

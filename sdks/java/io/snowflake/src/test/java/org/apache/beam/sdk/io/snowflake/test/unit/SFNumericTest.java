@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.unit;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFDecimal;
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFDouble;
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFFloat;
@@ -31,48 +33,48 @@ public class SFNumericTest {
   public void testDecimal() {
     SFDecimal decimal = SFDecimal.of(20, 1);
 
-    assert decimal.sql().equals("NUMBER(20,1)");
+    assertEquals("NUMBER(20,1)", decimal.sql());
   }
 
   @Test
   public void testDouble() {
     SFDouble sfDouble = SFDouble.of();
 
-    assert sfDouble.sql().equals("FLOAT");
+    assertEquals("FLOAT", sfDouble.sql());
   }
 
   @Test
   public void testFloat() {
     SFFloat sfFloat = SFFloat.of();
 
-    assert sfFloat.sql().equals("FLOAT");
+    assertEquals("FLOAT", sfFloat.sql());
   }
 
   @Test
   public void testInteger() {
     SFInteger sfInteger = SFInteger.of();
 
-    assert sfInteger.sql().equals("NUMBER(38,0)");
+    assertEquals("NUMBER(38,0)", sfInteger.sql());
   }
 
   @Test
   public void testNumber() {
     SFNumber sfNumber = SFNumber.of();
 
-    assert sfNumber.sql().equals("NUMBER(38,0)");
+    assertEquals("NUMBER(38,0)", sfNumber.sql());
   }
 
   @Test
   public void testNumeric() {
     SFNumeric sfNumeric = SFNumeric.of(33, 2);
 
-    assert sfNumeric.sql().equals("NUMBER(33,2)");
+    assertEquals("NUMBER(33,2)", sfNumeric.sql());
   }
 
   @Test
   public void testReal() {
     SFReal sfReal = SFReal.of();
 
-    assert sfReal.sql().equals("FLOAT");
+    assertEquals("FLOAT", sfReal.sql());
   }
 }

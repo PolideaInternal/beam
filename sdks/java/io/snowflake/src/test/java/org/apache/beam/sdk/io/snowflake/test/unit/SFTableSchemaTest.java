@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.unit;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFDouble;
@@ -28,7 +30,7 @@ public class SFTableSchemaTest {
   public void testOneColumn() {
     SFTableSchema schema = new SFTableSchema(SFColumn.of("id", SFVarchar.of()));
 
-    assert schema.sql().equals("id VARCHAR");
+    assertEquals("id VARCHAR", schema.sql());
   }
 
   @Test
@@ -36,6 +38,6 @@ public class SFTableSchemaTest {
     SFTableSchema schema =
         new SFTableSchema(SFColumn.of("id", new SFVarchar()), SFColumn.of("tax", new SFDouble()));
 
-    assert schema.sql().equals("id VARCHAR, tax FLOAT");
+    assertEquals("id VARCHAR, tax FLOAT", schema.sql());
   }
 }

@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.unit;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.beam.sdk.io.snowflake.data.datetime.SFDate;
 import org.apache.beam.sdk.io.snowflake.data.datetime.SFDateTime;
 import org.apache.beam.sdk.io.snowflake.data.datetime.SFTime;
@@ -31,48 +33,48 @@ public class SFDateTimeTest {
   public void testDate() {
     SFDate date = SFDate.of();
 
-    assert date.sql().equals("DATE");
+    assertEquals("DATE", date.sql());
   }
 
   @Test
   public void testDateTime() {
     SFDateTime dateTime = SFDateTime.of();
 
-    assert dateTime.sql().equals("TIMESTAMP_NTZ");
+    assertEquals("TIMESTAMP_NTZ", dateTime.sql());
   }
 
   @Test
   public void testTime() {
     SFTime time = SFTime.of();
 
-    assert time.sql().equals("TIME");
+    assertEquals("TIME", time.sql());
   }
 
   @Test
   public void testTimestamp() {
     SFTimestamp timestamp = SFTimestamp.of();
 
-    assert timestamp.sql().equals("TIMESTAMP_NTZ");
+    assertEquals("TIMESTAMP_NTZ", timestamp.sql());
   }
 
   @Test
   public void testTimestampNTZ() {
     SFTimestampNTZ timestamp = SFTimestampNTZ.of();
 
-    assert timestamp.sql().equals("TIMESTAMP_NTZ");
+    assertEquals("TIMESTAMP_NTZ", timestamp.sql());
   }
 
   @Test
   public void testTimestampLTZ() {
     SFTimestampLTZ timestamp = SFTimestampLTZ.of();
 
-    assert timestamp.sql().equals("TIMESTAMP_LTZ");
+    assertEquals("TIMESTAMP_LTZ", timestamp.sql());
   }
 
   @Test
   public void testTimestampTZ() {
     SFTimestampTZ timestamp = SFTimestampTZ.of();
 
-    assert timestamp.sql().equals("TIMESTAMP_TZ");
+    assertEquals("TIMESTAMP_TZ", timestamp.sql());
   }
 }

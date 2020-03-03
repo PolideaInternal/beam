@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.unit;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.beam.sdk.io.snowflake.data.logical.SFBoolean;
 import org.junit.Test;
 
@@ -25,6 +27,6 @@ public class SFBooleanTest {
   public void testBoolean() {
     SFBoolean sfBoolean = SFBoolean.of();
 
-    assert sfBoolean.sql().equals("BOOLEAN");
+    assertEquals("BOOLEAN", sfBoolean.sql());
   }
 }

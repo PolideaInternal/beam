@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.unit;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
 import org.junit.Test;
@@ -26,13 +28,13 @@ public class SFColumnTest {
   public void testVarcharColumn() {
     SFColumn column = SFColumn.of("id", SFVarchar.of());
 
-    assert column.sql().equals("id VARCHAR");
+    assertEquals("id VARCHAR", column.sql());
   }
 
   @Test
   public void testNullColumn() {
     SFColumn column = SFColumn.of("id", SFVarchar.of(), true);
 
-    assert column.sql().equals("id VARCHAR NULL");
+    assertEquals("id VARCHAR NULL", column.sql());
   }
 }
