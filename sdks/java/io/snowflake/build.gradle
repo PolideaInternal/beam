@@ -1,120 +1,40 @@
-buildscript {
-  repositories {
-    maven {
-      url "https://plugins.gradle.org/m2/"
-    }
-  }
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * License); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-  dependencies {
-    classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:2.0.0"
-  }
-}
+plugins { id 'org.apache.beam.module' }
+applyJavaNature(automaticModuleName: 'org.apache.beam.sdk.io.snowflake')
 
-plugins {
-  id 'java-library'
-  id 'groovy'
-  id 'idea'
-  id 'application'
-  id 'com.diffplug.gradle.spotless' version '3.26.1'
-  id 'checkstyle'
-  id "com.github.spotbugs" version "2.0.0"
-}
-
-import groovy.json.JsonSlurper
-import groovy.json.JsonOutput
-
-repositories {
-  mavenCentral()
-}
-
-configurations {
-  testCompile
-}
-
-checkstyle {
-  configFile rootProject.file("build-configs/checkstyle/checkstyle.xml")
-  toolVersion = '8.23'
-  showViolations = true
-  maxErrors = 0
-}
-
-spotless {
-  enforceCheck true
-  java {
-    googleJavaFormat()
-  }
-  def grEclipseConfig = project(":").file("build-configs/spotless/greclipse.properties")
-  groovy {
-    paddedCell() // Recommended to avoid cyclic ambiguity issues
-    greclipse().configFile(grEclipseConfig)
-  }
-  groovyGradle { greclipse().configFile(grEclipseConfig) }
-}
-
-spotbugs {
-  excludeFilter = rootProject.file('build-configs/spotbugs/spotbugs-filter.xml')
-  sourceSets = [sourceSets.main]
-}
-
-tasks.withType(com.github.spotbugs.SpotBugsTask) {
-  reports {
-    xml.enabled = false
-    html.enabled = true
-  }
-}
-
-ext {
-  beamVersion = '2.18.0'
-}
+description = "Apache Beam :: SDKs :: Java :: IO :: Snowflake"
+ext.summary = "IO to read and write on Snowflake."
 
 dependencies {
-
-  compile group: 'org.apache.beam', name: 'beam-sdks-java-core', version: "$beamVersion"
-  compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
-  compile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: "$beamVersion"
-  compile group: 'org.apache.beam', name: 'beam-runners-google-cloud-dataflow-java', version: "$beamVersion"
-  compile group: 'org.apache.beam', name: 'beam-sdks-java-io-parquet', version: "$beamVersion"
-  compile group: 'org.apache.beam', name: 'beam-runners-direct-java', version: "$beamVersion"
-  compile "com.google.auto.value:auto-value-annotations:1.7"
-  annotationProcessor "com.google.auto.value:auto-value:1.7"
-  compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+  compile library.java.vendored_guava_26_0_jre
+  compile project(path: ":sdks:java:core", configuration: "shadow")
+  compile library.java.slf4j_api
   compile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.11.0'
-  compile group: 'org.hamcrest', name: 'hamcrest-library', version: '2.1'
-  compile group: 'junit', name: 'junit', version: '4.12'
   compile group: 'com.opencsv', name: 'opencsv', version: '5.0'
   compile 'com.google.cloud:google-cloud-storage:1.102.0'
 
-  testCompile group: 'org.apache.beam', name: 'beam-sdks-java-io-jdbc', version: "$beamVersion"
-  testCompile group: 'org.apache.beam', name: 'beam-sdks-java-core', version: "$beamVersion"
-  testCompile group: 'org.apache.beam', name: 'beam-runners-google-cloud-dataflow-java', version: "$beamVersion"
-  testCompile group: 'org.apache.beam', name: 'beam-runners-direct-java', version: "$beamVersion"
-  testCompile group: 'junit', name: 'junit', version: '4.12'
-  testCompile "com.google.auto.value:auto-value-annotations:1.7"
-  testAnnotationProcessor "com.google.auto.value:auto-value:1.7"
-  testCompile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.10.2'
-  testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '2.1'
-}
-
-test {
-  String pipelineOptions = System.getProperty("integrationTestPipelineOptions")
-
-  if (pipelineOptions) {
-    def allOptionsList = (new JsonSlurper()).parseText(pipelineOptions)
-
-    pipelineOptions = JsonOutput.toJson(allOptionsList)
-  }
-
-  systemProperties.beamTestPipelineOptions = pipelineOptions
-}
-
-task fatJar(type: Jar) {
-  classifier = 'all'
-  baseName = 'snowflake-io'
-  zip64 = true
-  from {
-    configurations.compile.collect {
-      it.isDirectory() ? it : zipTree(it)
-    }
-  }
-  with jar
+  provided library.java.hadoop_client
+  testCompile project(path: ":sdks:java:core", configuration: "shadowTest")
+  testCompile library.java.junit
+  testCompile library.java.hamcrest_core
+  testCompile library.java.hamcrest_library
+  testRuntimeOnly library.java.slf4j_jdk14
+  testRuntimeOnly project(path: ":runners:direct-java", configuration: "shadow")
 }
