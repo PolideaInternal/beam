@@ -18,6 +18,7 @@
 package org.apache.beam.sdk.io.snowflake.credentials;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
@@ -56,7 +57,7 @@ public class KeyPairSnowflakeCredentials implements SnowflakeCredentials {
     try {
       byte[] keyBytes = Files.readAllBytes(Paths.get(privateKeyPath));
 
-      String encrypted = new String(keyBytes);
+      String encrypted = new String(keyBytes, Charset.defaultCharset());
       encrypted = encrypted.replace("-----BEGIN ENCRYPTED PRIVATE KEY-----", "");
       encrypted = encrypted.replace("-----END ENCRYPTED PRIVATE KEY-----", "");
       EncryptedPrivateKeyInfo pkInfo =

@@ -17,10 +17,13 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 import java.util.List;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
@@ -41,7 +44,11 @@ public class CSVSink implements FileIO.Sink<String> {
 
   @Override
   public void open(WritableByteChannel channel) throws IOException {
-    writer = new PrintWriter(Channels.newOutputStream(channel));
+    writer =
+        new PrintWriter(
+            new BufferedWriter(
+                new OutputStreamWriter(
+                    Channels.newOutputStream(channel), Charset.defaultCharset())));
     if (this.header != null) {
       writer.println(header);
     }
