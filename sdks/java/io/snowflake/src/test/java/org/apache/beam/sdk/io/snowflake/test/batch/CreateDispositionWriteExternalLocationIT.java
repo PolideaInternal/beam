@@ -19,12 +19,13 @@ package org.apache.beam.sdk.io.snowflake.test.batch;
 
 import static org.apache.beam.sdk.io.snowflake.test.TestUtils.getCsvMapper;
 import static org.junit.Assume.assumeNotNull;
-import static org.junit.Assume.assumeTrue;
 
-import java.io.File;
+import com.google.api.gax.paging.Page;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import net.snowflake.client.jdbc.internal.apache.commons.io.FileUtils;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
@@ -43,8 +44,11 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-public class CreateDispositionWriteInternalLocationTest {
+@RunWith(JUnit4.class)
+public class CreateDispositionWriteExternalLocationIT {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static DataSource dataSource;
 
@@ -74,34 +78,46 @@ public class CreateDispositionWriteInternalLocationTest {
 
   @Before
   public void setup() {
-    assumeNotNull(options.getInternalLocation());
+    assumeNotNull(options.getExternalLocation());
   }
 
   @After
   public void tearDown() throws Exception {
-    if (options.getInternalLocation() != null) {
-      File directory = new File(options.getInternalLocation());
-      FileUtils.deleteDirectory(directory);
+    if (options.getExternalLocation() != null) {
+      String storageName = options.getExternalLocation();
+      storageName = storageName.replaceAll("gs://", "");
+      String[] splitted = storageName.split("/", 2);
+      String bucketName = splitted[0];
+      String path = splitted[1];
+      Storage storage = StorageOptions.getDefaultInstance().getService();
+      Page<Blob> blobs =
+          storage.list(
+              bucketName,
+              Storage.BlobListOption.currentDirectory(),
+              Storage.BlobListOption.prefix(path));
+
+      for (Blob blob : blobs.iterateAll()) {
+        storage.delete(blob.getBlobId());
+      }
     }
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithAlreadyCreatedTableSuccess() throws SQLException {
-    assumeTrue(options.getInternalLocation() != null);
-
+  public void writeToExternalWithWriteCreateDispositionWithAlreadyCreatedTableSuccess()
+      throws SQLException {
     locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
-            "Write SnowflakeIO",
+            "Copy IO",
             SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(options.getTable())
                 .via(locationSpec)
-                .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
+                .withFileNameTemplate("output*")
                 .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
@@ -113,11 +129,9 @@ public class CreateDispositionWriteInternalLocationTest {
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreatedTableWithoutSchemaFails() {
-    assumeTrue(options.getInternalLocation() != null);
-
+  public void writeToExternalWithWriteCreateDispositionWithCreatedTableWithoutSchemaFails() {
     locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
     exceptionRule.expect(RuntimeException.class);
     exceptionRule.expectMessage(
@@ -126,7 +140,7 @@ public class CreateDispositionWriteInternalLocationTest {
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
-            "Write SnowflakeIO",
+            "Copy IO",
             SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to("test_example_fail")
@@ -141,12 +155,10 @@ public class CreateDispositionWriteInternalLocationTest {
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreatedTableWithSchemaSuccess()
+  public void writeToExternalWithWriteCreateDispositionWithCreatedTableWithSchemaSuccess()
       throws SQLException {
-    assumeTrue(options.getInternalLocation() != null);
-
     locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
     SFTableSchema tableSchema = new SFTableSchema(SFColumn.of("id", new SFVarchar()));
 
@@ -157,8 +169,8 @@ public class CreateDispositionWriteInternalLocationTest {
             SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to("test_example_success")
-                .via(locationSpec)
                 .withTableSchema(tableSchema)
+                .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
@@ -172,22 +184,21 @@ public class CreateDispositionWriteInternalLocationTest {
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreateNeverSuccess() throws SQLException {
-    assumeTrue(options.getInternalLocation() != null);
-
+  public void writeToExternalWithWriteCreateDispositionWithCreateNeverSuccess()
+      throws SQLException {
     locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
-            "Write SnowflakeIO",
+            "Copy IO",
             SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(options.getTable())
                 .via(locationSpec)
-                .withUserDataMapper(getCsvMapper())
                 .withFileNameTemplate("output*")
+                .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_NEVER)
                 .withParallelization(false));
 
@@ -199,11 +210,9 @@ public class CreateDispositionWriteInternalLocationTest {
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreateNeededFails() {
-    assumeTrue(options.getInternalLocation() != null);
-
+  public void writeToExternalWithWriteCreateDispositionWithCreateNeededFails() {
     locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
     exceptionRule.expect(RuntimeException.class);
     exceptionRule.expectMessage(
@@ -213,13 +222,13 @@ public class CreateDispositionWriteInternalLocationTest {
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
-            "Write SnowflakeIO",
+            "Copy IO",
             SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to("test_failure")
                 .via(locationSpec)
-                .withUserDataMapper(getCsvMapper())
                 .withFileNameTemplate("output*")
+                .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_NEVER)
                 .withParallelization(false));
 

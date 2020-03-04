@@ -19,11 +19,10 @@ package org.apache.beam.sdk.io.snowflake.test.tpch;
 
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.PipelineResult;
-import org.apache.beam.sdk.coders.AvroCoder;
-import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.parquet.ParquetIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
+import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.values.PCollection;
@@ -31,50 +30,53 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-public class TpchReadQueryTest {
-  private static final String DATABASE = "SNOWFLAKE_SAMPLE_DATA";
-  private static final String QUERY = "SELECT * FROM LINEITEM LIMIT 1000";
+@RunWith(JUnit4.class)
+public class TpchWriteTableIT {
+
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
-  private static String stagingBucketName;
-  private static String integrationName;
-  private static String output;
+  private static String parquetFilesLocation;
+  private static String table;
 
   @BeforeClass
   public static void setup() {
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
-    stagingBucketName = options.getStagingBucketName();
-    integrationName = options.getStorageIntegration();
-    output = options.getParquetFilesLocation();
-    String testSize = options.getTestSize();
+    parquetFilesLocation = options.getParquetFilesLocation();
+    table = options.getTable();
 
-    Assume.assumeNotNull(testSize);
+    Assume.assumeNotNull(
+        table,
+        parquetFilesLocation,
+        options.getExternalLocation(),
+        options.getStorageIntegration());
 
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
+            .withUrl(options.getUrl())
             .withServerName(options.getServerName())
             .withWarehouse(options.getWarehouse())
-            .withDatabase(DATABASE)
-            .withSchema(testSize); // selecting tests size is done by selecting schema
+            .withDatabase(options.getDatabase())
+            .withSchema(options.getSchema());
   }
 
   @Test
-  public void tpchReadTestForQuery() {
+  public void tpchWriteTestForTable() {
+
     PCollection<GenericRecord> items =
-        pipeline.apply(
-            SnowflakeIO.<GenericRecord>read()
-                .withDataSourceConfiguration(dataSourceConfiguration)
-                .fromQuery(QUERY)
-                .withStagingBucketName(stagingBucketName)
-                .withIntegrationName(integrationName)
-                .withCsvMapper(TpchTestUtils.getCsvMapper())
-                .withCoder(AvroCoder.of(TpchTestUtils.getSchema())));
+        pipeline.apply(ParquetIO.read(TpchTestUtils.getSchema()).from(parquetFilesLocation));
 
     items.apply(
-        FileIO.<GenericRecord>write().via(ParquetIO.sink(TpchTestUtils.getSchema())).to(output));
+        SnowflakeIO.<GenericRecord>write()
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .to(table)
+            .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
+            .via(LocationFactory.of(options))
+            .withUserDataMapper(TpchTestUtils.getUserDataMapper()));
 
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();

@@ -39,8 +39,11 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-public class QueryDispositionWriteInternalLocationTest {
+@RunWith(JUnit4.class)
+public class QueryDispositionWriteInternalLocationIT {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static DataSource dataSource;
 

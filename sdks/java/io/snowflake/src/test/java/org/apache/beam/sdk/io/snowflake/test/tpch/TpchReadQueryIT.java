@@ -31,11 +31,13 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-public class TpchReadTableTest {
+@RunWith(JUnit4.class)
+public class TpchReadQueryIT {
   private static final String DATABASE = "SNOWFLAKE_SAMPLE_DATA";
-  private static final String TABLE = "LINEITEM";
-
+  private static final String QUERY = "SELECT * FROM LINEITEM LIMIT 1000";
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
@@ -63,12 +65,12 @@ public class TpchReadTableTest {
   }
 
   @Test
-  public void tpchReadTestForTable() {
+  public void tpchReadTestForQuery() {
     PCollection<GenericRecord> items =
         pipeline.apply(
             SnowflakeIO.<GenericRecord>read()
                 .withDataSourceConfiguration(dataSourceConfiguration)
-                .fromTable(TABLE)
+                .fromQuery(QUERY)
                 .withStagingBucketName(stagingBucketName)
                 .withIntegrationName(integrationName)
                 .withCsvMapper(TpchTestUtils.getCsvMapper())

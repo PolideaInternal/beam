@@ -18,6 +18,8 @@
 
 plugins { id 'org.apache.beam.module' }
 applyJavaNature(automaticModuleName: 'org.apache.beam.sdk.io.snowflake')
+provideIntegrationTestingDependencies()
+
 
 description = "Apache Beam :: SDKs :: Java :: IO :: Snowflake"
 ext.summary = "IO to read and write on Snowflake."
@@ -30,13 +32,15 @@ dependencies {
   compile group: 'com.opencsv', name: 'opencsv', version: '5.0'
   compile 'com.google.cloud:google-cloud-storage:1.102.0'
 
-  provided library.java.hadoop_client
   testCompile project(path: ":sdks:java:core", configuration: "shadowTest")
+  testCompile project(path: ":sdks:java:io:common", configuration: "testRuntime")
+  testCompile project(path: ":sdks:java:testing:test-utils", configuration: "testRuntime")
   testCompile project(path: ":sdks:java:io:parquet")
   testCompile library.java.avro
   testCompile library.java.junit
   testCompile library.java.hamcrest_core
   testCompile library.java.hamcrest_library
+  testCompile library.java.slf4j_api
   testRuntimeOnly library.java.slf4j_jdk14
   testRuntimeOnly project(path: ":runners:direct-java", configuration: "shadow")
 }

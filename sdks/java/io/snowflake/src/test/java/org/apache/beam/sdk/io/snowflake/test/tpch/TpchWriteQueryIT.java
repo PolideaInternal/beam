@@ -34,8 +34,11 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-public class TpchWriteQueryTest {
+@RunWith(JUnit4.class)
+public class TpchWriteQueryIT {
 
   private static final String QUERY_TRANSFORMATION = "select t.$1, t.$3, t.$16 from %s t";
 

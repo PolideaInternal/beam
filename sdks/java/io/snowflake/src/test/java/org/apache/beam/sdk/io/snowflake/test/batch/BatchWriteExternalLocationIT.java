@@ -45,6 +45,8 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /**
  * Integration tests that checks batch write operation of SnowflakeIO.
@@ -56,7 +58,8 @@ import org.junit.rules.ExpectedException;
  * "--schema=PUBLIC", "--table=...", "--database=...", "--stage=...", "--internalLocation=./test",
  * "--maxNumWorkers=5", "--appName=internal" ]'
  */
-public class BatchWriteExternalLocationTest {
+@RunWith(JUnit4.class)
+public class BatchWriteExternalLocationIT {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static DataSource dataSource;
 

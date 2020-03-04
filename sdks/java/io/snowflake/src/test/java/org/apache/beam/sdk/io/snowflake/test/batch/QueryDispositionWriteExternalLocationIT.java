@@ -30,9 +30,6 @@ import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
-import org.apache.beam.sdk.io.snowflake.data.SFColumn;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
@@ -44,16 +41,17 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-public class CreateDispositionWriteExternalLocationTest {
+@RunWith(JUnit4.class)
+public class QueryDispositionWriteExternalLocationIT {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static DataSource dataSource;
 
   static BatchTestPipelineOptions options;
   static SnowflakeIO.DataSourceConfiguration dc;
   static Location locationSpec;
-
-  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @BeforeClass
   public static void setupAll() {
@@ -97,54 +95,60 @@ public class CreateDispositionWriteExternalLocationTest {
         storage.delete(blob.getBlobId());
       }
     }
-  }
-
-  @Test
-  public void writeToExternalWithWriteCreateDispositionWithAlreadyCreatedTableSuccess()
-      throws SQLException {
-    locationSpec =
-        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
-
-    pipeline
-        .apply(GenerateSequence.from(0).to(100))
-        .apply(
-            "Copy IO",
-            SnowflakeIO.<Long>write()
-                .withDataSourceConfiguration(dc)
-                .to(options.getTable())
-                .via(locationSpec)
-                .withUserDataMapper(getCsvMapper())
-                .withFileNameTemplate("output*")
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
-
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
 
     TestUtils.runConnectionWithStatement(
         dataSource, String.format("TRUNCATE %s;", options.getTable()));
   }
 
   @Test
-  public void writeToExternalWithWriteCreateDispositionWithCreatedTableWithoutSchemaFails() {
+  public void writeWithWriteTruncateDispositionSuccess() throws SQLException {
+    String query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
+    TestUtils.runConnectionWithStatement(dataSource, query);
+
+    locationSpec =
+        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
+
+    pipeline
+        .apply(GenerateSequence.from(0).to(100))
+        .apply(
+            "Truncate before write",
+            SnowflakeIO.<Long>write()
+                .withDataSourceConfiguration(dc)
+                .to(options.getTable())
+                .via(locationSpec)
+                .withUserDataMapper(getCsvMapper())
+                .withFileNameTemplate("output*")
+                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
+                .withParallelization(false));
+    PipelineResult pipelineResult = pipeline.run(options);
+    pipelineResult.waitUntilFinish();
+  }
+
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
+  @Test
+  public void writeWithWriteEmptyDispositionWithNotEmptyTableFails() throws SQLException {
+    String query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
+    TestUtils.runConnectionWithStatement(dataSource, query);
+
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
     exceptionRule.expect(RuntimeException.class);
     exceptionRule.expectMessage(
-        "java.lang.IllegalArgumentException: The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
+        "java.lang.RuntimeException: Table is not empty. Aborting COPY with disposition EMPTY");
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
-            "Copy IO",
+            "Write SnowflakeIO",
             SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
-                .to("test_example_fail")
+                .to(options.getTable())
                 .via(locationSpec)
-                .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withFileNameTemplate("output*")
+                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.EMPTY)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
@@ -152,81 +156,24 @@ public class CreateDispositionWriteExternalLocationTest {
   }
 
   @Test
-  public void writeToExternalWithWriteCreateDispositionWithCreatedTableWithSchemaSuccess()
-      throws SQLException {
-    locationSpec =
-        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
-
-    SFTableSchema tableSchema = new SFTableSchema(SFColumn.of("id", new SFVarchar()));
-
-    pipeline
-        .apply(GenerateSequence.from(0).to(100))
-        .apply(
-            "Copy IO",
-            SnowflakeIO.<Long>write()
-                .withDataSourceConfiguration(dc)
-                .to("test_example_success")
-                .withTableSchema(tableSchema)
-                .via(locationSpec)
-                .withFileNameTemplate("output*")
-                .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
-
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
-
+  public void writeWithWriteEmptyDispositionWithEmptyTableSuccess() throws SQLException {
     TestUtils.runConnectionWithStatement(
-        dataSource, String.format("DROP TABLE IF EXISTS test_example_success;"));
-  }
+        dataSource, String.format("TRUNCATE %s;", options.getTable()));
 
-  @Test
-  public void writeToExternalWithWriteCreateDispositionWithCreateNeverSuccess()
-      throws SQLException {
     locationSpec =
         LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
-            "Copy IO",
+            "Write SnowflakeIO",
             SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(options.getTable())
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_NEVER)
-                .withParallelization(false));
-
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
-
-    TestUtils.runConnectionWithStatement(
-        dataSource, String.format("TRUNCATE %s;", options.getTable()));
-  }
-
-  @Test
-  public void writeToExternalWithWriteCreateDispositionWithCreateNeededFails() {
-    locationSpec =
-        LocationFactory.getExternalLocation(options.getStage(), options.getExternalLocation());
-
-    exceptionRule.expect(RuntimeException.class);
-    exceptionRule.expectMessage(
-        "net.snowflake.client.jdbc.SnowflakeSQLException: SQL compilation error:"
-            + "\nTable 'TEST_FAILURE' does not exist");
-
-    pipeline
-        .apply(GenerateSequence.from(0).to(100))
-        .apply(
-            "Copy IO",
-            SnowflakeIO.<Long>write()
-                .withDataSourceConfiguration(dc)
-                .to("test_failure")
-                .via(locationSpec)
-                .withFileNameTemplate("output*")
-                .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_NEVER)
+                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.EMPTY)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
