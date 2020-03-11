@@ -50,7 +50,7 @@ to authorize Snowflake to operate on your GCS bucket.
 ## Running Read Table test
 
 ```shell script
-./gradlew test --tests TpchReadTableTest -DintegrationTestPipelineOptions='[
+./gradlew integrationTest -DintegrationTestPipelineOptions='[
 "--serverName=<YOUR SNOWFLAKE SERVER NAME>", 
 "--username=<USERNAME>", 
 "--password=<PASSWORD>", 
@@ -61,12 +61,14 @@ to authorize Snowflake to operate on your GCS bucket.
 "--project=<GCP_PROJECT>", 
 "--testSize=TPCH_SF1000", 
 "--tempLocation=gs://<BUCKET-NAME>/dataflow-read-table-tmp"]'
+--tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchReadTableIT
+-DintegrationTestRunner=direct
 ```
 
 ## Running Read Query test
 
 ```shell script
-./gradlew test --tests TpchReadQueryTest -DintegrationTestPipelineOptions='[
+./gradlew integrationTest -DintegrationTestPipelineOptions='[
 "--serverName=<YOUR SNOWFLAKE SERVER NAME>", 
 "--username=<USERNAME>", 
 "--password=<PASSWORD>", 
@@ -77,6 +79,8 @@ to authorize Snowflake to operate on your GCS bucket.
 "--project=<GCP_PROJECT>", 
 "--testSize=TPCH_SF1000",
 "--tempLocation=gs://<BUCKET-NAME>/dataflow-read-query-tmp"]'
+--tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchReadQueryIT
+-DintegrationTestRunner=direct
 ```
 
 ## Running Write Table test
@@ -88,7 +92,7 @@ CREATE TABLE "<DATABASE>"."<SCHEMA>".<TABLE_NAME> LIKE "SNOWFLAKE_SAMPLE_DATA"."
 
 run the test
 ```shell script
-./gradlew test --tests TpchWriteTableTest -DintegrationTestPipelineOptions='[
+./gradlew integrationTest -DintegrationTestPipelineOptions='[
 "--serverName=<YOUR SNOWFLAKE SERVER NAME>", 
 "--username=<USERNAME>", 
 "--password=<PASSWORD>", 
@@ -101,6 +105,8 @@ run the test
 "--runner=DataflowRunner", 
 "--project=<GCP_PROJECT>", 
 "--tempLocation=gs://<BUCKET-NAME>/dataflow-write-table-tmp"]'
+--tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchWriteTableIT
+-DintegrationTestRunner=direct
 ```
 
 
@@ -118,7 +124,7 @@ No need to prepare table, it will be automatically created.
 
 run the test
 ```shell script
-./gradlew test --tests TpchWriteQueryTest -DintegrationTestPipelineOptions='[
+./gradlew integrationTest -DintegrationTestPipelineOptions='[
 "--serverName=<YOUR SNOWFLAKE SERVER NAME>", 
 "--username=<USERNAME>", 
 "--password=<PASSWORD>", 
@@ -131,4 +137,6 @@ run the test
 "--runner=DataflowRunner", 
 "--project=<GCP_PROJECT>", 
 "--tempLocation=gs://<BUCKET-NAME>/dataflow-write-table-tmp"]'
+--tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchWriteQueryIT
+-DintegrationTestRunner=direct
 ```

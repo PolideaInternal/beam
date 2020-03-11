@@ -34,6 +34,29 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+/**
+ * A test of {@link org.apache.beam.sdk.io.snowflake.SnowflakeIO} on an independent Snowflake
+ * instance.
+ *
+ * <p>This test requires a running instance of Snowflake. Pass in connection information using
+ * PipelineOptions:
+ *
+ * <pre>
+ * ./gradlew integrationTest -DintegrationTestPipelineOptions='[
+ * "--serverName=<YOUR SNOWFLAKE SERVER NAME>",
+ * "--username=<USERNAME>",
+ * "--password=<PASSWORD>",
+ * "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/",
+ * "--stagingBucketName=<BUCKET-NAME>",
+ * "--storageIntegration=<STORAGE INTEGRATION NAME>",
+ * "--runner=DataflowRunner",
+ * "--project=<GCP_PROJECT>",
+ * "--testSize=TPCH_SF1000",
+ * "--tempLocation=gs://<BUCKET-NAME>/dataflow-read-table-tmp"]'
+ * --tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchReadTableIT
+ * -DintegrationTestRunner=direct
+ * </pre>
+ */
 @RunWith(JUnit4.class)
 public class TpchReadTableIT {
   private static final String DATABASE = "SNOWFLAKE_SAMPLE_DATA";

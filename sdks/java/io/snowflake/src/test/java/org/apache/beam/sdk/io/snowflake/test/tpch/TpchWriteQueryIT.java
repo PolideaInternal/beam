@@ -37,6 +37,31 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+/**
+ * A test of {@link org.apache.beam.sdk.io.snowflake.SnowflakeIO} on an independent Snowflake
+ * instance.
+ *
+ * <p>This test requires a running instance of Snowflake. Pass in connection information using
+ * PipelineOptions:
+ *
+ * <pre>
+ * ./gradlew integrationTest -DintegrationTestPipelineOptions='[
+ * "--serverName=<YOUR SNOWFLAKE SERVER NAME>",
+ * "--username=<USERNAME>",
+ * "--password=<PASSWORD>",
+ * "--database=<DATABASE>",
+ * "--table=<TABLE NAME>",
+ * "--schema=<SCHEMA>",
+ * "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/*",
+ * "--externalLocation=gs://<BUCKET-NAME>/csv-query-location/",
+ * "--stage=<STAGE NAME>",
+ * "--runner=DataflowRunner",
+ * "--project=<GCP_PROJECT>",
+ * "--tempLocation=gs://<BUCKET-NAME>/dataflow-write-table-tmp"]'
+ * --tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchWriteQueryIT
+ * -DintegrationTestRunner=direct
+ * </pre>
+ */
 @RunWith(JUnit4.class)
 public class TpchWriteQueryIT {
 
