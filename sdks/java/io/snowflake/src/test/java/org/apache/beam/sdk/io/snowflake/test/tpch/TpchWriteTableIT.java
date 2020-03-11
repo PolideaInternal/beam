@@ -46,7 +46,7 @@ import org.junit.runners.JUnit4;
  * "--username=<USERNAME>",
  * "--password=<PASSWORD>",
  * "--database=<DATABASE>",
- * "--table=<TABLE NAME>",
+ * "--table=<TARGET TABLE NAME>",
  * "--schema=<SCHEMA>",
  * "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/*",
  * "--externalLocation=gs://<BUCKET-NAME>/csv-table-location/",
