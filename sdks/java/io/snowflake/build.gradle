@@ -17,9 +17,9 @@
  */
 
 plugins { id 'org.apache.beam.module' }
-applyJavaNature(automaticModuleName: 'org.apache.beam.sdk.io.snowflake')
+applyJavaNature(automaticModuleName: 'org.apache.beam.sdk.io.snowflake', shadowClosure: {})
 provideIntegrationTestingDependencies()
-
+enableJavaPerformanceTesting()
 
 description = "Apache Beam :: SDKs :: Java :: IO :: Snowflake"
 ext.summary = "IO to read and write on Snowflake."
@@ -41,6 +41,16 @@ dependencies {
   testCompile library.java.hamcrest_core
   testCompile library.java.hamcrest_library
   testCompile library.java.slf4j_api
+  testRuntimeOnly library.java.hadoop_client
   testRuntimeOnly library.java.slf4j_jdk14
   testRuntimeOnly project(path: ":runners:direct-java", configuration: "shadow")
+}
+
+shadowJar {
+  manifest {
+    attributes "Main-Class": "org.apache.beam.sdk.io.snowflake.SnowflakeIO"
+  }
+  dependencies {
+    exclude(project(path: ":sdks:java:core"))
+  }
 }
