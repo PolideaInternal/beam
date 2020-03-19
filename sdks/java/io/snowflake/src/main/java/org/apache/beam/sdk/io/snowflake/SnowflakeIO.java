@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.PrivateKey;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -71,6 +71,7 @@ import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
+import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Function;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +95,8 @@ public class SnowflakeIO {
         return read(new SnowflakeServiceImpl());
     }
 
-    public static <ParameterT, OutputT> ReadAll<ParameterT, OutputT> readAll(SnowflakeService snowflakeService) {
+    public static <ParameterT, OutputT> ReadAll<ParameterT, OutputT> readAll(
+            SnowflakeService snowflakeService) {
         return new AutoValue_SnowflakeIO_ReadAll.Builder<ParameterT, OutputT>()
                 .setSnowflakeService(snowflakeService)
                 .build();
@@ -154,7 +156,6 @@ public class SnowflakeIO {
 
         @Nullable
         abstract SnowflakeService getSnowflakeService();
-
 
         abstract Builder<T> toBuilder();
 
@@ -542,17 +543,15 @@ public class SnowflakeIO {
 
         @ProcessElement
         public void processElement(ProcessContext context) throws Exception {
-            snowflakeService.executeCopyIntoLocation(
-                    context,
+            String output = snowflakeService.executeCopyIntoLocation(
                     connection,
-                    dataSourceProviderFn,
-                    query.get(),
-                    table.get(),
-                    integrationName.get(),
-                    stagingBucketName.get(),
-                    tmpDirName.get()
-            );
+                    query,
+                    table,
+                    integrationName,
+                    stagingBucketName,
+                    tmpDirName);
 
+            context.output(output);
         }
 
         @Teardown
@@ -843,11 +842,6 @@ public class SnowflakeIO {
         }
     }
 
-    @FunctionalInterface
-    public interface PreparedStatementSetter<T> extends Serializable {
-        void setParameters(T element, PreparedStatement preparedStatement) throws Exception;
-    }
-
     @AutoValue
     public abstract static class Write<T> extends PTransform<PCollection<T>, PDone> {
         @Nullable
@@ -1078,7 +1072,8 @@ public class SnowflakeIO {
                             location.getFilesLocationForCopy(),
                             location.getFilesPath(),
                             getFileNameTemplate(),
-                            getParallelization(), getSnowflakeService()));
+                            getParallelization(),
+                            getSnowflakeService()));
         }
 
         private ParDo.SingleOutput<Object, Object> copyToTable(Location location) {
@@ -1090,8 +1085,8 @@ public class SnowflakeIO {
                             location,
                             getCreateDisposition(),
                             getWriteDisposition(),
-                            getTableSchema(), getSnowflakeService())
-            );
+                            getTableSchema(),
+                            getSnowflakeService()));
         }
     }
 
@@ -1185,16 +1180,16 @@ public class SnowflakeIO {
 
         @ProcessElement
         public void processElement(ProcessContext context) throws Exception {
-            snowflakeService.executeCopyToTable(context,
-                    dataSourceProviderFn,
+            snowflakeService.executeCopyToTable(
+                    (List<String>) context.element(),
                     connection,
                     dataSource,
                     table,
-                    tableSchema.get(),
+                    tableSchema,
                     source,
                     location,
-                    createDisposition.get(),
-                    writeDisposition.get(),
+                    createDisposition,
+                    writeDisposition,
                     filesPath);
         }
 
@@ -1242,14 +1237,28 @@ public class SnowflakeIO {
         @ProcessElement
         public void processElement(ProcessContext context) throws Exception {
             snowflakeService.executePut(
-                    context,
+                    context.element().toString(),
                     connection,
-                    dataSourceProviderFn,
                     stage,
                     directory,
-                    fileNameTemplate.get(),
-                    parallelization.get()
-            );
+                    fileNameTemplate,
+                    parallelization,
+                    resultSet -> {
+                        assert resultSet != null;
+                        getFilenamesFromPutOperation((ResultSet) resultSet, context);
+                    });
+
+        }
+
+        void getFilenamesFromPutOperation(ResultSet resultSet, ProcessContext context) {
+            int indexOfNameOfFile = 2;
+            try {
+                while (resultSet.next()) {
+                    context.output((OutputT) resultSet.getString(indexOfNameOfFile));
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException("Unable run pipeline with PUT operation.", e);
+            }
         }
 
         @Teardown

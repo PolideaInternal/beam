@@ -1,99 +1,112 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.beam.sdk.io.snowflake;
 
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.SerializableFunction;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Function;
+import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import javax.sql.DataSource;
 
-import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
-
+import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
+import org.apache.beam.sdk.io.snowflake.locations.Location;
+import org.apache.beam.sdk.options.ValueProvider;
+import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 
 public class SnowflakeServiceImpl implements SnowflakeService {
     private static final String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
     @Override
     public void executePut(
-            DoFn.ProcessContext context,
+            String bucketName,
             Connection connection,
-            SerializableFunction<Void, DataSource> dataSourceProviderFn,
             String stage,
             String directory,
-            String fileNameTemplate,
-            Boolean parallelization) throws SQLException {
+            ValueProvider<String> fileNameTemplate,
+            ValueProvider<Boolean> parallelization,
+            Consumer resultSetMethod)
+            throws SQLException {
         String query;
-        if (parallelization) {
-            query = String.format("put file://%s %s;", context.element().toString(), stage);
+        if (parallelization.get()) {
+            query = String.format("put file://%s %s;", bucketName, stage);
         } else {
-            query =
-                    String.format(
-                            "put file://%s/%s %s;", directory, fileNameTemplate, stage);
+            query = String.format("put file://%s/%s %s;", directory, fileNameTemplate, stage);
         }
 
         runStatement(
                 query,
                 connection,
-                resultSet -> {
-                    assert resultSet != null;
-                    getFilenamesFromPutOperation((ResultSet) resultSet, context);
-                    return resultSet;
-                });
+                resultSetMethod);
+
     }
 
 
     @Override
-    public void executeCopyIntoLocation(DoFn.ProcessContext context,
-                                        Connection connection,
-                                        SerializableFunction<Void, DataSource> dataSourceProviderFn,
-                                        String query,
-                                        String table,
-                                        String integrationName,
-                                        String stagingBucketName,
-                                        String tmpDirName) throws SQLException {
+    public String executeCopyIntoLocation(
+            Connection connection,
+            ValueProvider<String> query,
+            ValueProvider<String> table,
+            ValueProvider<String> integrationName,
+            ValueProvider<String> stagingBucketName,
+            ValueProvider<String> tmpDirName)
+            throws SQLException {
         String from;
         if (query != null) {
             // Query must be surrounded with brackets
             from = String.format("(%s)", query);
         } else {
-            from = table;
+            from = table.get();
         }
 
-        String externalLocation =
-                String.format("gcs://%s/%s/", stagingBucketName, tmpDirName);
+        String externalLocation = String.format("gcs://%s/%s/", stagingBucketName.get(), tmpDirName.get());
         String copyQuery =
                 String.format(
                         "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
-                        externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
+                        externalLocation, from, integrationName.get(), CSV_QUOTE_CHAR_FOR_COPY);
 
         runStatement(copyQuery, connection, null);
 
-        String output = String.format("gs://%s/%s/*", stagingBucketName, tmpDirName);
-        context.output(output);
+        return String.format("gs://%s/%s/*", stagingBucketName.get(), tmpDirName);
     }
 
     @Override
-    public void executeCopyToTable(DoFn.ProcessContext context,
-                                   SerializableFunction<Void, DataSource> dataSourceProviderFn,
-                                   Connection connection,
-                                   DataSource dataSource,
-                                   String table,
-                                   SFTableSchema tableSchema,
-                                   String source,
-                                   Location location,
-                                   CreateDisposition createDisposition,
-                                   WriteDisposition writeDisposition,
-                                   String filesPath) throws SQLException {
+    public void executeCopyToTable(
+            List<String> filesList,
+            Connection connection,
+            DataSource dataSource,
+            String table,
+            ValueProvider<SFTableSchema> tableSchema,
+            String source,
+            Location location,
+            ValueProvider<CreateDisposition> createDisposition,
+            ValueProvider<WriteDisposition> writeDisposition,
+            String filesPath)
+            throws SQLException {
 
-        List<String> filesList = (List<String>) context.element();
         String files = String.join(", ", filesList);
         files = files.replaceAll(String.valueOf(filesPath), "");
 
@@ -117,18 +130,6 @@ public class SnowflakeServiceImpl implements SnowflakeService {
         runStatement(query, connection, null);
     }
 
-    private void getFilenamesFromPutOperation(ResultSet resultSet, DoFn.ProcessContext context) {
-        int indexOfNameOfFile = 2;
-        try {
-            while (resultSet.next()) {
-//                TODO add (OutputT) before (resultSet
-                context.output(resultSet.getString(indexOfNameOfFile));
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Unable run pipeline with PUT operation.", e);
-        }
-    }
-
     private void truncateTable(DataSource dataSource, String table) throws SQLException {
         String query = String.format("TRUNCATE %s;", table);
         runConnectionWithStatement(dataSource, query, null);
@@ -142,7 +143,6 @@ public class SnowflakeServiceImpl implements SnowflakeService {
                 resultSet -> {
                     assert resultSet != null;
                     checkIfTableIsEmpty((ResultSet) resultSet);
-                    return resultSet;
                 });
     }
 
@@ -167,18 +167,24 @@ public class SnowflakeServiceImpl implements SnowflakeService {
         return true;
     }
 
-    private void prepareTableAccordingCreateDisposition(DataSource dataSource, String table, SFTableSchema tableSchema, CreateDisposition createDisposition) throws SQLException {
-        switch (createDisposition) {
+    private void prepareTableAccordingCreateDisposition(
+            DataSource dataSource,
+            String table,
+            ValueProvider<SFTableSchema> tableSchema,
+            ValueProvider<CreateDisposition> createDisposition)
+            throws SQLException {
+        switch (createDisposition.get()) {
             case CREATE_NEVER:
                 break;
             case CREATE_IF_NEEDED:
-                createTableIfNotExists(dataSource, table, tableSchema);
+                createTableIfNotExists(dataSource, table, tableSchema.get());
                 break;
         }
     }
 
-    private void prepareTableAccordingWriteDisposition(DataSource dataSource, String table, WriteDisposition writeDisposition) throws SQLException {
-        switch (writeDisposition) {
+    private void prepareTableAccordingWriteDisposition(
+            DataSource dataSource, String table, ValueProvider<WriteDisposition> writeDisposition) throws SQLException {
+        switch (writeDisposition.get()) {
             case TRUNCATE:
                 truncateTable(dataSource, table);
                 break;
@@ -191,7 +197,8 @@ public class SnowflakeServiceImpl implements SnowflakeService {
         }
     }
 
-    private void createTableIfNotExists(DataSource dataSource, String table, SFTableSchema tableSchema) throws SQLException {
+    private void createTableIfNotExists(
+            DataSource dataSource, String table, SFTableSchema tableSchema) throws SQLException {
         String query =
                 String.format(
                         "SELECT EXISTS (SELECT 1 FROM  information_schema.tables  WHERE  table_name = '%s');",
@@ -209,7 +216,6 @@ public class SnowflakeServiceImpl implements SnowflakeService {
                             throw new RuntimeException("Unable to create table.", e);
                         }
                     }
-                    return resultSet;
                 });
     }
 
@@ -225,12 +231,12 @@ public class SnowflakeServiceImpl implements SnowflakeService {
         }
     }
 
-    private void createTable(DataSource dataSource, String table, SFTableSchema tableSchema) throws SQLException {
+    private void createTable(DataSource dataSource, String table, SFTableSchema tableSchema)
+            throws SQLException {
         checkArgument(
                 tableSchema != null,
                 "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
-        String query =
-                String.format("CREATE TABLE %s (%s);", table, tableSchema.sql());
+        String query = String.format("CREATE TABLE %s (%s);", table, tableSchema.sql());
         runConnectionWithStatement(dataSource, query, null);
     }
 
@@ -240,19 +246,19 @@ public class SnowflakeServiceImpl implements SnowflakeService {
     }
 
     private static void runConnectionWithStatement(
-            DataSource dataSource, String query, Function resultSetMethod) throws SQLException {
+            DataSource dataSource, String query, Consumer resultSetMethod) throws SQLException {
         Connection connection = dataSource.getConnection();
         runStatement(query, connection, resultSetMethod);
         connection.close();
     }
 
-    private static void runStatement(String query, Connection connection, Function resultSetMethod)
+    private static void runStatement(String query, Connection connection, Consumer resultSetMethod)
             throws SQLException {
         PreparedStatement statement = connection.prepareStatement(query);
         try {
             if (resultSetMethod != null) {
                 ResultSet resultSet = statement.executeQuery();
-                resultSetMethod.apply(resultSet);
+                resultSetMethod.accept(resultSet);
             } else {
                 statement.execute();
             }
@@ -260,6 +266,4 @@ public class SnowflakeServiceImpl implements SnowflakeService {
             statement.close();
         }
     }
-
-
 }
