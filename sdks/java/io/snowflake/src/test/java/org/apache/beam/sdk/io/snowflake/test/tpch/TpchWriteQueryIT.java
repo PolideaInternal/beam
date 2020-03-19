@@ -20,6 +20,7 @@ package org.apache.beam.sdk.io.snowflake.test.tpch;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.parquet.ParquetIO;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
@@ -108,7 +109,7 @@ public class TpchWriteQueryIT {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .to(table)
             .withQueryTransformation(QUERY_TRANSFORMATION)
-            .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+            .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
             .withTableSchema(tableSchema)
             .via(LocationFactory.of(options))
             .withUserDataMapper(TpchTestUtils.getUserDataMapper()));

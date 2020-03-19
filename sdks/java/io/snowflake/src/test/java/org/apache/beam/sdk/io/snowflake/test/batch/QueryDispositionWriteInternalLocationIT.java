@@ -26,6 +26,7 @@ import net.snowflake.client.jdbc.internal.apache.commons.io.FileUtils;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
@@ -103,7 +104,7 @@ public class QueryDispositionWriteInternalLocationIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getCsvMapper())
-                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
+                .withWriteDisposition(WriteDisposition.TRUNCATE)
                 .withParallelization(false));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
@@ -130,7 +131,7 @@ public class QueryDispositionWriteInternalLocationIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getCsvMapper())
-                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.EMPTY)
+                .withWriteDisposition(WriteDisposition.EMPTY)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
@@ -155,7 +156,7 @@ public class QueryDispositionWriteInternalLocationIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getCsvMapper())
-                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.EMPTY)
+                .withWriteDisposition(WriteDisposition.EMPTY)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);

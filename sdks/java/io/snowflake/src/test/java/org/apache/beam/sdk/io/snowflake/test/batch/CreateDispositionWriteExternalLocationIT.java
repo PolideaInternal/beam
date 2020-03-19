@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.GenerateSequence;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
@@ -118,7 +119,7 @@ public class CreateDispositionWriteExternalLocationIT {
                 .via(locationSpec)
                 .withUserDataMapper(getCsvMapper())
                 .withFileNameTemplate("output*")
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
@@ -147,7 +148,7 @@ public class CreateDispositionWriteExternalLocationIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
@@ -173,7 +174,7 @@ public class CreateDispositionWriteExternalLocationIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
@@ -199,7 +200,7 @@ public class CreateDispositionWriteExternalLocationIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_NEVER)
+                .withCreateDisposition(CreateDisposition.CREATE_NEVER)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
@@ -229,7 +230,7 @@ public class CreateDispositionWriteExternalLocationIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_NEVER)
+                .withCreateDisposition(CreateDisposition.CREATE_NEVER)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);

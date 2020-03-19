@@ -29,6 +29,7 @@ import javax.sql.DataSource;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
@@ -211,7 +212,7 @@ public class BatchWriteExternalLocationIT {
                 .via(locationSpec)
                 .withUserDataMapper(getCsvMapper())
                 .withQueryTransformation(query)
-                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.APPEND)
+                .withWriteDisposition(WriteDisposition.APPEND)
                 .withDataSourceConfiguration(dc));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
