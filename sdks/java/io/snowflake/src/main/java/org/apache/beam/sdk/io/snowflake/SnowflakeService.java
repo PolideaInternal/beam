@@ -17,52 +17,48 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.options.ValueProvider;
-
-import javax.sql.DataSource;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import javax.sql.DataSource;
+import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
+import org.apache.beam.sdk.io.snowflake.locations.Location;
 
 public interface SnowflakeService extends Serializable {
 
-    void executePut(
-            String bucketName,
-            Connection connection,
-            String stage,
-            String directory,
-            ValueProvider<String> fileNameTemplate,
-            ValueProvider<Boolean> parallelization,
-            Consumer resultSetMethod)
-            throws SQLException;
+  void executePut(
+      Connection connection,
+      String bucketName,
+      String stage,
+      String directory,
+      String fileNameTemplate,
+      Boolean parallelization,
+      Consumer resultSetMethod)
+      throws SQLException;
 
-    String executeCopyIntoLocation(
-            Connection connection,
-            ValueProvider<String> query,
-            ValueProvider<String> table,
-            ValueProvider<String> integrationName,
-            ValueProvider<String> stagingBucketName,
-            ValueProvider<String> tmpDirName)
-            throws SQLException;
+  String executeCopyIntoLocation(
+      Connection connection,
+      String query,
+      String table,
+      String integrationName,
+      String stagingBucketName,
+      String tmpDirName)
+      throws SQLException;
 
-    void executeCopyToTable(
-            List<String> filesList,
-            Connection connection,
-            DataSource dataSource,
-            String table,
-            ValueProvider<SFTableSchema> tableSchema,
-            String source,
-            Location location,
-            ValueProvider<CreateDisposition> createDisposition,
-            ValueProvider<WriteDisposition> writeDisposition,
-            String filesPath)
-            throws SQLException;
-
+  void executeCopyToTable(
+      Connection connection,
+      List<String> filesList,
+      DataSource dataSource,
+      String table,
+      SFTableSchema tableSchema,
+      String source,
+      Location location,
+      CreateDisposition createDisposition,
+      WriteDisposition writeDisposition,
+      String filesPath)
+      throws SQLException;
 }

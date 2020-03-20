@@ -42,7 +42,7 @@ import org.junit.runners.JUnit4;
  * PipelineOptions:
  *
  * <pre>
- * ./gradlew integrationTest -DintegrationTestPipelineOptions='[
+ * ./gradlew -p sdks/java/io/snowflakeintegrationTest -DintegrationTestPipelineOptions='[
  * "--serverName=<YOUR SNOWFLAKE SERVER NAME>",
  * "--username=<USERNAME>",
  * "--password=<PASSWORD>",
