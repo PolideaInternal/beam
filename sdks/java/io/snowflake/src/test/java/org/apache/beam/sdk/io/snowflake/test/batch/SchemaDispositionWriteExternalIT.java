@@ -42,6 +42,7 @@ import org.apache.beam.sdk.io.snowflake.data.structured.SFArray;
 import org.apache.beam.sdk.io.snowflake.data.structured.SFObject;
 import org.apache.beam.sdk.io.snowflake.data.structured.SFVariant;
 import org.apache.beam.sdk.io.snowflake.data.text.SFText;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
@@ -171,7 +172,7 @@ public class SchemaDispositionWriteExternalIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
@@ -204,7 +205,7 @@ public class SchemaDispositionWriteExternalIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);
@@ -237,7 +238,7 @@ public class SchemaDispositionWriteExternalIT {
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
     PipelineResult pipelineResult = pipeline.run(options);

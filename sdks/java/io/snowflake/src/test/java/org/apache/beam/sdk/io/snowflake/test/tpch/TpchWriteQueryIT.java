@@ -26,6 +26,7 @@ import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFNumber;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
@@ -45,7 +46,7 @@ import org.junit.runners.JUnit4;
  * PipelineOptions:
  *
  * <pre>
- * ./gradlew integrationTest -DintegrationTestPipelineOptions='[
+ * ./gradlew -p sdks/java/io/snowflake integrationTest -DintegrationTestPipelineOptions='[
  * "--serverName=<YOUR SNOWFLAKE SERVER NAME>",
  * "--username=<USERNAME>",
  * "--password=<PASSWORD>",
@@ -108,7 +109,7 @@ public class TpchWriteQueryIT {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .to(table)
             .withQueryTransformation(QUERY_TRANSFORMATION)
-            .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+            .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
             .withTableSchema(tableSchema)
             .via(LocationFactory.of(options))
             .withUserDataMapper(TpchTestUtils.getUserDataMapper()));

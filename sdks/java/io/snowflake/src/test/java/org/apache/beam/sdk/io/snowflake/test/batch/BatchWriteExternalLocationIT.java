@@ -30,6 +30,7 @@ import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
@@ -51,13 +52,13 @@ import org.junit.runners.JUnit4;
 /**
  * Integration tests that checks batch write operation of SnowflakeIO.
  *
- * <p>Example test run: ./gradlew test --tests
- * org.apache.beam.sdk.io.snowflake.test.BatchWriteTest.writeToInternalWithNamedStageTest
+ * <p>Example test run: ./gradlew -p sdks/java/io/snowflake integrationTest
  * -DintegrationTestPipelineOptions='[ "--runner=DataflowRunner", "--project=...",
  * "--stagingLocation=gs://...", "--serverName=...", "--username=...", "--password=...",
  * "--schema=PUBLIC", "--table=...", "--database=...", "--stage=...", "--internalLocation=./test",
- * "--maxNumWorkers=5", "--appName=internal" ]'
+ * "--maxNumWorkers=5", "--appName=internal" ]' --tests org.apache.beam.sdk.io.snowflake.test.tpch.BatchWriteExternalLocationIT
  */
+
 @RunWith(JUnit4.class)
 public class BatchWriteExternalLocationIT {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
@@ -211,7 +212,7 @@ public class BatchWriteExternalLocationIT {
                 .via(locationSpec)
                 .withUserDataMapper(getCsvMapper())
                 .withQueryTransformation(query)
-                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.APPEND)
+                .withWriteDisposition(WriteDisposition.APPEND)
                 .withDataSourceConfiguration(dc));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();

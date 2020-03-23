@@ -22,6 +22,7 @@ import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.parquet.ParquetIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
@@ -41,7 +42,7 @@ import org.junit.runners.JUnit4;
  * PipelineOptions:
  *
  * <pre>
- * ./gradlew integrationTest -DintegrationTestPipelineOptions='[
+ * ./gradlew -p sdks/java/io/snowflake integrationTest -DintegrationTestPipelineOptions='[
  * "--serverName=<YOUR SNOWFLAKE SERVER NAME>",
  * "--username=<USERNAME>",
  * "--password=<PASSWORD>",
@@ -82,7 +83,6 @@ public class TpchWriteTableIT {
 
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
-            .withUrl(options.getUrl())
             .withServerName(options.getServerName())
             .withWarehouse(options.getWarehouse())
             .withDatabase(options.getDatabase())
@@ -99,7 +99,7 @@ public class TpchWriteTableIT {
         SnowflakeIO.<GenericRecord>write()
             .withDataSourceConfiguration(dataSourceConfiguration)
             .to(table)
-            .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
+            .withWriteDisposition(WriteDisposition.TRUNCATE)
             .via(LocationFactory.of(options))
             .withUserDataMapper(TpchTestUtils.getUserDataMapper()));
 

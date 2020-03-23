@@ -17,9 +17,6 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
-import static org.apache.beam.sdk.io.TextIO.readFiles;
-import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
-
 import com.google.api.gax.paging.Page;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.storage.Blob;
@@ -27,21 +24,6 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
-import java.io.IOException;
-import java.io.Serializable;
-import java.security.PrivateKey;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.Nullable;
-import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
@@ -53,25 +35,38 @@ import org.apache.beam.sdk.io.snowflake.credentials.OAuthTokenSnowflakeCredentia
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentials;
 import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCredentials;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.options.ValueProvider;
-import org.apache.beam.sdk.transforms.Combine;
-import org.apache.beam.sdk.transforms.Create;
-import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.PTransform;
-import org.apache.beam.sdk.transforms.ParDo;
-import org.apache.beam.sdk.transforms.SerializableFunction;
-import org.apache.beam.sdk.transforms.Wait;
+import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.sdk.transforms.display.HasDisplayData;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Function;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.Serializable;
+import java.security.PrivateKey;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.apache.beam.sdk.io.TextIO.readFiles;
+import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
 public class SnowflakeIO {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeIO.class);
@@ -80,12 +75,25 @@ public class SnowflakeIO {
   private static final String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
   /** Read data from a Snowflake using COPY method. */
+  public static <T> Read<T> read(SnowflakeService snowflakeService) {
+    return new AutoValue_SnowflakeIO_Read.Builder<T>()
+        .setSnowflakeService(snowflakeService)
+        .build();
+  }
+
   public static <T> Read<T> read() {
-    return new AutoValue_SnowflakeIO_Read.Builder<T>().build();
+    return read(new SnowflakeServiceImpl());
+  }
+
+  public static <ParameterT, OutputT> ReadAll<ParameterT, OutputT> readAll(
+      SnowflakeService snowflakeService) {
+    return new AutoValue_SnowflakeIO_ReadAll.Builder<ParameterT, OutputT>()
+        .setSnowflakeService(snowflakeService)
+        .build();
   }
 
   public static <ParameterT, OutputT> ReadAll<ParameterT, OutputT> readAll() {
-    return new AutoValue_SnowflakeIO_ReadAll.Builder<ParameterT, OutputT>().build();
+    return readAll(new SnowflakeServiceImpl());
   }
 
   @FunctionalInterface
@@ -98,14 +106,19 @@ public class SnowflakeIO {
     Object[] mapRow(T element);
   }
 
-  public static <T> Write<T> write() {
+  public static <T> Write<T> write(SnowflakeService snowflakeService) {
     return new AutoValue_SnowflakeIO_Write.Builder<T>()
         .setFileNameTemplate(ValueProvider.StaticValueProvider.of("output*"))
         .setParallelization(ValueProvider.StaticValueProvider.of(true))
         .setCreateDisposition(
-            ValueProvider.StaticValueProvider.of(Write.CreateDisposition.CREATE_IF_NEEDED))
-        .setWriteDisposition(ValueProvider.StaticValueProvider.of(Write.WriteDisposition.APPEND))
+            ValueProvider.StaticValueProvider.of(CreateDisposition.CREATE_IF_NEEDED))
+        .setWriteDisposition(ValueProvider.StaticValueProvider.of(WriteDisposition.APPEND))
+        .setSnowflakeService(snowflakeService)
         .build();
+  }
+
+  public static <T> Write<T> write() {
+    return write(new SnowflakeServiceImpl());
   }
 
   @AutoValue
@@ -114,22 +127,25 @@ public class SnowflakeIO {
     abstract SerializableFunction<Void, DataSource> getDataSourceProviderFn();
 
     @Nullable
-    abstract ValueProvider<String> getQuery();
+    abstract String getQuery();
 
     @Nullable
-    abstract ValueProvider<String> getTable();
+    abstract String getTable();
 
     @Nullable
-    abstract ValueProvider<String> getIntegrationName();
+    abstract String getIntegrationName();
 
     @Nullable
-    abstract ValueProvider<String> getStagingBucketName();
+    abstract String getStagingBucketName();
 
     @Nullable
     abstract CsvMapper<T> getCsvMapper();
 
     @Nullable
     abstract Coder<T> getCoder();
+
+    @Nullable
+    abstract SnowflakeService getSnowflakeService();
 
     abstract Builder<T> toBuilder();
 
@@ -138,17 +154,19 @@ public class SnowflakeIO {
       abstract Builder<T> setDataSourceProviderFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn);
 
-      abstract Builder<T> setQuery(ValueProvider<String> query);
+      abstract Builder<T> setQuery(String query);
 
-      abstract Builder<T> setTable(ValueProvider<String> table);
+      abstract Builder<T> setTable(String table);
 
-      abstract Builder<T> setIntegrationName(ValueProvider<String> integrationName);
+      abstract Builder<T> setIntegrationName(String integrationName);
 
-      abstract Builder<T> setStagingBucketName(ValueProvider<String> stagingBucketName);
+      abstract Builder<T> setStagingBucketName(String stagingBucketName);
 
       abstract Builder<T> setCsvMapper(CsvMapper<T> csvMapper);
 
       abstract Builder<T> setCoder(Coder<T> coder);
+
+      abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
       abstract Read<T> build();
     }
@@ -169,34 +187,18 @@ public class SnowflakeIO {
     }
 
     public Read<T> fromQuery(String query) {
-      return fromQuery(ValueProvider.StaticValueProvider.of(query));
-    }
-
-    public Read<T> fromQuery(ValueProvider<String> query) {
       return toBuilder().setQuery(query).build();
     }
 
     public Read<T> fromTable(String table) {
-      return fromTable(ValueProvider.StaticValueProvider.of(table));
-    }
-
-    public Read<T> fromTable(ValueProvider<String> table) {
       return toBuilder().setTable(table).build();
     }
 
     public Read<T> withStagingBucketName(String stagingBucketName) {
-      return withStagingBucketName(ValueProvider.StaticValueProvider.of(stagingBucketName));
-    }
-
-    public Read<T> withStagingBucketName(ValueProvider<String> stagingBucketName) {
       return toBuilder().setStagingBucketName(stagingBucketName).build();
     }
 
     public Read<T> withIntegrationName(String integrationName) {
-      return withIntegrationName(ValueProvider.StaticValueProvider.of(integrationName));
-    }
-
-    public Read<T> withIntegrationName(ValueProvider<String> integrationName) {
       return toBuilder().setIntegrationName(integrationName).build();
     }
 
@@ -225,7 +227,7 @@ public class SnowflakeIO {
       return input
           .apply(Create.of((Void) null))
           .apply(
-              SnowflakeIO.<Void, T>readAll()
+              SnowflakeIO.<Void, T>readAll(getSnowflakeService())
                   .withDataSourceProviderFn(getDataSourceProviderFn())
                   .fromQuery(getQuery())
                   .fromTable(getTable())
@@ -238,10 +240,10 @@ public class SnowflakeIO {
     @Override
     public void populateDisplayData(DisplayData.Builder builder) {
       super.populateDisplayData(builder);
-      if (getQuery() != null && getQuery().get() != null) {
+      if (getQuery() != null) {
         builder.add(DisplayData.item("query", getQuery()));
       }
-      if (getTable() != null && getTable().get() != null) {
+      if (getTable() != null) {
         builder.add(DisplayData.item("table", getTable()));
       }
       builder.add(DisplayData.item("integrationName", getIntegrationName()));
@@ -262,22 +264,25 @@ public class SnowflakeIO {
     abstract SerializableFunction<Void, DataSource> getDataSourceProviderFn();
 
     @Nullable
-    abstract ValueProvider<String> getQuery();
+    abstract String getQuery();
 
     @Nullable
-    abstract ValueProvider<String> getTable();
+    abstract String getTable();
 
     @Nullable
-    abstract ValueProvider<String> getIntegrationName();
+    abstract String getIntegrationName();
 
     @Nullable
-    abstract ValueProvider<String> getStagingBucketName();
+    abstract String getStagingBucketName();
 
     @Nullable
     abstract CsvMapper<OutputT> getCsvMapper();
 
     @Nullable
     abstract Coder<OutputT> getCoder();
+
+    @Nullable
+    abstract SnowflakeService getSnowflakeService();
 
     abstract Builder<ParameterT, OutputT> toBuilder();
 
@@ -286,19 +291,19 @@ public class SnowflakeIO {
       abstract Builder<ParameterT, OutputT> setDataSourceProviderFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn);
 
-      abstract Builder<ParameterT, OutputT> setQuery(ValueProvider<String> query);
+      abstract Builder<ParameterT, OutputT> setQuery(String query);
 
-      abstract Builder<ParameterT, OutputT> setTable(ValueProvider<String> table);
+      abstract Builder<ParameterT, OutputT> setTable(String table);
 
-      abstract Builder<ParameterT, OutputT> setIntegrationName(
-          ValueProvider<String> integrationName);
+      abstract Builder<ParameterT, OutputT> setIntegrationName(String integrationName);
 
-      abstract Builder<ParameterT, OutputT> setStagingBucketName(
-          ValueProvider<String> stagingBucketName);
+      abstract Builder<ParameterT, OutputT> setStagingBucketName(String stagingBucketName);
 
       abstract Builder<ParameterT, OutputT> setCsvMapper(CsvMapper<OutputT> csvMapper);
 
       abstract Builder<ParameterT, OutputT> setCoder(Coder<OutputT> coder);
+
+      abstract Builder<ParameterT, OutputT> setSnowflakeService(SnowflakeService snowflakeService);
 
       abstract ReadAll<ParameterT, OutputT> build();
     }
@@ -314,18 +319,10 @@ public class SnowflakeIO {
     }
 
     public ReadAll<ParameterT, OutputT> fromQuery(String query) {
-      return fromQuery(ValueProvider.StaticValueProvider.of(query));
-    }
-
-    public ReadAll<ParameterT, OutputT> fromQuery(ValueProvider<String> query) {
       return toBuilder().setQuery(query).build();
     }
 
     public ReadAll<ParameterT, OutputT> fromTable(String table) {
-      return fromTable(ValueProvider.StaticValueProvider.of(table));
-    }
-
-    public ReadAll<ParameterT, OutputT> fromTable(ValueProvider<String> table) {
       return toBuilder().setTable(table).build();
     }
 
@@ -333,25 +330,10 @@ public class SnowflakeIO {
       checkArgument(
           integrationName != null,
           "SnowflakeIO.readAll().withIntegrationName(integrationName) called with null integrationName");
-      return withIntegrationName(ValueProvider.StaticValueProvider.of(integrationName));
-    }
-
-    public ReadAll<ParameterT, OutputT> withIntegrationName(ValueProvider<String> integrationName) {
-      checkArgument(
-          integrationName != null,
-          "SnowflakeIO.readAll().withIntegrationName(integrationName) called with null integrationName");
       return toBuilder().setIntegrationName(integrationName).build();
     }
 
     public ReadAll<ParameterT, OutputT> withStagingBucketName(String stagingBucketName) {
-      checkArgument(
-          stagingBucketName != null,
-          "SnowflakeIO.readAll().withStagingBucketName(stagingBucketName) called with null stagingBucketName");
-      return withStagingBucketName(ValueProvider.StaticValueProvider.of(stagingBucketName));
-    }
-
-    public ReadAll<ParameterT, OutputT> withStagingBucketName(
-        ValueProvider<String> stagingBucketName) {
       checkArgument(
           stagingBucketName != null,
           "SnowflakeIO.readAll().withStagingBucketName(stagingBucketName) called with null stagingBucketName");
@@ -373,7 +355,7 @@ public class SnowflakeIO {
     @Override
     public PCollection<OutputT> expand(PCollection<ParameterT> input) {
       PCollection<OutputT> output;
-      ValueProvider<String> gcpTmpDirName = ValueProvider.StaticValueProvider.of(makeTmpDirName());
+      String gcpTmpDirName = makeTmpDirName();
 
       output =
           input
@@ -385,7 +367,8 @@ public class SnowflakeIO {
                           getTable(),
                           getIntegrationName(),
                           getStagingBucketName(),
-                          gcpTmpDirName)))
+                          gcpTmpDirName,
+                          getSnowflakeService())))
               .apply(FileIO.matchAll())
               .apply(FileIO.readMatches())
               .apply(readFiles())
@@ -404,10 +387,10 @@ public class SnowflakeIO {
     @Override
     public void populateDisplayData(DisplayData.Builder builder) {
       super.populateDisplayData(builder);
-      if (getQuery() != null && getQuery().get() != null) {
+      if (getQuery() != null) {
         builder.add(DisplayData.item("query", getQuery()));
       }
-      if (getTable() != null && getTable().get() != null) {
+      if (getTable() != null) {
         builder.add(DisplayData.item("table", getTable()));
       }
       builder.add(DisplayData.item("integrationName", getIntegrationName()));
@@ -439,11 +422,10 @@ public class SnowflakeIO {
   }
 
   public static class CleanTmpFilesFromGcsFn extends DoFn<Object, Object> {
-    private final ValueProvider<String> bucketName;
-    private final ValueProvider<String> bucketPath;
+    private final String bucketName;
+    private final String bucketPath;
 
-    public CleanTmpFilesFromGcsFn(
-        ValueProvider<String> bucketName, ValueProvider<String> bucketPath) {
+    public CleanTmpFilesFromGcsFn(String bucketName, String bucketPath) {
       this.bucketName = bucketName;
       this.bucketPath = bucketPath;
     }
@@ -451,8 +433,7 @@ public class SnowflakeIO {
     @ProcessElement
     public void processElement(ProcessContext c) {
       Storage storage = StorageOptions.getDefaultInstance().getService();
-      Page<Blob> blobs =
-          storage.list(bucketName.get(), Storage.BlobListOption.prefix(bucketPath.get()));
+      Page<Blob> blobs = storage.list(bucketName, Storage.BlobListOption.prefix(bucketPath));
       for (Blob blob : blobs.iterateAll()) {
         storage.delete(blob.getBlobId());
       }
@@ -474,28 +455,31 @@ public class SnowflakeIO {
 
   private static class CopyToExternalLocationFn<ParameterT> extends DoFn<ParameterT, String> {
     private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
-    private final ValueProvider<String> query;
-    private final ValueProvider<String> table;
-    private final ValueProvider<String> integrationName;
-    private final ValueProvider<String> stagingBucketName;
-    private final ValueProvider<String> tmpDirName;
+    private final String query;
+    private final String table;
+    private final String integrationName;
+    private final String stagingBucketName;
+    private final String tmpDirName;
+    private final SnowflakeService snowflakeService;
 
     private DataSource dataSource;
     private Connection connection;
 
     private CopyToExternalLocationFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
-        ValueProvider<String> query,
-        ValueProvider<String> table,
-        ValueProvider<String> integrationName,
-        ValueProvider<String> stagingBucketName,
-        ValueProvider<String> tmpDirName) {
+        String query,
+        String table,
+        String integrationName,
+        String stagingBucketName,
+        String tmpDirName,
+        SnowflakeService snowflakeService) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.query = query;
       this.table = table;
       this.integrationName = integrationName;
       this.stagingBucketName = stagingBucketName;
       this.tmpDirName = tmpDirName;
+      this.snowflakeService = snowflakeService;
     }
 
     @Setup
@@ -506,25 +490,10 @@ public class SnowflakeIO {
 
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
+      String output =
+          snowflakeService.executeCopyIntoLocation(
+              connection, query, table, integrationName, stagingBucketName, tmpDirName);
 
-      String from;
-      if (query != null) {
-        // Query must be surrounded with brackets
-        from = String.format("(%s)", query);
-      } else {
-        from = table.get();
-      }
-
-      String externalLocation =
-          String.format("gcs://%s/%s/", stagingBucketName.get(), tmpDirName.get());
-      String copyQuery =
-          String.format(
-              "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
-              externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
-
-      runStatement(copyQuery, connection, null);
-
-      String output = String.format("gs://%s/%s/*", stagingBucketName.get(), tmpDirName);
       context.output(output);
     }
 
@@ -816,11 +785,6 @@ public class SnowflakeIO {
     }
   }
 
-  @FunctionalInterface
-  public interface PreparedStatementSetter<T> extends Serializable {
-    void setParameters(T element, PreparedStatement preparedStatement) throws Exception;
-  }
-
   @AutoValue
   public abstract static class Write<T> extends PTransform<PCollection<T>, PDone> {
     @Nullable
@@ -851,7 +815,10 @@ public class SnowflakeIO {
     abstract UserDataMapper getUserDataMapper();
 
     @Nullable
-    abstract ValueProvider<SFTableSchema> getTableSchema();
+    abstract SFTableSchema getTableSchema();
+
+    @Nullable
+    abstract SnowflakeService getSnowflakeService();
 
     abstract Builder<T> toBuilder();
 
@@ -876,7 +843,9 @@ public class SnowflakeIO {
 
       abstract Builder<T> setCreateDisposition(ValueProvider<CreateDisposition> createDisposition);
 
-      abstract Builder<T> setTableSchema(ValueProvider<SFTableSchema> tableSchema);
+      abstract Builder<T> setTableSchema(SFTableSchema tableSchema);
+
+      abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
       abstract Write<T> build();
     }
@@ -951,22 +920,7 @@ public class SnowflakeIO {
     }
 
     public Write<T> withTableSchema(SFTableSchema tableSchema) {
-      return withTableSchema(ValueProvider.StaticValueProvider.of(tableSchema));
-    }
-
-    public Write<T> withTableSchema(ValueProvider<SFTableSchema> tableSchema) {
       return toBuilder().setTableSchema(tableSchema).build();
-    }
-
-    public enum WriteDisposition {
-      TRUNCATE,
-      APPEND,
-      EMPTY
-    }
-
-    public enum CreateDisposition {
-      CREATE_IF_NEEDED,
-      CREATE_NEVER
     }
 
     @Override
@@ -1057,7 +1011,8 @@ public class SnowflakeIO {
               location.getFilesLocationForCopy(),
               location.getFilesPath(),
               getFileNameTemplate(),
-              getParallelization()));
+              getParallelization(),
+              getSnowflakeService()));
     }
 
     private ParDo.SingleOutput<Object, Object> copyToTable(Location location) {
@@ -1069,7 +1024,8 @@ public class SnowflakeIO {
               location,
               getCreateDisposition(),
               getWriteDisposition(),
-              getTableSchema()));
+              getTableSchema(),
+              getSnowflakeService()));
     }
   }
 
@@ -1120,9 +1076,10 @@ public class SnowflakeIO {
     private final String filesPath;
     private final Location location;
     private final String table;
-    private final ValueProvider<SFTableSchema> tableSchema;
-    private final ValueProvider<Write.WriteDisposition> writeDisposition;
-    private final ValueProvider<Write.CreateDisposition> createDisposition;
+    private final SFTableSchema tableSchema;
+    private final ValueProvider<WriteDisposition> writeDisposition;
+    private final ValueProvider<CreateDisposition> createDisposition;
+    private final SnowflakeService snowflakeService;
 
     private DataSource dataSource;
     private Connection connection;
@@ -1132,9 +1089,10 @@ public class SnowflakeIO {
         ValueProvider<String> table,
         ValueProvider<String> query,
         Location location,
-        ValueProvider<Write.CreateDisposition> createDisposition,
-        ValueProvider<Write.WriteDisposition> writeDisposition,
-        ValueProvider<SFTableSchema> tableSchema) {
+        ValueProvider<CreateDisposition> createDisposition,
+        ValueProvider<WriteDisposition> writeDisposition,
+        SFTableSchema tableSchema,
+        SnowflakeService snowflakeService) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.table = table.get();
       this.tableSchema = tableSchema;
@@ -1150,6 +1108,7 @@ public class SnowflakeIO {
       this.filesPath = location.getFilesPath();
       this.createDisposition = createDisposition;
       this.writeDisposition = writeDisposition;
+      this.snowflakeService = snowflakeService;
     }
 
     @Setup
@@ -1160,28 +1119,19 @@ public class SnowflakeIO {
 
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
-      List<String> filesList = (List<String>) context.element();
-      String files = String.join(", ", filesList);
-      files = files.replaceAll(String.valueOf(this.filesPath), "");
+      LOG.error("ERROR" + (tableSchema == null));
 
-      prepareTableAccordingCreateDisposition(dataSource);
-      prepareTableAccordingWriteDisposition(dataSource);
-
-      String query;
-      if (location.isUsingIntegration()) {
-        String integration = this.location.getIntegration();
-        query =
-            String.format(
-                "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP) STORAGE_INTEGRATION=%s;",
-                this.table, this.source, files, CSV_QUOTE_CHAR_FOR_COPY, integration);
-      } else {
-        query =
-            String.format(
-                "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP);",
-                this.table, this.source, files, CSV_QUOTE_CHAR_FOR_COPY);
-      }
-
-      runStatement(query, connection, null);
+      snowflakeService.executeCopyToTable(
+          connection,
+          (List<String>) context.element(),
+          dataSource,
+          table,
+          tableSchema,
+          source,
+          location,
+          createDisposition.get(),
+          writeDisposition.get(),
+          filesPath);
     }
 
     @Teardown
@@ -1189,116 +1139,6 @@ public class SnowflakeIO {
       if (connection != null) {
         connection.close();
       }
-    }
-
-    private void prepareTableAccordingCreateDisposition(DataSource dataSource) throws SQLException {
-      switch (this.createDisposition.get()) {
-        case CREATE_NEVER:
-          break;
-        case CREATE_IF_NEEDED:
-          createTableIfNotExists(dataSource);
-          break;
-      }
-    }
-
-    private void createTableIfNotExists(DataSource dataSource) throws SQLException {
-      String query =
-          String.format(
-              "SELECT EXISTS (SELECT 1 FROM  information_schema.tables  WHERE  table_name = '%s');",
-              table.toUpperCase());
-
-      runConnectionWithStatement(
-          dataSource,
-          query,
-          resultSet -> {
-            assert resultSet != null;
-            if (!checkResultIfTableExists((ResultSet) resultSet)) {
-              try {
-                createTable(dataSource);
-              } catch (SQLException e) {
-                throw new RuntimeException("Unable to create table.", e);
-              }
-            }
-            return resultSet;
-          });
-    }
-
-    static boolean checkResultIfTableExists(ResultSet resultSet) {
-      try {
-        if (resultSet.next()) {
-          return checkIfResultIsTrue(resultSet);
-        } else {
-          throw new RuntimeException("Unable run pipeline with CREATE IF NEEDED - no response.");
-        }
-      } catch (SQLException e) {
-        throw new RuntimeException("Unable run pipeline with CREATE IF NEEDED disposition.", e);
-      }
-    }
-
-    void createTable(DataSource dataSource) throws SQLException {
-      checkArgument(
-          this.tableSchema != null,
-          "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
-      String query =
-          String.format("CREATE TABLE %s (%s);", this.table, this.tableSchema.get().sql());
-      runConnectionWithStatement(dataSource, query, null);
-    }
-
-    static boolean checkIfResultIsTrue(ResultSet resultSet) throws SQLException {
-      int columnId = 1;
-      return resultSet.getBoolean(columnId);
-    }
-
-    private void prepareTableAccordingWriteDisposition(DataSource dataSource) throws SQLException {
-      switch (this.writeDisposition.get()) {
-        case TRUNCATE:
-          truncateTable(dataSource);
-          break;
-        case EMPTY:
-          checkIfTableIsEmpty(dataSource);
-          break;
-        case APPEND:
-        default:
-          break;
-      }
-    }
-
-    private void truncateTable(DataSource dataSource) throws SQLException {
-      String query = String.format("TRUNCATE %s;", this.table);
-      runConnectionWithStatement(dataSource, query, null);
-    }
-
-    private void checkIfTableIsEmpty(DataSource dataSource) throws SQLException {
-      String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", this.table);
-      runConnectionWithStatement(
-          dataSource,
-          selectQuery,
-          resultSet -> {
-            assert resultSet != null;
-            checkIfTableIsEmpty((ResultSet) resultSet);
-            return resultSet;
-          });
-    }
-
-    static void checkIfTableIsEmpty(ResultSet resultSet) {
-      int columnId = 1;
-      try {
-        if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
-          throw new RuntimeException("Table is not empty. Aborting COPY with disposition EMPTY");
-        }
-      } catch (SQLException e) {
-        throw new RuntimeException("Unable run pipeline with EMPTY disposition.", e);
-      }
-    }
-
-    private static boolean checkIfTableIsEmpty(ResultSet resultSet, int columnId)
-        throws SQLException {
-      int rowCount = resultSet.getInt(columnId);
-      if (rowCount >= 1) {
-        return false;
-        // TODO cleanup stage?
-      }
-      return true;
     }
   }
 
@@ -1308,6 +1148,7 @@ public class SnowflakeIO {
     private final String directory;
     private final ValueProvider<String> fileNameTemplate;
     private final ValueProvider<Boolean> parallelization;
+    private final SnowflakeService snowflakeService;
 
     private DataSource dataSource;
     private Connection connection;
@@ -1317,12 +1158,14 @@ public class SnowflakeIO {
         String stage,
         String file,
         ValueProvider<String> fileNameTemplate,
-        ValueProvider<Boolean> parallelization) {
+        ValueProvider<Boolean> parallelization,
+        SnowflakeService snowflakeService) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.stage = stage;
       this.directory = file;
       this.fileNameTemplate = fileNameTemplate;
       this.parallelization = parallelization;
+      this.snowflakeService = snowflakeService;
     }
 
     @Setup
@@ -1334,22 +1177,16 @@ public class SnowflakeIO {
     /* Right now it is paralleled per each created file */
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
-      String query;
-      if (parallelization.get()) {
-        query = String.format("put file://%s %s;", context.element().toString(), this.stage);
-      } else {
-        query =
-            String.format(
-                "put file://%s/%s %s;", this.directory, this.fileNameTemplate, this.stage);
-      }
-
-      runStatement(
-          query,
+      snowflakeService.executePut(
           connection,
+          context.element().toString(),
+          stage,
+          directory,
+          fileNameTemplate.get(),
+          parallelization.get(),
           resultSet -> {
             assert resultSet != null;
             getFilenamesFromPutOperation((ResultSet) resultSet, context);
-            return resultSet;
           });
     }
 
@@ -1367,28 +1204,6 @@ public class SnowflakeIO {
     @Teardown
     public void teardown() throws Exception {
       connection.close();
-    }
-  }
-
-  private static void runConnectionWithStatement(
-      DataSource dataSource, String query, Function resultSetMethod) throws SQLException {
-    Connection connection = dataSource.getConnection();
-    runStatement(query, connection, resultSetMethod);
-    connection.close();
-  }
-
-  private static void runStatement(String query, Connection connection, Function resultSetMethod)
-      throws SQLException {
-    PreparedStatement statement = connection.prepareStatement(query);
-    try {
-      if (resultSetMethod != null) {
-        ResultSet resultSet = statement.executeQuery();
-        resultSetMethod.apply(resultSet);
-      } else {
-        statement.execute();
-      }
-    } finally {
-      statement.close();
     }
   }
 }
