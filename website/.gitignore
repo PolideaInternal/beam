@@ -11,3 +11,9 @@ content/
 *.iml
 *.ipr
 *.iws
+
+# Hugo
+www/node_modules
+www/dist
+www/site/resources
+!www/site/content
