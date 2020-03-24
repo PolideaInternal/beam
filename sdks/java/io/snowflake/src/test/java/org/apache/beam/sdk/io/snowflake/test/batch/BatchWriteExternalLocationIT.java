@@ -56,9 +56,9 @@ import org.junit.runners.JUnit4;
  * -DintegrationTestPipelineOptions='[ "--runner=DataflowRunner", "--project=...",
  * "--stagingLocation=gs://...", "--serverName=...", "--username=...", "--password=...",
  * "--schema=PUBLIC", "--table=...", "--database=...", "--stage=...", "--internalLocation=./test",
- * "--maxNumWorkers=5", "--appName=internal" ]' --tests org.apache.beam.sdk.io.snowflake.test.tpch.BatchWriteExternalLocationIT
+ * "--maxNumWorkers=5", "--appName=internal" ]' --tests
+ * org.apache.beam.sdk.io.snowflake.test.tpch.BatchWriteExternalLocationIT
  */
-
 @RunWith(JUnit4.class)
 public class BatchWriteExternalLocationIT {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
