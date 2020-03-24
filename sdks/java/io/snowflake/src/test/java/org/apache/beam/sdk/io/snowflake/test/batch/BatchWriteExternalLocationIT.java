@@ -52,11 +52,20 @@ import org.junit.runners.JUnit4;
 /**
  * Integration tests that checks batch write operation of SnowflakeIO.
  *
- * <p>Example test run: ./gradlew -p sdks/java/io/snowflake integrationTest
- * -DintegrationTestPipelineOptions='[ "--runner=DataflowRunner", "--project=...",
- * "--stagingLocation=gs://...", "--serverName=...", "--username=...", "--password=...",
- * "--schema=PUBLIC", "--table=...", "--database=...", "--stage=...", "--internalLocation=./test",
- * "--maxNumWorkers=5", "--appName=internal" ]' --tests org.apache.beam.sdk.io.snowflake.test.tpch.BatchWriteExternalLocationIT
+ * <p>Example test run:
+ * ./gradlew -p sdks/java/io/snowflake integrationTest -DintegrationTestPipelineOptions='[
+ * "--runner=DirectRunner",
+ * "--project=...",
+ * "--storageIntegration=...",
+ * "--serverName=...",
+ * "--username=...",
+ * "--password=...",
+ * "--schema=PUBLIC",
+ * "--table=...",
+ * "--database=...",
+ * "--stage=...",
+ * "--externalLocation=gs://...",
+ * "--appName=external" ]' --tests org.apache.beam.sdk.io.snowflake.test.batch.BatchWriteExternalLocationIT -DintegrationTestRunner=direct
  */
 
 @RunWith(JUnit4.class)

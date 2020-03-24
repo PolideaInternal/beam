@@ -56,7 +56,7 @@ import org.junit.runners.JUnit4;
  * "--project=<GCP_PROJECT>",
  * "--tempLocation=gs://<BUCKET-NAME>/dataflow-write-table-tmp"]'
  * --tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchWriteTableIT
- * -DintegrationTestRunner=direct
+ * -DintegrationTestRunner=dataflow
  * </pre>
  */
 @RunWith(JUnit4.class)
