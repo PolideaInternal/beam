@@ -37,6 +37,8 @@ import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFInteger;
 import org.apache.beam.sdk.io.snowflake.data.text.SFString;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.ExternalIntegrationLocation;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.testing.PAssert;
@@ -139,11 +141,11 @@ public class SnowflakeIOIT {
         .apply(
             SnowflakeIO.<TestRow>write()
                 .withDataSourceConfiguration(dataSourceConfiguration)
-                .withWriteDisposition(SnowflakeIO.Write.WriteDisposition.TRUNCATE)
+                .withWriteDisposition(WriteDisposition.TRUNCATE)
                 .withUserDataMapper(getUserDataMapper())
                 .to(tableName)
                 .via(location)
-                .withCreateDisposition(SnowflakeIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withTableSchema(
                     SFTableSchema.of(
                         SFColumn.of("id", SFInteger.of()), SFColumn.of("name", SFString.of()))));
