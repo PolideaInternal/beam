@@ -28,6 +28,7 @@ import java.util.List;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 
+/** Implementation of {@link org.apache.beam.sdk.io.FileIO.Sink} for writing CSV */
 public class CSVSink implements FileIO.Sink<String> {
   private String header;
   private transient PrintWriter writer;

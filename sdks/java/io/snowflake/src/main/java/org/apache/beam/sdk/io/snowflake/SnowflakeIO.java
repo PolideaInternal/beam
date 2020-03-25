@@ -67,19 +67,102 @@ import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * IO to read and write data on Snowflake.
+ *
+ * <p>SnowflakeIO uses <a href="https://docs.snowflake.net/manuals/user-guide/jdbc.html">Snowflake
+ * JDBC</a> driver under the hood, but data isn't read/written using JDBC directly. Instead,
+ * SnowflakeIO uses dedicated <b>COPY</b> operations to read/write data from/to Google Cloud
+ * Storage.
+ *
+ * <p>To configure SnowflakeIO to read/write from your Snowflake instance, you have to provide a
+ * {@link DataSourceConfiguration} using {@link
+ * DataSourceConfiguration#create(SnowflakeCredentials)}, where {@link SnowflakeCredentials might be
+ * created using {@link org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory}}.
+ * Additionally one of {@link DataSourceConfiguration#withServerName(String)} or {@link
+ * DataSourceConfiguration#withUrl(String)} must be used to tell SnowflakeIO which instance to use.
+ * <br>
+ * There are also other options available to configure connection to Snowflake:
+ *
+ * <ul>
+ *   <li>{@link DataSourceConfiguration#withWarehouse(String)} to specify which Warehouse to use
+ *   <li>{@link DataSourceConfiguration#withDatabase(String)} to specify which Database to connect
+ *       to
+ *   <li>{@link DataSourceConfiguration#withSchema(String)} to specify which schema to use
+ *   <li>{@link DataSourceConfiguration#withRole(String)} to specify which role to use
+ *   <li>{@link DataSourceConfiguration#withPortNumber(int)} to specify custom port of Snowflake
+ *       instance
+ * </ul>
+ *
+ * <p>For example:
+ *
+ * <pre>{@code
+ * SnowflakeIO.DataSourceConfiguration dataSourceConfiguration =
+ *     SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
+ *         .withServerName(options.getServerName())
+ *         .withWarehouse(options.getWarehouse())
+ *         .withDatabase(options.getDatabase())
+ *         .withSchema(options.getSchema);
+ * }</pre>
+ *
+ * <h3>Reading from Snowflake</h3>
+ *
+ * <p>SnowflakeIO.Read returns a bounded collection of {@code T} as a {@code PCollection<T>}. T is
+ * the type returned by the provided {@link CsvMapper}.
+ *
+ * <p>For example
+ *
+ * <pre>{@code
+ * PCollection<GenericRecord> items = pipeline.apply(
+ *  SnowflakeIO.<GenericRecord>read()
+ *    .withDataSourceConfiguration(dataSourceConfiguration)
+ *    .fromQuery(QUERY)
+ *    .withStagingBucketName(stagingBucketName)
+ *    .withIntegrationName(integrationName)
+ *    .withCsvMapper(...)
+ *    .withCoder(...));
+ * }</pre>
+ *
+ * <h3>Writing to Snowflake</h3>
+ *
+ * <p>SnowflakeIO.Write supports writing records into a database. It writes a {@link PCollection<T>}
+ * to the database by converting each T into a {@link Object[]} via a user-provided {@link
+ * UserDataMapper}.
+ *
+ * <p>For example
+ *
+ * <pre>{@code
+ * items.apply(
+ *     SnowflakeIO.<KV<Integer, String>>write()
+ *         .withDataSourceConfiguration(dataSourceConfiguration)
+ *         .to(table)
+ *         .via(LocationFactory.of(options))
+ *         .withUserDataMapper(...);
+ * }</pre>
+ */
 public class SnowflakeIO {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeIO.class);
 
   private static final String CSV_QUOTE_CHAR = "'";
   private static final String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
-  /** Read data from a Snowflake using COPY method. */
+  /**
+   * Read data from Snowflake via COPY statement via user-defined {@link SnowflakeService}.
+   *
+   * @param snowflakeService user-defined {@link SnowflakeService}
+   * @param <T> Type of the data to be read.
+   */
   public static <T> Read<T> read(SnowflakeService snowflakeService) {
     return new AutoValue_SnowflakeIO_Read.Builder<T>()
         .setSnowflakeService(snowflakeService)
         .build();
   }
 
+  /**
+   * Read data from Snowflake via COPY statement via default {@link SnowflakeServiceImpl}
+   *
+   * @param <T> Type of the data to be read.
+   */
   public static <T> Read<T> read() {
     return read(new SnowflakeServiceImpl());
   }
@@ -95,16 +178,33 @@ public class SnowflakeIO {
     return readAll(new SnowflakeServiceImpl());
   }
 
+  /**
+   * Interface for user-defined function mapping parts of CSV line into T. Used for
+   * SnowflakeIO.Read.
+   *
+   * @param <T> Type of data to be read.
+   */
   @FunctionalInterface
   public interface CsvMapper<T> extends Serializable {
     T mapRow(String[] parts) throws Exception;
   }
 
+  /**
+   * Interface for user-defined function mapping T into array of Objects. Used for SnowflakeIO.Write
+   *
+   * @param <T> Type of data to be written.
+   */
   @FunctionalInterface
   public interface UserDataMapper<T> extends Serializable {
     Object[] mapRow(T element);
   }
 
+  /**
+   * Write data to Snowflake via COPY statement via user-defined {@link SnowflakeService}.
+   *
+   * @param <T> Type of data to be written.
+   * @param snowflakeService user-defined {@link SnowflakeService}
+   */
   public static <T> Write<T> write(SnowflakeService snowflakeService) {
     return new AutoValue_SnowflakeIO_Write.Builder<T>()
         .setFileNameTemplate(ValueProvider.StaticValueProvider.of("output*"))
@@ -116,10 +216,16 @@ public class SnowflakeIO {
         .build();
   }
 
+  /**
+   * Write data to Snowflake via COPY statement via default {@link SnowflakeServiceImpl}
+   *
+   * @param <T> Type of data to be written.
+   */
   public static <T> Write<T> write() {
     return write(new SnowflakeServiceImpl());
   }
 
+  /** Implementation of {@link #read()} */
   @AutoValue
   public abstract static class Read<T> extends PTransform<PBegin, PCollection<T>> {
     @Nullable
@@ -255,6 +361,7 @@ public class SnowflakeIO {
     }
   }
 
+  /** Implementation of {@link #readAll()} */
   @AutoValue
   public abstract static class ReadAll<ParameterT, OutputT>
       extends PTransform<PCollection<ParameterT>, PCollection<OutputT>> {
@@ -502,6 +609,10 @@ public class SnowflakeIO {
     }
   }
 
+  /**
+   * A POJO describing a {@link DataSource}, providing all properties allowing to create a {@link
+   * DataSource}.
+   */
   @AutoValue
   public abstract static class DataSourceConfiguration implements Serializable {
     @Nullable
@@ -584,13 +695,6 @@ public class SnowflakeIO {
       abstract Builder setDataSource(DataSource dataSource);
 
       abstract DataSourceConfiguration build();
-    }
-
-    public static DataSourceConfiguration create(DataSource dataSource) {
-      checkArgument(dataSource instanceof Serializable, "dataSource must be Serializable");
-      return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
-          .setDataSource(dataSource)
-          .build();
     }
 
     public static DataSourceConfiguration create(SnowflakeCredentials credentials) {
@@ -784,6 +888,7 @@ public class SnowflakeIO {
     }
   }
 
+  /** Implementation of {@link #write()} */
   @AutoValue
   public abstract static class Write<T> extends PTransform<PCollection<T>, PDone> {
     @Nullable
@@ -1041,6 +1146,11 @@ public class SnowflakeIO {
     }
   }
 
+  /**
+   * Custom DoFn that maps {@link Object[]} into CSV line to be saved to Snowflake.
+   *
+   * <p>Adds Snowflake-specific quotations around strings.
+   */
   private static class MapObjecsArrayToCsvFn extends DoFn<Object[], String> {
 
     @ProcessElement

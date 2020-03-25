@@ -20,6 +20,10 @@ package org.apache.beam.sdk.io.snowflake.locations;
 import java.io.Serializable;
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 
+/**
+ * POJO Describing {@link Location} that uses <a
+ * href="https://docs.snowflake.net/manuals/sql-reference/sql/create-stage.html">Internal Stage</a>.
+ */
 public class InternalLocation implements Location, Serializable {
   String stage;
   String filesLocation;

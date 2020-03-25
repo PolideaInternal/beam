@@ -19,6 +19,10 @@ package org.apache.beam.sdk.io.snowflake.credentials;
 
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 
+/**
+ * Factory class for creating implementations of {@link SnowflakeCredentials} from {@link
+ * SnowflakePipelineOptions}
+ */
 public class SnowflakeCredentialsFactory {
   public static SnowflakeCredentials of(SnowflakePipelineOptions options) {
     if (options.getOauthToken() != null && !options.getOauthToken().isEmpty()) {

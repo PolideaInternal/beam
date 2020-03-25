@@ -33,6 +33,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 
+/** POJO for handling Key-Pair authentication against Snowflake */
 public class KeyPairSnowflakeCredentials implements SnowflakeCredentials {
   private String username;
   private PrivateKey privateKey;

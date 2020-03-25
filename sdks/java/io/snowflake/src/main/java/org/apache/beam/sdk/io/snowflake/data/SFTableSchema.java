@@ -20,8 +20,15 @@ package org.apache.beam.sdk.io.snowflake.data;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 
+/**
+ * POJO representing schema of Table in Snowflake. Used by {@link SnowflakeIO.Write} when {
+ *
+ * @link org.apache.beam.sdk.io.snowflake.SnowflakeIO.Write.CreateDisposition#CREATE_IF_NEEDED}
+ *     disposition is used.
+ */
 public class SFTableSchema implements Serializable {
   private SFColumn[] columns;
 

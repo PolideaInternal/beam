@@ -19,6 +19,7 @@ package org.apache.beam.sdk.io.snowflake.credentials;
 
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 
+/** POJO for handling OAuth authentication against Snowflake, using pre-obtained OAuth token. */
 public class OAuthTokenSnowflakeCredentials implements SnowflakeCredentials {
   private String token;
 

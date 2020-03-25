@@ -19,6 +19,7 @@ package org.apache.beam.sdk.io.snowflake.credentials;
 
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 
+/** POJO for handling Username & Password authentication against Snowflake */
 public class UsernamePasswordSnowflakeCredentials implements SnowflakeCredentials {
   private String username;
   private String password;

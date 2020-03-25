@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.beam.sdk.transforms.Combine;
 
+/** Helper CombineFn for joining two lists of strings into one. */
 public class Concatenate extends Combine.CombineFn<String, List<String>, List<String>> {
   @Override
   public List<String> createAccumulator() {
