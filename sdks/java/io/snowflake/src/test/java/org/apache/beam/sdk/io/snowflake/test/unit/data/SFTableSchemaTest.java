@@ -15,26 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.unit;
+package org.apache.beam.sdk.io.snowflake.test.unit.data;
 
 import static org.junit.Assert.assertEquals;
 
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
+import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.numeric.SFDouble;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
 import org.junit.Test;
 
-public class SFColumnTest {
+public class SFTableSchemaTest {
   @Test
-  public void testVarcharColumn() {
-    SFColumn column = SFColumn.of("id", SFVarchar.of());
+  public void testOneColumn() {
+    SFTableSchema schema = new SFTableSchema(SFColumn.of("id", SFVarchar.of()));
 
-    assertEquals("id VARCHAR", column.sql());
+    assertEquals("id VARCHAR", schema.sql());
   }
 
   @Test
-  public void testNullColumn() {
-    SFColumn column = SFColumn.of("id", SFVarchar.of(), true);
+  public void testTwoColumns() {
+    SFTableSchema schema =
+        new SFTableSchema(SFColumn.of("id", new SFVarchar()), SFColumn.of("tax", new SFDouble()));
 
-    assertEquals("id VARCHAR NULL", column.sql());
+    assertEquals("id VARCHAR, tax FLOAT", schema.sql());
   }
 }

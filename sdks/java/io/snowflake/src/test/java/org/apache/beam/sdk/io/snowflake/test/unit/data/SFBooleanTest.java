@@ -15,34 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.unit;
+package org.apache.beam.sdk.io.snowflake.test.unit.data;
 
 import static org.junit.Assert.assertEquals;
 
-import org.apache.beam.sdk.io.snowflake.data.structured.SFArray;
-import org.apache.beam.sdk.io.snowflake.data.structured.SFObject;
-import org.apache.beam.sdk.io.snowflake.data.structured.SFVariant;
+import org.apache.beam.sdk.io.snowflake.data.logical.SFBoolean;
 import org.junit.Test;
 
-public class SFStructuredDataTest {
+public class SFBooleanTest {
   @Test
-  public void testVariant() {
-    SFVariant variant = SFVariant.of();
+  public void testBoolean() {
+    SFBoolean sfBoolean = SFBoolean.of();
 
-    assertEquals("VARIANT", variant.sql());
-  }
-
-  @Test
-  public void testArray() {
-    SFArray array = SFArray.of();
-
-    assertEquals("ARRAY", array.sql());
-  }
-
-  @Test
-  public void testObject() {
-    SFObject object = SFObject.of();
-
-    assertEquals("OBJECT", object.sql());
+    assertEquals("BOOLEAN", sfBoolean.sql());
   }
 }

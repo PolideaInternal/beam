@@ -66,7 +66,8 @@ public class SnowflakeCredentialsFactoryTest {
   public void emptyOptionsTest() {
     SnowflakePipelineOptions options = PipelineOptionsFactory.as(SnowflakePipelineOptions.class);
 
-    Exception ex = assertThrows(RuntimeException.class, () -> SnowflakeCredentialsFactory.of(options));
+    Exception ex =
+        assertThrows(RuntimeException.class, () -> SnowflakeCredentialsFactory.of(options));
     assertEquals("Can't get credentials from Options", ex.getMessage());
   }
 }
