@@ -15,14 +15,13 @@
 <head>
   {{ partial "head.html" . }}
 </head>
-<body></body>
+<body class="body body--index">
+  {{ partial "header.html" . }}
   {{/* 
-  <body class="body {% if page.body_class %}{{page.body_class}}{% endif %}">
-    {% include header.html %}
-    <div class="body__contained">
-      {{ content }}
-    </div>
-    {% include footer.html %}
-  </body>
+  <div class="body__contained">
+    {{ content }}
+  </div>
+  {% include footer.html %}
   */}}
+</body>
 </html>
