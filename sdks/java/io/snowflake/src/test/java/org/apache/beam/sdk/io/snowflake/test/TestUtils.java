@@ -17,6 +17,7 @@
  */
 package org.apache.beam.sdk.io.snowflake.test;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,6 +26,9 @@ import javax.sql.DataSource;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 
 public class TestUtils {
+  private static final String PRIVATE_KEY_FILE_NAME = "test_rsa_key.p8";
+  private static final String PRIVATE_KEY_PASSPHRASE = "snowflake";
+
   public static ResultSet runConnectionWithStatement(DataSource dataSource, String query)
       throws SQLException {
 
@@ -44,5 +48,15 @@ public class TestUtils {
 
   public static SnowflakeIO.UserDataMapper<Long> getCsvMapper() {
     return (SnowflakeIO.UserDataMapper<Long>) recordLine -> new String[] {recordLine.toString()};
+  }
+
+  public static String getPrivateKeyPath(Class klass) {
+    ClassLoader classLoader = klass.getClassLoader();
+    File file = new File(classLoader.getResource(PRIVATE_KEY_FILE_NAME).getFile());
+    return file.getAbsolutePath();
+  }
+
+  public static String getPrivateKeyPassphrase() {
+    return PRIVATE_KEY_PASSPHRASE;
   }
 }
