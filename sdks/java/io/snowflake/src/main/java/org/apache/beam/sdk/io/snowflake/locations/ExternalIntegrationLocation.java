@@ -20,6 +20,11 @@ package org.apache.beam.sdk.io.snowflake.locations;
 import java.io.Serializable;
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 
+/**
+ * POJO Describing {@link Location} that uses <a
+ * href="https://docs.snowflake.net/manuals/sql-reference/sql/create-storage-integration.html">Storage
+ * Integration</a> and external storage path.
+ */
 public class ExternalIntegrationLocation implements Location, Serializable {
   String integration;
   String bucketPath;

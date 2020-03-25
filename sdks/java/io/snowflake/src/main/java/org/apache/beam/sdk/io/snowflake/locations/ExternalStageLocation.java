@@ -20,6 +20,11 @@ package org.apache.beam.sdk.io.snowflake.locations;
 import java.io.Serializable;
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 
+/**
+ * POJO Describing {@link Location} that uses <a
+ * href="https://docs.snowflake.net/manuals/sql-reference/sql/create-stage.html">External Stage</a>
+ * and external storage path.
+ */
 public class ExternalStageLocation implements Location, Serializable {
   String stage;
   String bucketPath;

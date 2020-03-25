@@ -19,6 +19,7 @@ package org.apache.beam.sdk.io.snowflake.data;
 
 import java.io.Serializable;
 
+/** Interface for data types to provide SQLs for themselves. */
 public interface SFDataType extends Serializable {
   String sql();
 }

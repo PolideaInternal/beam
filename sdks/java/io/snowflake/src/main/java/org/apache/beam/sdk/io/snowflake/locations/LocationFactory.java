@@ -19,6 +19,10 @@ package org.apache.beam.sdk.io.snowflake.locations;
 
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 
+/**
+ * Factory class for creating implementations of {@link Location} from {@link
+ * SnowflakePipelineOptions}
+ */
 public class LocationFactory {
 
   public static Location of(SnowflakePipelineOptions options) {
