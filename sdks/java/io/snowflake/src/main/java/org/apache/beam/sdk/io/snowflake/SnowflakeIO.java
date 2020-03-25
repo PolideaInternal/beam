@@ -616,49 +616,49 @@ public class SnowflakeIO {
   @AutoValue
   public abstract static class DataSourceConfiguration implements Serializable {
     @Nullable
-    abstract ValueProvider<String> getUrl();
+    public abstract ValueProvider<String> getUrl();
 
     @Nullable
-    abstract ValueProvider<String> getUsername();
+    public abstract ValueProvider<String> getUsername();
 
     @Nullable
-    abstract ValueProvider<String> getPassword();
+    public abstract ValueProvider<String> getPassword();
 
     @Nullable
-    abstract ValueProvider<PrivateKey> getPrivateKey();
+    public abstract ValueProvider<PrivateKey> getPrivateKey();
 
     @Nullable
-    abstract ValueProvider<String> getOauthToken();
+    public abstract ValueProvider<String> getOauthToken();
 
     @Nullable
-    abstract ValueProvider<String> getDatabase();
+    public abstract ValueProvider<String> getDatabase();
 
     @Nullable
-    abstract ValueProvider<String> getWarehouse();
+    public abstract ValueProvider<String> getWarehouse();
 
     @Nullable
-    abstract ValueProvider<String> getSchema();
+    public abstract ValueProvider<String> getSchema();
 
     @Nullable
-    abstract ValueProvider<String> getServerName();
+    public abstract ValueProvider<String> getServerName();
 
     @Nullable
-    abstract ValueProvider<Integer> getPortNumber();
+    public abstract ValueProvider<Integer> getPortNumber();
 
     @Nullable
-    abstract ValueProvider<String> getRole();
+    public abstract ValueProvider<String> getRole();
 
     @Nullable
-    abstract ValueProvider<String> getAuthenticator();
+    public abstract ValueProvider<String> getAuthenticator();
 
     @Nullable
-    abstract ValueProvider<Integer> getLoginTimeout();
+    public abstract ValueProvider<Integer> getLoginTimeout();
 
     @Nullable
-    abstract ValueProvider<Boolean> getSsl();
+    public abstract ValueProvider<Boolean> getSsl();
 
     @Nullable
-    abstract DataSource getDataSource();
+    public abstract DataSource getDataSource();
 
     abstract Builder builder();
 
