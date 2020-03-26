@@ -17,27 +17,26 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.transforms.SerializableFunction;
+import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.function.Consumer;
-
-import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
+import javax.sql.DataSource;
+import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
+import org.apache.beam.sdk.io.snowflake.locations.Location;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 
 public class SnowflakeServiceImpl implements SnowflakeService {
 
   @Override
   public void executePut(
-      Connection connection,
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String bucketName,
       String stage,
       String directory,
@@ -53,7 +52,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       query = String.format("put file://%s/%s %s;", directory, fileNameTemplate, stage);
     }
 
-    runStatement(query, connection, resultSetMethod);
+    runStatement(query, getConnection(dataSourceProviderFn), resultSetMethod);
   }
 
   @Override
@@ -80,18 +79,15 @@ public class SnowflakeServiceImpl implements SnowflakeService {
             "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
             externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
 
-    DataSource dataSource = dataSourceProviderFn.apply(null);
-    Connection connection = dataSource.getConnection();
-    runStatement(copyQuery, connection, null);
+    runStatement(copyQuery, getConnection(dataSourceProviderFn), null);
 
     return String.format("gs://%s/%s/*", stagingBucketName, tmpDirName);
   }
 
   @Override
   public void executeCopyToTable(
-      Connection connection,
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
-      DataSource dataSource,
       String table,
       SFTableSchema tableSchema,
       String source,
@@ -103,6 +99,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
 
     String files = String.join(", ", filesList);
     files = files.replaceAll(String.valueOf(filesPath), "");
+    DataSource dataSource = dataSourceProviderFn.apply(null);
 
     prepareTableAccordingCreateDisposition(dataSource, table, tableSchema, createDisposition);
     prepareTableAccordingWriteDisposition(dataSource, table, writeDisposition);
@@ -121,7 +118,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
               table, source, files, CSV_QUOTE_CHAR_FOR_COPY);
     }
 
-    runStatement(query, connection, null);
+    runStatement(query, dataSource.getConnection(), null);
   }
 
   private void truncateTable(DataSource dataSource, String table) throws SQLException {
@@ -260,5 +257,11 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       statement.close();
       connection.close();
     }
+  }
+
+  private Connection getConnection(SerializableFunction<Void, DataSource> dataSourceProviderFn)
+      throws SQLException {
+    DataSource dataSource = dataSourceProviderFn.apply(null);
+    return dataSource.getConnection();
   }
 }

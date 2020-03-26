@@ -17,18 +17,16 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
+import java.io.Serializable;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.function.Consumer;
+import javax.sql.DataSource;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
-
-import javax.sql.DataSource;
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.function.Consumer;
 
 public interface SnowflakeService extends Serializable {
   String CSV_QUOTE_CHAR_FOR_COPY = "''";
@@ -43,7 +41,7 @@ public interface SnowflakeService extends Serializable {
       throws SQLException;
 
   void executePut(
-      Connection connection,
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String bucketName,
       String stage,
       String directory,
@@ -53,9 +51,8 @@ public interface SnowflakeService extends Serializable {
       throws SQLException;
 
   void executeCopyToTable(
-      Connection connection,
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
-      DataSource dataSource,
       String table,
       SFTableSchema tableSchema,
       String source,
