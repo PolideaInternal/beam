@@ -1,0 +1,13 @@
+# REMOVE THIS FILE BEFORE SUBMITTING PR TO APACHE/BEAM
+
+image: java:8
+
+stages:
+  - check
+
+check:
+  tags:
+    - docker
+  stage: check
+  script:
+    - ./gradlew -p sdks/java/io/snowflake check

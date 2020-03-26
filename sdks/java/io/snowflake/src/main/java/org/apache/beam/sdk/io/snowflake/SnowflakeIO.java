@@ -56,7 +56,13 @@ import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.options.ValueProvider;
-import org.apache.beam.sdk.transforms.*;
+import org.apache.beam.sdk.transforms.Combine;
+import org.apache.beam.sdk.transforms.Create;
+import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.apache.beam.sdk.transforms.Wait;
 import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.sdk.transforms.display.HasDisplayData;
 import org.apache.beam.sdk.values.KV;
@@ -159,7 +165,7 @@ public class SnowflakeIO {
   }
 
   /**
-   * Read data from Snowflake via COPY statement via default {@link SnowflakeServiceImpl}
+   * Read data from Snowflake via COPY statement via default {@link SnowflakeServiceImpl}.
    *
    * @param <T> Type of the data to be read.
    */
@@ -190,7 +196,8 @@ public class SnowflakeIO {
   }
 
   /**
-   * Interface for user-defined function mapping T into array of Objects. Used for SnowflakeIO.Write
+   * Interface for user-defined function mapping T into array of Objects. Used for
+   * SnowflakeIO.Write.
    *
    * @param <T> Type of data to be written.
    */
@@ -217,7 +224,7 @@ public class SnowflakeIO {
   }
 
   /**
-   * Write data to Snowflake via COPY statement via default {@link SnowflakeServiceImpl}
+   * Write data to Snowflake via COPY statement via default {@link SnowflakeServiceImpl}.
    *
    * @param <T> Type of data to be written.
    */
@@ -225,7 +232,7 @@ public class SnowflakeIO {
     return write(new SnowflakeServiceImpl());
   }
 
-  /** Implementation of {@link #read()} */
+  /** Implementation of {@link #read()}. */
   @AutoValue
   public abstract static class Read<T> extends PTransform<PBegin, PCollection<T>> {
     @Nullable
@@ -361,7 +368,7 @@ public class SnowflakeIO {
     }
   }
 
-  /** Implementation of {@link #readAll()} */
+  /** Implementation of {@link #readAll()}. */
   @AutoValue
   public abstract static class ReadAll<ParameterT, OutputT>
       extends PTransform<PCollection<ParameterT>, PCollection<OutputT>> {
@@ -888,7 +895,7 @@ public class SnowflakeIO {
     }
   }
 
-  /** Implementation of {@link #write()} */
+  /** Implementation of {@link #write()}. */
   @AutoValue
   public abstract static class Write<T> extends PTransform<PCollection<T>, PDone> {
     @Nullable
