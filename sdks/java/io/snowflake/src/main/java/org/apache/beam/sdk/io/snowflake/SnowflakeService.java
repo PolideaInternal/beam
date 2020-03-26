@@ -17,18 +17,30 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
+import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
+import org.apache.beam.sdk.io.snowflake.locations.Location;
+import org.apache.beam.sdk.transforms.SerializableFunction;
+
+import javax.sql.DataSource;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.function.Consumer;
-import javax.sql.DataSource;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
 
 public interface SnowflakeService extends Serializable {
+  String CSV_QUOTE_CHAR_FOR_COPY = "''";
+
+  String executeCopyIntoStage(
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
+      String query,
+      String table,
+      String integrationName,
+      String stagingBucketName,
+      String tmpDirName)
+      throws SQLException;
 
   void executePut(
       Connection connection,
@@ -38,15 +50,6 @@ public interface SnowflakeService extends Serializable {
       String fileNameTemplate,
       Boolean parallelization,
       Consumer resultSetMethod)
-      throws SQLException;
-
-  String executeCopyIntoLocation(
-      Connection connection,
-      String query,
-      String table,
-      String integrationName,
-      String stagingBucketName,
-      String tmpDirName)
       throws SQLException;
 
   void executeCopyToTable(

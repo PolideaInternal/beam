@@ -17,22 +17,23 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
-import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
+import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
+import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
+import org.apache.beam.sdk.io.snowflake.locations.Location;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.function.Consumer;
-import javax.sql.DataSource;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
+
+import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
 public class SnowflakeServiceImpl implements SnowflakeService {
-  private static final String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
   @Override
   public void executePut(
@@ -56,14 +57,15 @@ public class SnowflakeServiceImpl implements SnowflakeService {
   }
 
   @Override
-  public String executeCopyIntoLocation(
-      Connection connection,
+  public String executeCopyIntoStage(
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String query,
       String table,
       String integrationName,
       String stagingBucketName,
       String tmpDirName)
       throws SQLException {
+
     String from;
     if (query != null) {
       // Query must be surrounded with brackets
@@ -78,6 +80,8 @@ public class SnowflakeServiceImpl implements SnowflakeService {
             "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
             externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
 
+    DataSource dataSource = dataSourceProviderFn.apply(null);
+    Connection connection = dataSource.getConnection();
     runStatement(copyQuery, connection, null);
 
     return String.format("gs://%s/%s/*", stagingBucketName, tmpDirName);
@@ -254,6 +258,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       }
     } finally {
       statement.close();
+      connection.close();
     }
   }
 }
