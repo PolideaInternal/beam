@@ -1,4 +1,4 @@
-<!--
+{{/* 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -8,7 +8,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License. See accompanying LICENSE file.
--->
+*/}}
 
 <nav class="header navbar navbar-fixed-top">
     <div class="navbar-header">
@@ -19,7 +19,7 @@
         <span class="icon-bar"></span>
       </button>
 
-      <a href="" class="navbar-brand" >
+      <a href="/" class="navbar-brand" >
         <img alt="Brand" style="height: 25px" src="/images/beam_logo_navbar.png">
       </a>
     </div>
@@ -85,7 +85,7 @@
             GitHub links will not resolve until the markdown source is available on the master branch.
             New pages would fail validation during development / PR test automation.
           -->
-          <a href="https://github.com/apache/beam/edit/master/website/src/{{ .File.Path }}" data-proofer-ignore>
+          <a href="https://github.com/apache/beam/edit/master/website/www/site/content/{{ .Site.Language.Lang }}/{{ .Path }}" data-proofer-ignore>
             <i class="far fa-edit fa-lg" alt="Edit on GitHub" title="Edit on GitHub"></i>
           </a>
         </li>
