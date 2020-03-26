@@ -27,14 +27,10 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 import org.apache.beam.sdk.io.snowflake.SfCloudProvider;
 
+/**
+ * Fake implementation of {@link org.apache.beam.sdk.io.snowflake.SfCloudProvider} used in test code
+ */
 public class FakeSFCloudProvider implements SfCloudProvider, Serializable {
-  @Override
-  public String getStoragePath(String fileName) {
-    return null;
-  }
-
-  @Override
-  public void put() {}
 
   @Override
   public void remove(String bucketPath, String bucketName) {

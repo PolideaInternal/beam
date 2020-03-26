@@ -15,11 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.data;
+package org.apache.beam.sdk.io.snowflake.test.unit.data;
 
-import java.io.Serializable;
+import static org.junit.Assert.assertEquals;
 
-/** Interface for data types to provide SQLs for themselves. */
-public interface SFDataType extends Serializable {
-  String sql();
+import org.apache.beam.sdk.io.snowflake.data.structured.SFArray;
+import org.apache.beam.sdk.io.snowflake.data.structured.SFObject;
+import org.apache.beam.sdk.io.snowflake.data.structured.SFVariant;
+import org.junit.Test;
+
+public class SFStructuredDataTest {
+  @Test
+  public void testVariant() {
+    SFVariant variant = SFVariant.of();
+
+    assertEquals("VARIANT", variant.sql());
+  }
+
+  @Test
+  public void testArray() {
+    SFArray array = SFArray.of();
+
+    assertEquals("ARRAY", array.sql());
+  }
+
+  @Test
+  public void testObject() {
+    SFObject object = SFObject.of();
+
+    assertEquals("OBJECT", object.sql());
+  }
 }

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.unit;
+package org.apache.beam.sdk.io.snowflake.test.unit.data;
 
 import static org.junit.Assert.assertEquals;
 

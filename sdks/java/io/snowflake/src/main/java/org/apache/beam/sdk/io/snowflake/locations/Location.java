@@ -17,6 +17,9 @@
  */
 package org.apache.beam.sdk.io.snowflake.locations;
 
+import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
+
+/** Interface for defining Location for {@link SnowflakeIO#write()} */
 public interface Location {
   /** Returns location of files where/to copy. It can be stage name or bucket path. */
   String getIntegration();

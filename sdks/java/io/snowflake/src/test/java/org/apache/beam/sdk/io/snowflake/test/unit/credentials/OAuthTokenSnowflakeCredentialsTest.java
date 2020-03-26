@@ -15,26 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.unit;
+package org.apache.beam.sdk.io.snowflake.test.unit.credentials;
 
 import static org.junit.Assert.assertEquals;
 
-import org.apache.beam.sdk.io.snowflake.data.SFColumn;
-import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
+import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
+import org.apache.beam.sdk.io.snowflake.credentials.OAuthTokenSnowflakeCredentials;
 import org.junit.Test;
 
-public class SFColumnTest {
-  @Test
-  public void testVarcharColumn() {
-    SFColumn column = SFColumn.of("id", SFVarchar.of());
+public class OAuthTokenSnowflakeCredentialsTest {
 
-    assertEquals("id VARCHAR", column.sql());
+  @Test
+  public void testConstructor() {
+    OAuthTokenSnowflakeCredentials credentials = new OAuthTokenSnowflakeCredentials("token");
+
+    assertEquals("token", credentials.getToken());
   }
 
   @Test
-  public void testNullColumn() {
-    SFColumn column = SFColumn.of("id", SFVarchar.of(), true);
+  public void testBuildingDataSource() {
+    OAuthTokenSnowflakeCredentials credentials = new OAuthTokenSnowflakeCredentials("token");
 
-    assertEquals("id VARCHAR NULL", column.sql());
+    SnowflakeIO.DataSourceConfiguration configuration =
+        credentials.createSnowflakeDataSourceConfiguration();
+
+    assertEquals(credentials.getToken(), configuration.getOauthToken().get());
   }
 }

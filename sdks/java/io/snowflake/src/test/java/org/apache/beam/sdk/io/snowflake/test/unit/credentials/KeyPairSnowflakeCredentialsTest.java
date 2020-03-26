@@ -15,29 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.unit;
+package org.apache.beam.sdk.io.snowflake.test.unit.credentials;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-import org.apache.beam.sdk.io.snowflake.data.SFColumn;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.data.numeric.SFDouble;
-import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
+import org.apache.beam.sdk.io.snowflake.credentials.KeyPairSnowflakeCredentials;
+import org.apache.beam.sdk.io.snowflake.test.TestUtils;
 import org.junit.Test;
 
-public class SFTableSchemaTest {
+public class KeyPairSnowflakeCredentialsTest {
   @Test
-  public void testOneColumn() {
-    SFTableSchema schema = new SFTableSchema(SFColumn.of("id", SFVarchar.of()));
-
-    assertEquals("id VARCHAR", schema.sql());
-  }
-
-  @Test
-  public void testTwoColumns() {
-    SFTableSchema schema =
-        new SFTableSchema(SFColumn.of("id", new SFVarchar()), SFColumn.of("tax", new SFDouble()));
-
-    assertEquals("id VARCHAR, tax FLOAT", schema.sql());
+  public void testFilePathConstructor() {
+    KeyPairSnowflakeCredentials credentials =
+        new KeyPairSnowflakeCredentials(
+            "username",
+            TestUtils.getPrivateKeyPath(getClass()),
+            TestUtils.getPrivateKeyPassphrase());
+    assertEquals("username", credentials.getUsername());
+    assertNotNull(credentials.getPrivateKey());
   }
 }

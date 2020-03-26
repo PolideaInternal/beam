@@ -33,18 +33,23 @@ import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 /**
- * Integration tests that checks batch write operation of SnowflakeIO. ./gradlew -p
- * sdks/java/io/snowflake integrationTest -DintegrationTestPipelineOptions='[
- * "--runner=DirectRunner", "--project=...", "--storageIntegration=...", "--serverName=...",
- * "--username=...", "--password=...", "--schema=PUBLIC", "--table=...", "--database=...",
- * "--stage=...", "--internalLocation=gs://...", "--appName=internal" ]' --tests
- * org.apache.beam.sdk.io.snowflake.test.batch.BatchWriteInternalLocationIT
- * -DintegrationTestRunner=direct
+ * Integration tests that checks batch write operation of SnowflakeIO.
+ *
+ * <p>Example test run: ./gradlew -p sdks/java/io/snowflake integrationTest
+ * -DintegrationTestPipelineOptions='[ "--runner=DataflowRunner", "--project=...",
+ * "--stagingLocation=gs://...", "--serverName=...", "--username=...", "--password=...",
+ * "--schema=PUBLIC", "--table=...", "--database=...", "--stage=...", "--internalLocation=./test",
+ * "--maxNumWorkers=5", "--appName=internal" ]' --tests
+ * org.apache.beam.sdk.io.snowflake.test.tpch.BatchWriteInternalLocationIT
  */
 @RunWith(JUnit4.class)
 public class BatchWriteInternalLocationIT {

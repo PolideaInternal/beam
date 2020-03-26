@@ -22,6 +22,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 
+/**
+ * Fake implementation of {@link net.snowflake.client.jdbc.SnowflakeBasicDataSource} used in test
+ * code
+ */
 public class FakeSnowflakeBasicDataSource extends SnowflakeBasicDataSource implements Serializable {
   @Override
   public Connection getConnection() throws SQLException {

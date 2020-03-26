@@ -17,9 +17,13 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.tpch;
 
+import java.util.Arrays;
+import java.util.List;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.coders.AvroCoder;
+import org.apache.beam.sdk.io.snowflake.SfCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
+import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.test.FakeSFCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowFlakeDatabase;
@@ -35,17 +39,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.Arrays;
-import java.util.List;
-
 @RunWith(JUnit4.class)
-public class ReadUnitTestIT {
+public class SnowFlakeIOReadTest {
   public static final String FAKE_TABLE = "FAKE_TABLE";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
-  private static FakeSnowFlakeServiceImpl snowflakeService;
+  private static SnowflakeService snowflakeService;
+  private static SfCloudProvider cloudProvider;
   private static FakeSnowFlakeDatabase fakeSnowFlakeDatabase;
 
   private static String stagingBucketName;
@@ -81,15 +83,15 @@ public class ReadUnitTestIT {
             .withServerName(options.getServerName());
 
     snowflakeService = new FakeSnowFlakeServiceImpl();
+    cloudProvider = new FakeSFCloudProvider();
   }
 
   @Test
   public void tpchReadTestForTable() {
     PCollection<GenericRecord> items =
         pipeline.apply(
-            SnowflakeIO.<GenericRecord>read(snowflakeService)
+            SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dataSourceConfiguration)
-                .withSfCloudProvider(new FakeSFCloudProvider())
                 .fromTable(FAKE_TABLE)
                 .withStagingBucketName(stagingBucketName)
                 .withIntegrationName(integrationName)
@@ -98,5 +100,6 @@ public class ReadUnitTestIT {
 
     PAssert.that(items).containsInAnyOrder();
     pipeline.run(options);
+    System.out.println();
   }
 }

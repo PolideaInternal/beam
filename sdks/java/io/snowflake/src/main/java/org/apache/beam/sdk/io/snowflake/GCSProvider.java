@@ -25,14 +25,6 @@ import com.google.cloud.storage.StorageOptions;
 public class GCSProvider implements SfCloudProvider {
 
   @Override
-  public String getStoragePath(String fileName) {
-    return null;
-  }
-
-  @Override
-  public void put() {}
-
-  @Override
   public void remove(String bucketPath, String bucketName) {
     Storage storage = StorageOptions.getDefaultInstance().getService();
     Page<Blob> blobs = storage.list(bucketName, Storage.BlobListOption.prefix(bucketPath));

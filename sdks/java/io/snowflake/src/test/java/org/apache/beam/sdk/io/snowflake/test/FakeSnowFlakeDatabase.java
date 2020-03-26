@@ -19,7 +19,7 @@ package org.apache.beam.sdk.io.snowflake.test;
 
 import java.util.*;
 
-/** Stores tables and their contents in memory. */
+/** Fake implementation of SnowFlake warehouse used in test code */
 public class FakeSnowFlakeDatabase {
   private static FakeSnowFlakeDatabase instance = null;
 

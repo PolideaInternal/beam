@@ -32,6 +32,10 @@ import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
+/**
+ * Fake implementation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in test
+ * code
+ */
 public class FakeSnowFlakeServiceImpl implements SnowflakeService {
 
   @Override

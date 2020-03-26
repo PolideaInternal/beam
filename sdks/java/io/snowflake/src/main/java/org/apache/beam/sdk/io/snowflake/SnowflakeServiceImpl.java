@@ -32,6 +32,10 @@ import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
+/**
+ * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in production
+ * code
+ */
 public class SnowflakeServiceImpl implements SnowflakeService {
 
   @Override
