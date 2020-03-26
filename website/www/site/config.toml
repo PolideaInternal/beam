@@ -35,6 +35,9 @@ hrefTargetBlank = true
 angledQuotes = false
 latexDashes = true
 
+[permalinks]
+blog = "/:year/:month/:day/:slug/"
+
 # Image processing configuration.
 [imaging]
 resampleFilter = "CatmullRom"
