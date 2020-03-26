@@ -36,7 +36,7 @@
             {{ end }}
         </i></p>
 
-        {{ .Summary }}
+        {{ .Summary | markdownify }}
 
         {{ if .Truncated }}
             <p>

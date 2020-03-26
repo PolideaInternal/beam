@@ -59,11 +59,11 @@ $(document).ready(function() {
             "addTabs": function() {
                 var _self = this;
 
-                $("div"+_self.selector).each(function() {
-                    if ($(this).prev().is("div"+_self.selector)) {
+                $("code"+_self.selector).each(function() {
+                    if ($(this).prev().is("code"+_self.selector)) {
                         return;
                     }
-                    $(this).before(_self.navHtml(_self.lookup($(this), [])));
+                    $(this).closest(".highlight").before(_self.navHtml(_self.lookup($(this), [])));
                 });
             },
             /**
@@ -75,7 +75,7 @@ $(document).ready(function() {
              * @return array - list of types found.
             */
             "lookup": function(el, lang) {
-                if (!el.is("div"+this.selector)) {
+                if (!el.is("code"+this.selector)) {
                     return lang;
                 }
 
@@ -104,7 +104,7 @@ $(document).ready(function() {
 
                 if(!isPrefSelected) {
                   pref = this.default;
-                  
+
                   $("." + this.wrapper + " li").each(function() {
                       if ($(this).data("type") === pref) {
                           $(this).addClass("active");
