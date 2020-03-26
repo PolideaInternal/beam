@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Unified",
+    "body": "Use a single programming model for both batch and streaming use cases."
+  },
+  {
+    "title": "Portable",
+    "body": "Execute pipelines on multiple execution environments."
+  },
+  {
+    "title": "Extensible",
+    "body": "Write and share new SDKs, IO connectors, and transformation libraries."
+  }
+]
