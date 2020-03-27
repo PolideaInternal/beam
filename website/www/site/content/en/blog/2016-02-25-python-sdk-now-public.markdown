@@ -5,6 +5,8 @@ slug: "python-sdk-now-public.html"
 date:   2016-02-25 13:00:00 -0800
 excerpt_separator: <!--more-->
 categories: beam python sdk
+aliases:
+- /beam/python/sdk/2016/02/25/python-sdk-now-public.html
 authors:
 - jamesmalone
 ---

@@ -5,6 +5,8 @@ slug: "presentation-materials.html"
 date:   2016-04-03 11:00:00 -0700
 excerpt_separator: <!--more-->
 categories: beam capability
+aliases:
+- /beam/capability/2016/04/03/presentation-materials.html
 authors:
   - fjp
   - takidau

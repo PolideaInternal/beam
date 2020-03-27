@@ -5,6 +5,8 @@ slug: "first-release.html"
 date:   2016-06-15 00:00:01 -0700
 excerpt_separator: <!--more-->
 categories: beam release
+aliases:
+- /beam/release/2016/06/15/first-release.html
 authors:
   - davor
 ---

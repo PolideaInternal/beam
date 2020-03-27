@@ -5,6 +5,8 @@ slug: "beam-has-a-logo.html"
 date:   2016-02-22 10:21:48 -0800
 excerpt_separator: <!--more-->
 categories: beam update website
+aliases:
+- /beam/update/website/2016/02/22/beam-has-a-logo.html
 authors:
 - jamesmalone
 ---

@@ -5,6 +5,8 @@ slug: "capability-matrix.html"
 date:   2016-03-17 11:00:00 -0700
 excerpt_separator: <!--more-->
 categories: beam capability
+aliases:
+- /beam/capability/2016/03/17/capability-matrix.html
 authors:
   - fjp
   - takidau
