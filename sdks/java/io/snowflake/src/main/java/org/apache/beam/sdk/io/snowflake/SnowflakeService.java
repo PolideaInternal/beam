@@ -32,7 +32,7 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 public interface SnowflakeService extends Serializable {
   String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
-  String executeCopyIntoStage(
+  String copyIntoStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String query,
       String table,
@@ -41,7 +41,7 @@ public interface SnowflakeService extends Serializable {
       String tmpDirName)
       throws SQLException;
 
-  void executePut(
+  void putOnStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String bucketName,
       String stage,
@@ -51,7 +51,7 @@ public interface SnowflakeService extends Serializable {
       Consumer resultSetMethod)
       throws SQLException;
 
-  void executeCopyToTable(
+  void copyToTable(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
       String table,

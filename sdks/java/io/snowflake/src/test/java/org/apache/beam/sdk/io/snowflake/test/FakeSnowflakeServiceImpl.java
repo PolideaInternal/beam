@@ -35,10 +35,10 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 /**
  * Fake implementation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in tests.
  */
-public class FakeSnowFlakeServiceImpl implements SnowflakeService {
+public class FakeSnowflakeServiceImpl implements SnowflakeService {
 
   @Override
-  public String executeCopyIntoStage(
+  public String copyIntoStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String query,
       String table,
@@ -47,7 +47,7 @@ public class FakeSnowFlakeServiceImpl implements SnowflakeService {
       String tmpDirName)
       throws SQLException {
 
-    FakeSnowFlakeDatabase database = FakeSnowFlakeDatabase.getInstance();
+    FakeSnowflakeDatabase database = FakeSnowflakeDatabase.getInstance();
 
     writeToFile(stagingBucketName, tmpDirName, database.getTable(table));
 
@@ -55,7 +55,7 @@ public class FakeSnowFlakeServiceImpl implements SnowflakeService {
   }
 
   @Override
-  public void executePut(
+  public void putOnStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String bucketName,
       String stage,
@@ -66,7 +66,7 @@ public class FakeSnowFlakeServiceImpl implements SnowflakeService {
       throws SQLException {}
 
   @Override
-  public void executeCopyToTable(
+  public void copyToTable(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
       String table,

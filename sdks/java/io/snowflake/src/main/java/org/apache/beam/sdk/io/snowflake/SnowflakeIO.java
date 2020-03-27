@@ -357,7 +357,7 @@ public class SnowflakeIO {
           .apply(
               ParDo.of(
                   new CleanTmpFilesFromGcsFn(
-                      gcpTmpDirName, getStagingBucketName(), getSnowFlakeCloudProvider())));
+                      getStagingBucketName(), gcpTmpDirName, getSnowFlakeCloudProvider())));
 
       return output;
     }
@@ -399,7 +399,7 @@ public class SnowflakeIO {
       @ProcessElement
       public void processElement(ProcessContext context) throws Exception {
         String output =
-            snowflakeService.executeCopyIntoStage(
+            snowflakeService.copyIntoStage(
                 dataSourceProviderFn, query, table, integrationName, stagingBucketName, tmpDirName);
 
         context.output(output);
@@ -517,9 +517,6 @@ public class SnowflakeIO {
     @Nullable
     public abstract DataSource getDataSource();
 
-    @Nullable
-    abstract SnowflakeBasicDataSource getSnowflakeBasicDataSource();
-
     abstract Builder builder();
 
     @AutoValue.Builder
@@ -554,9 +551,6 @@ public class SnowflakeIO {
 
       abstract Builder setDataSource(DataSource dataSource);
 
-      abstract Builder setSnowflakeBasicDataSource(
-          SnowflakeBasicDataSource snowflakeBasicDataSource);
-
       abstract DataSourceConfiguration build();
     }
 
@@ -575,7 +569,6 @@ public class SnowflakeIO {
       return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
           .setUsername(ValueProvider.StaticValueProvider.of(credentials.getUsername()))
           .setPassword(ValueProvider.StaticValueProvider.of(credentials.getPassword()))
-          .setSnowflakeBasicDataSource(new SnowflakeBasicDataSource())
           .build();
     }
 
@@ -583,14 +576,12 @@ public class SnowflakeIO {
       return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
           .setUsername(ValueProvider.StaticValueProvider.of(credentials.getUsername()))
           .setPrivateKey(ValueProvider.StaticValueProvider.of(credentials.getPrivateKey()))
-          .setSnowflakeBasicDataSource(new SnowflakeBasicDataSource())
           .build();
     }
 
     public static DataSourceConfiguration create(OAuthTokenSnowflakeCredentials credentials) {
       return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
           .setOauthToken(ValueProvider.StaticValueProvider.of(credentials.getToken()))
-          .setSnowflakeBasicDataSource(new SnowflakeBasicDataSource())
           .build();
     }
 
@@ -686,7 +677,7 @@ public class SnowflakeIO {
 
     public DataSource buildDatasource() {
       if (getDataSource() == null) {
-        SnowflakeBasicDataSource basicDataSource = getSnowflakeBasicDataSource();
+        SnowflakeBasicDataSource basicDataSource = new SnowflakeBasicDataSource();
 
         if (getUrl() != null) {
           basicDataSource.setUrl(getUrl().get());
@@ -1066,7 +1057,7 @@ public class SnowflakeIO {
     public void processElement(ProcessContext context) throws Exception {
       LOG.error("ERROR" + (tableSchema == null));
 
-      snowflakeService.executeCopyToTable(
+      snowflakeService.copyToTable(
           dataSourceProviderFn,
           (List<String>) context.element(),
           table,
@@ -1105,7 +1096,7 @@ public class SnowflakeIO {
     /* Right now it is paralleled per each created file */
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
-      snowflakeService.executePut(
+      snowflakeService.putOnStage(
           dataSourceProviderFn,
           context.element().toString(),
           stage,

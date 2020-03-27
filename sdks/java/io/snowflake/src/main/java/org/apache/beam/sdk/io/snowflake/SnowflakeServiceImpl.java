@@ -38,7 +38,7 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 public class SnowflakeServiceImpl implements SnowflakeService {
 
   @Override
-  public void executePut(
+  public void putOnStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String bucketName,
       String stage,
@@ -59,7 +59,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
   }
 
   @Override
-  public String executeCopyIntoStage(
+  public String copyIntoStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String query,
       String table,
@@ -88,7 +88,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
   }
 
   @Override
-  public void executeCopyToTable(
+  public void copyToTable(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
       String table,

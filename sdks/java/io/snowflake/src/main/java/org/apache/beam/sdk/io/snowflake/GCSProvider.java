@@ -21,8 +21,9 @@ import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import java.io.Serializable;
 
-public class GCSProvider implements SnowFlakeCloudProvider {
+public class GCSProvider implements SnowFlakeCloudProvider, Serializable {
 
   @Override
   public void removeFiles(String bucketName, String pathOnBucket) {

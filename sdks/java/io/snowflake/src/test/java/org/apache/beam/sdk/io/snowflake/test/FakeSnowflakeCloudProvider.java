@@ -28,11 +28,11 @@ import java.util.stream.Stream;
 import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
 
 /** Fake implementation of {@link SnowFlakeCloudProvider} used in test code. */
-public class FakeSFCloudProvider implements SnowFlakeCloudProvider, Serializable {
+public class FakeSnowflakeCloudProvider implements SnowFlakeCloudProvider, Serializable {
 
   @Override
   public void removeFiles(String bucketName, String pathOnBucket) {
-    Path path = Paths.get(String.format("./%s", pathOnBucket));
+    Path path = Paths.get(String.format("./%s", bucketName));
     try (Stream<Path> stream = Files.walk(path)) {
       stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
     } catch (IOException e) {

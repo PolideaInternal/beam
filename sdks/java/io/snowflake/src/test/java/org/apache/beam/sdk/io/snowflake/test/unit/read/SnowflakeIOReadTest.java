@@ -26,10 +26,10 @@ import org.apache.beam.sdk.io.AvroGeneratedUser;
 import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
-import org.apache.beam.sdk.io.snowflake.test.FakeSFCloudProvider;
-import org.apache.beam.sdk.io.snowflake.test.FakeSnowFlakeDatabase;
-import org.apache.beam.sdk.io.snowflake.test.FakeSnowFlakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeCloudProvider;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.tpch.TpchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.PAssert;
@@ -43,7 +43,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class SnowFlakeIOReadTest {
+public class SnowflakeIOReadTest {
   public static final String FAKE_TABLE = "FAKE_TABLE";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
@@ -51,7 +51,7 @@ public class SnowFlakeIOReadTest {
   private static TpchTestPipelineOptions options;
   private static SnowflakeService snowflakeService;
   private static SnowFlakeCloudProvider cloudProvider;
-  private static FakeSnowFlakeDatabase fakeSnowFlakeDatabase;
+  private static FakeSnowflakeDatabase fakeSnowFlakeDatabase;
 
   private static String stagingBucketName;
   private static String integrationName;
@@ -68,7 +68,7 @@ public class SnowFlakeIOReadTest {
             new AvroGeneratedUser("Paul", 51, "red"),
             new AvroGeneratedUser("Jackson", 41, "green"));
 
-    fakeSnowFlakeDatabase = FakeSnowFlakeDatabase.getInstance();
+    fakeSnowFlakeDatabase = FakeSnowflakeDatabase.getInstance();
     fakeSnowFlakeDatabase.putTable(FAKE_TABLE, testData);
 
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
@@ -84,8 +84,8 @@ public class SnowFlakeIOReadTest {
         SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
             .withServerName(options.getServerName());
 
-    snowflakeService = new FakeSnowFlakeServiceImpl();
-    cloudProvider = new FakeSFCloudProvider();
+    snowflakeService = new FakeSnowflakeServiceImpl();
+    cloudProvider = new FakeSnowflakeCloudProvider();
   }
 
   @Test

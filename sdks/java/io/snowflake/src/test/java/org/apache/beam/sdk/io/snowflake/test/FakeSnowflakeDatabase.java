@@ -22,23 +22,23 @@ import java.util.List;
 import java.util.Map;
 
 /** Fake implementation of SnowFlake warehouse used in test code. */
-public class FakeSnowFlakeDatabase {
-  private static FakeSnowFlakeDatabase instance = null;
+public class FakeSnowflakeDatabase {
+  private static FakeSnowflakeDatabase instance = null;
 
   private Map<String, List<String>> tables;
 
-  private FakeSnowFlakeDatabase() {
+  private FakeSnowflakeDatabase() {
     tables = new HashMap<>();
   }
 
-  public static FakeSnowFlakeDatabase getInstance() {
+  public static FakeSnowflakeDatabase getInstance() {
     if (instance == null) {
-      instance = new FakeSnowFlakeDatabase();
+      instance = new FakeSnowflakeDatabase();
     }
     return instance;
   }
 
-  public FakeSnowFlakeDatabase(Map<String, List<String>> tables) {
+  public FakeSnowflakeDatabase(Map<String, List<String>> tables) {
     this.tables = new HashMap<>();
   }
 
