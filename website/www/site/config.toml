@@ -25,8 +25,13 @@ pygmentsUseClassic = false
 # See https://help.farbox.com/pygments.html
 pygmentsStyle = "tango"
 
-# [permalinks]
-# blog = "/:section/:year/:month/:day/:slug/"
+summaryLength = "unlimited"
+
+[markup.goldmark.renderer]
+unsafe= true
+
+[markup.highlight]
+noClasses = false
 
 ## Configuration for BlackFriday markdown parser: https://github.com/russross/blackfriday
 [blackfriday]
@@ -34,6 +39,9 @@ plainIDAnchors = true
 hrefTargetBlank = true
 angledQuotes = false
 latexDashes = true
+
+[permalinks]
+blog = "/blog/:year/:month/:day/:slug/"
 
 # Image processing configuration.
 [imaging]
