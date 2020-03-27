@@ -1,0 +1,24 @@
+{{ define "main" }}
+    {{ $authors := .Params.authors }}
+    <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">{{ .Title }}</h1>
+        <p class="post-meta"><time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}" itemprop="datePublished">{{ .Date.Format "Jan 2, 2006" }}</time>
+        {{ with $authors }} •
+            {{ $count := len . }}
+            {{ range $index, $authorId := . }}
+                {{ if and (ne $index 0) (gt $count 2) }},{{ end }}
+                {{ if and (eq $index (sub $count 1)) (gt $count 1) }} &amp;{{ end }}
+                {{ $author := index $.Site.Data.authors $authorId }} {{ $author.name }} {{ with $author.twitter }}[<a href="https://twitter.com/{{ $author.twitter }}">@{{ $author.twitter }}</a>]{{ end }}
+            {{ end }}
+        {{ end }}
+        </p>
+      </header>
+
+      <div class="post-content" itemprop="articleBody">
+        {{ .Content }}
+      </div>
+
+    </article>
+{{ end }}

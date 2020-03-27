@@ -1,4 +1,4 @@
-{{/* 
+{{/*
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -40,14 +40,14 @@
               The latest from the blog
             </div>
             <div class="hero__blog__cards">
-              {{/* TODO: Depends on BLOG page
-              {% for post in site.posts limit:3 %}
-              <a class="hero__blog__cards__card" href="{{ post.url | prepend: site.baseurl }}">
-                <div class="hero__blog__cards__card__title">{{post.title}}</div>
-                <div class="hero__blog__cards__card__date">{{ post.date | date: "%b %-d, %Y" }}</div>
-              </a>
-              {% endfor %}
-              */}}
+
+              {{ range ( where site.RegularPages "Section" "blog" | first 3 ) }}
+                  <a class="hero__blog__cards__card" href="{{ .Permalink }}">
+                    <div class="hero__blog__cards__card__title">{{ .Title }}</div>
+                    <div class="hero__blog__cards__card__date">{{ .Date.Format "Jan 2, 2006" }}</div>
+                  </a>
+              {{ end }}
+
             </div>
           </div>
         </div>
