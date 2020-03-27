@@ -17,7 +17,7 @@ $(document).ready(function() {
         var prefix = id + "-";
         return {
             "id": id,
-            "selector": "[class^=" + prefix + "]:not(.no-toggle)",
+            "selector": "[class*=" + prefix + "]:not(.no-toggle)",
             "wrapper": prefix + "switcher", // Parent wrapper-class.
             "default": prefix + def, // Default type to display.
             "dbKey": id, // Local Storage Key
@@ -60,10 +60,14 @@ $(document).ready(function() {
                 var _self = this;
 
                 $("code"+_self.selector).each(function() {
-                    if ($(this).prev().is("code"+_self.selector)) {
+                    $(this).closest(".highlight").addClass(this.classList.value);
+                });
+
+                $("div"+_self.selector).each(function() {
+                    if ($(this).prev().is("div"+_self.selector)) {
                         return;
                     }
-                    $(this).closest(".highlight").before(_self.navHtml(_self.lookup($(this), [])));
+                    $(this).before(_self.navHtml(_self.lookup($(this), [])));
                 });
             },
             /**
@@ -75,11 +79,11 @@ $(document).ready(function() {
              * @return array - list of types found.
             */
             "lookup": function(el, lang) {
-                if (!el.is("code"+this.selector)) {
+                if (!el.is("div"+this.selector)) {
                     return lang;
                 }
 
-                lang.push(el.attr("class").split(" ")[0])
+                lang.push(el.attr("class").split(" ").filter(item => item.includes("language-"))[0])
                 return this.lookup(el.next(), lang)
             },
             "bindEvents": function() {
