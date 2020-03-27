@@ -17,7 +17,7 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
-/** Interface which defines common methods for cloud providers */
+/** Interface which defines common methods for cloud providers. */
 public interface SnowFlakeCloudProvider {
   void removeFiles(String bucketName, String pathOnBucket);
 }

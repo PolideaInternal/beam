@@ -17,9 +17,11 @@
  */
 package org.apache.beam.sdk.io.snowflake.test;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-/** Fake implementation of SnowFlake warehouse used in test code */
+/** Fake implementation of SnowFlake warehouse used in test code. */
 public class FakeSnowFlakeDatabase {
   private static FakeSnowFlakeDatabase instance = null;
 
@@ -30,7 +32,9 @@ public class FakeSnowFlakeDatabase {
   }
 
   public static FakeSnowFlakeDatabase getInstance() {
-    if (instance == null) instance = new FakeSnowFlakeDatabase();
+    if (instance == null) {
+      instance = new FakeSnowFlakeDatabase();
+    }
     return instance;
   }
 

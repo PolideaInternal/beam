@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.tpch;
+package org.apache.beam.sdk.io.snowflake.test.unit.read;
 
 import java.util.Arrays;
 import java.util.List;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.beam.sdk.coders.AvroCoder;
+import org.apache.beam.sdk.io.AvroGeneratedUser;
 import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
@@ -28,9 +30,12 @@ import org.apache.beam.sdk.io.snowflake.test.FakeSFCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowFlakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowFlakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.tpch.TpchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableList;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,16 +56,20 @@ public class SnowFlakeIOReadTest {
   private static String stagingBucketName;
   private static String integrationName;
 
+  private static List<GenericRecord> avroTestData;
+
   @BeforeClass
   public static void setup() {
 
-    List<String> rows =
-        Arrays.asList(
-            "3628897,108036,8037,1,8.00,8352.24,0.04,0.00,'N','O','1996-09-16','1996-07-26','1996-10-01','TAKE BACK RETURN','TRUCK','uctions play car'",
-            "3628897,145958,5959,2,19.00,38075.05,0.05,0.03,'N','O','1996-10-05','1996-08-10','1996-10-26','DELIVER IN PERSON','MAIL','ges boost. pending instruction',");
+    List<String> testData = Arrays.asList("Paul,51,red", "Jackson,41,green");
+
+    avroTestData =
+        ImmutableList.of(
+            new AvroGeneratedUser("Paul", 51, "red"),
+            new AvroGeneratedUser("Jackson", 41, "green"));
 
     fakeSnowFlakeDatabase = FakeSnowFlakeDatabase.getInstance();
-    fakeSnowFlakeDatabase.putTable(FAKE_TABLE, rows);
+    fakeSnowFlakeDatabase.putTable(FAKE_TABLE, testData);
 
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
@@ -80,7 +89,7 @@ public class SnowFlakeIOReadTest {
   }
 
   @Test
-  public void tpchReadTestForTable() {
+  public void readTest() {
     PCollection<GenericRecord> items =
         pipeline.apply(
             SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
@@ -88,8 +97,20 @@ public class SnowFlakeIOReadTest {
                 .fromTable(FAKE_TABLE)
                 .withStagingBucketName(stagingBucketName)
                 .withIntegrationName(integrationName)
-                .withCsvMapper(TpchTestUtils.getCsvMapper())
-                .withCoder(AvroCoder.of(TpchTestUtils.getSchema())));
+                .withCsvMapper(getCsvMapper())
+                .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema())));
+
+    PAssert.that(items).containsInAnyOrder(avroTestData);
     pipeline.run(options);
+  }
+
+  static SnowflakeIO.CsvMapper<GenericRecord> getCsvMapper() {
+    return (SnowflakeIO.CsvMapper<GenericRecord>)
+        parts ->
+            new GenericRecordBuilder(AvroGeneratedUser.getClassSchema())
+                .set("name", String.valueOf(parts[0]))
+                .set("favorite_number", Integer.valueOf(parts[1]))
+                .set("favorite_color", String.valueOf(parts[2]))
+                .build();
   }
 }

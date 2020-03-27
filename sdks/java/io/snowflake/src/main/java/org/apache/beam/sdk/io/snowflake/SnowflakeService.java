@@ -28,7 +28,7 @@ import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
-/** Interface which defines common methods for interacting with SnowFlake */
+/** Interface which defines common methods for interacting with SnowFlake. */
 public interface SnowflakeService extends Serializable {
   String CSV_QUOTE_CHAR_FOR_COPY = "''";
 

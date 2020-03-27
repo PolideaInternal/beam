@@ -27,7 +27,7 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
 
-/** Fake implementation of {@link SnowFlakeCloudProvider} used in test code */
+/** Fake implementation of {@link SnowFlakeCloudProvider} used in test code. */
 public class FakeSFCloudProvider implements SnowFlakeCloudProvider, Serializable {
 
   @Override

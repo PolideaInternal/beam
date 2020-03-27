@@ -33,8 +33,7 @@ import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
 /**
- * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in production
- * code
+ * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in production.
  */
 public class SnowflakeServiceImpl implements SnowflakeService {
 
