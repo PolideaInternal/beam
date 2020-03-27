@@ -25,12 +25,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.stream.Stream;
-import org.apache.beam.sdk.io.snowflake.SfCloudProvider;
+import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
 
-/**
- * Fake implementation of {@link org.apache.beam.sdk.io.snowflake.SfCloudProvider} used in test code
- */
-public class FakeSFCloudProvider implements SfCloudProvider, Serializable {
+/** Fake implementation of {@link SnowFlakeCloudProvider} used in test code */
+public class FakeSFCloudProvider implements SnowFlakeCloudProvider, Serializable {
 
   @Override
   public void removeFiles(String bucketName, String pathOnBucket) {

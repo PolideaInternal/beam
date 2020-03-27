@@ -22,7 +22,7 @@ import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 
-public class GCSProvider implements SfCloudProvider {
+public class GCSProvider implements SnowFlakeCloudProvider {
 
   @Override
   public void removeFiles(String bucketName, String pathOnBucket) {

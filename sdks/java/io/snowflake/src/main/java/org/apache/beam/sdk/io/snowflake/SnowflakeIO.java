@@ -20,11 +20,7 @@ package org.apache.beam.sdk.io.snowflake;
 import static org.apache.beam.sdk.io.TextIO.readFiles;
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
-import com.google.api.gax.paging.Page;
 import com.google.auto.value.AutoValue;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import java.io.IOException;
@@ -152,10 +148,10 @@ public class SnowflakeIO {
    * @param <T> Type of the data to be read.
    */
   public static <T> Read<T> read(
-      SnowflakeService snowflakeService, SfCloudProvider sfCloudProvider) {
+      SnowflakeService snowflakeService, SnowFlakeCloudProvider snowFlakeCloudProvider) {
     return new AutoValue_SnowflakeIO_Read.Builder<T>()
         .setSnowflakeService(snowflakeService)
-        .setSfCloudProvider(sfCloudProvider)
+        .setSnowFlakeCloudProvider(snowFlakeCloudProvider)
         .build();
   }
 
@@ -243,7 +239,7 @@ public class SnowflakeIO {
     abstract SnowflakeService getSnowflakeService();
 
     @Nullable
-    abstract SfCloudProvider getSfCloudProvider();
+    abstract SnowFlakeCloudProvider getSnowFlakeCloudProvider();
 
     abstract Builder<T> toBuilder();
 
@@ -266,7 +262,7 @@ public class SnowflakeIO {
 
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
-      abstract Builder<T> setSfCloudProvider(SfCloudProvider provider);
+      abstract Builder<T> setSnowFlakeCloudProvider(SnowFlakeCloudProvider snowFlakeCloudProvider);
 
       abstract Read<T> build();
     }
@@ -312,10 +308,6 @@ public class SnowflakeIO {
       return toBuilder().setCoder(coder).build();
     }
 
-    public Read<T> withSfCloudProvider(SfCloudProvider provider) {
-      return toBuilder().setSfCloudProvider(provider).build();
-    }
-
     @Override
     public PCollection<T> expand(PBegin input) {
       // Either table or query is required. If query is present, it's being used, table is used
@@ -338,7 +330,7 @@ public class SnowflakeIO {
           emptyCollection
               .apply(
                   ParDo.of(
-                      new CopyIntoStageFn<>(
+                      new CopyIntoStageFn(
                           getDataSourceProviderFn(),
                           getQuery(),
                           getTable(),
@@ -356,7 +348,10 @@ public class SnowflakeIO {
 
       emptyCollection
           .apply(Wait.on(output))
-          .apply(ParDo.of(new CleanTmpFilesFromGcsFn(getStagingBucketName(), gcpTmpDirName)));
+          .apply(
+              ParDo.of(
+                  new CleanTmpFilesFromGcsFn(
+                      gcpTmpDirName, getStagingBucketName(), getSnowFlakeCloudProvider())));
 
       return output;
     }
@@ -431,24 +426,18 @@ public class SnowflakeIO {
     public static class CleanTmpFilesFromGcsFn extends DoFn<Object, Object> {
       private final String bucketName;
       private final String bucketPath;
-      private final SfCloudProvider sfCloudProvider;
+      private final SnowFlakeCloudProvider snowFlakeCloudProvider;
 
       public CleanTmpFilesFromGcsFn(
-          String bucketName, String bucketPath, SfCloudProvider sfCloudProvider) {
+          String bucketName, String bucketPath, SnowFlakeCloudProvider snowFlakeCloudProvider) {
         this.bucketName = bucketName;
         this.bucketPath = bucketPath;
-        this.sfCloudProvider = sfCloudProvider;
+        this.snowFlakeCloudProvider = snowFlakeCloudProvider;
       }
 
       @ProcessElement
       public void processElement(ProcessContext c) {
-        sfCloudProvider.removeFiles(bucketName, bucketPath);
-
-        Storage storage = StorageOptions.getDefaultInstance().getService();
-        Page<Blob> blobs = storage.list(bucketName, Storage.BlobListOption.prefix(bucketPath));
-        for (Blob blob : blobs.iterateAll()) {
-          storage.delete(blob.getBlobId());
-        }
+        snowFlakeCloudProvider.removeFiles(bucketName, bucketPath);
       }
     }
 
@@ -470,6 +459,7 @@ public class SnowflakeIO {
       }
     }
   }
+
   /**
    * A POJO describing a {@link DataSource}, providing all properties allowing to create a {@link
    * DataSource}.

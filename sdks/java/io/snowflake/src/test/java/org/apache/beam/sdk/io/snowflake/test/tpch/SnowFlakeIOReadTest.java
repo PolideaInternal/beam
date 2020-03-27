@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.coders.AvroCoder;
-import org.apache.beam.sdk.io.snowflake.SfCloudProvider;
+import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.test.FakeSFCloudProvider;
@@ -45,7 +45,7 @@ public class SnowFlakeIOReadTest {
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
   private static SnowflakeService snowflakeService;
-  private static SfCloudProvider cloudProvider;
+  private static SnowFlakeCloudProvider cloudProvider;
   private static FakeSnowFlakeDatabase fakeSnowFlakeDatabase;
 
   private static String stagingBucketName;
