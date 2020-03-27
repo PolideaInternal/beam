@@ -33,8 +33,8 @@ import org.apache.beam.sdk.io.snowflake.SfCloudProvider;
 public class FakeSFCloudProvider implements SfCloudProvider, Serializable {
 
   @Override
-  public void remove(String bucketPath, String bucketName) {
-    Path path = Paths.get(String.format("./%s", bucketPath));
+  public void removeFiles(String bucketName, String pathOnBucket) {
+    Path path = Paths.get(String.format("./%s", pathOnBucket));
     try (Stream<Path> stream = Files.walk(path)) {
       stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
     } catch (IOException e) {

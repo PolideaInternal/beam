@@ -24,13 +24,11 @@ import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.io.snowflake.SfCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
-import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.test.FakeSFCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowFlakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowFlakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.values.PCollection;
 import org.junit.BeforeClass;
@@ -66,20 +64,15 @@ public class SnowFlakeIOReadTest {
 
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
-    options.setUsername("NULL");
-    options.setPassword("NULL");
-    //            options.setRunner(DirectRunner.class);
     options.setServerName("NULL.snowflakecomputing.com");
     options.setStorageIntegration("STORAGE_INTEGRATION");
     options.setStagingBucketName("BUCKET");
-    options.setTempLocation("NULL");
 
     stagingBucketName = options.getStagingBucketName();
     integrationName = options.getStorageIntegration();
 
     dataSourceConfiguration =
-        SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
-            .withSnowflakeBasicDataSource(new FakeSnowflakeBasicDataSource())
+        SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
             .withServerName(options.getServerName());
 
     snowflakeService = new FakeSnowFlakeServiceImpl();
@@ -97,9 +90,6 @@ public class SnowFlakeIOReadTest {
                 .withIntegrationName(integrationName)
                 .withCsvMapper(TpchTestUtils.getCsvMapper())
                 .withCoder(AvroCoder.of(TpchTestUtils.getSchema())));
-
-    PAssert.that(items).containsInAnyOrder();
     pipeline.run(options);
-    System.out.println();
   }
 }
