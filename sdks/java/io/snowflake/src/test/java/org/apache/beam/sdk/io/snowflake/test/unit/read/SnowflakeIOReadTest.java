@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
+import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.io.AvroGeneratedUser;
 import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
@@ -47,6 +48,7 @@ public class SnowflakeIOReadTest {
   public static final String FAKE_TABLE = "FAKE_TABLE";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
+
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
   private static SnowflakeService snowflakeService;
@@ -88,8 +90,122 @@ public class SnowflakeIOReadTest {
     cloudProvider = new FakeSnowflakeCloudProvider();
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testConfigIsMissingStagingBucketName() {
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testConfigIsMissingIntegrationName() {
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testConfigIsMissingCsvMapper() {
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testConfigIsMissingCoder() {
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper());
+
+    read.expand(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testConfigIsMissingFromTableOrFromQuery() {
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testConfigIsMissingDataSourceConfiguration() {
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testConfigContainsFromQueryAndFromTable() {
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromQuery("")
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test(expected = PipelineExecutionException.class)
+  public void testTableDoesntExist() {
+    pipeline.apply(
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable("NON_EXIST")
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema())));
+
+    pipeline.run(options);
+  }
+
   @Test
-  public void readTest() {
+  public void testConfigIsProper() {
     PCollection<GenericRecord> items =
         pipeline.apply(
             SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)

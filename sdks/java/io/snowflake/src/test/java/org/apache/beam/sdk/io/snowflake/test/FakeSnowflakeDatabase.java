@@ -20,6 +20,7 @@ package org.apache.beam.sdk.io.snowflake.test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
 
 /** Fake implementation of SnowFlake warehouse used in test code. */
 public class FakeSnowflakeDatabase {
@@ -46,8 +47,14 @@ public class FakeSnowflakeDatabase {
     return tables;
   }
 
-  public List<String> getTable(String table) {
-    return this.tables.get(table);
+  public List<String> getTable(String table) throws SnowflakeSQLException {
+    List<String> rows = this.tables.get(table);
+
+    if (rows == null) {
+      throw new SnowflakeSQLException(table, 0);
+    }
+
+    return rows;
   }
 
   public List<String> putTable(String table, List<String> rows) {
