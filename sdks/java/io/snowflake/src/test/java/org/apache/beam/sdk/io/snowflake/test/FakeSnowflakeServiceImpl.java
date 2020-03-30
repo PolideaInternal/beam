@@ -15,33 +15,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake;
+package org.apache.beam.sdk.io.snowflake.test;
 
-import java.io.Serializable;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.sql.DataSource;
+import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
-/** Interface which defines common methods for interacting with SnowFlake. */
-public interface SnowflakeService extends Serializable {
-  String CSV_QUOTE_CHAR_FOR_COPY = "''";
+/**
+ * Fake implementation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in tests.
+ */
+public class FakeSnowflakeServiceImpl implements SnowflakeService {
 
-  String copyIntoStage(
+  @Override
+  public String copyIntoStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String query,
       String table,
       String integrationName,
       String stagingBucketName,
       String tmpDirName)
-      throws SQLException;
+      throws SQLException {
 
-  void putOnStage(
+    FakeSnowflakeDatabase database = FakeSnowflakeDatabase.getInstance();
+
+    writeToFile(stagingBucketName, tmpDirName, database.getTable(table));
+
+    return String.format("./%s/%s/*", stagingBucketName, tmpDirName);
+  }
+
+  @Override
+  public void putOnStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       String bucketName,
       String stage,
@@ -49,9 +63,10 @@ public interface SnowflakeService extends Serializable {
       String fileNameTemplate,
       Boolean parallelization,
       Consumer resultSetMethod)
-      throws SQLException;
+      throws SQLException {}
 
-  void copyToTable(
+  @Override
+  public void copyToTable(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
       String table,
@@ -61,5 +76,16 @@ public interface SnowflakeService extends Serializable {
       CreateDisposition createDisposition,
       WriteDisposition writeDisposition,
       String filesPath)
-      throws SQLException;
+      throws SQLException {}
+
+  private void writeToFile(String stagingBucketName, String tmpDirName, List<String> rows) {
+    Path filePath = Paths.get(String.format("./%s/%s/table.csv.gz", stagingBucketName, tmpDirName));
+    try {
+      Files.createDirectories(filePath.getParent());
+      Files.createFile(filePath);
+      Files.write(filePath, rows);
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to create files", e);
+    }
+  }
 }

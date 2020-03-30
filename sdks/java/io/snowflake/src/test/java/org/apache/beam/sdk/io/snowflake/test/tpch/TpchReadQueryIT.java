@@ -54,7 +54,7 @@ import org.junit.runners.JUnit4;
  * "--testSize=TPCH_SF1000",
  * "--tempLocation=gs://<BUCKET-NAME>/dataflow-read-table-tmp"]'
  * --tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchReadQueryIT
- * -DintegrationTestRunner=direct
+ * -DintegrationTestRunner=dataflow
  * </pre>
  */
 @RunWith(JUnit4.class)

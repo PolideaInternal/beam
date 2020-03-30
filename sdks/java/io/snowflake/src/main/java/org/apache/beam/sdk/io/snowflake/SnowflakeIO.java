@@ -20,11 +20,7 @@ package org.apache.beam.sdk.io.snowflake;
 import static org.apache.beam.sdk.io.TextIO.readFiles;
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
-import com.google.api.gax.paging.Page;
 import com.google.auto.value.AutoValue;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import java.io.IOException;
@@ -150,7 +146,6 @@ public class SnowflakeIO {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeIO.class);
 
   private static final String CSV_QUOTE_CHAR = "'";
-  private static final String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
   /**
    * Read data from Snowflake via COPY statement via user-defined {@link SnowflakeService}.
@@ -158,9 +153,11 @@ public class SnowflakeIO {
    * @param snowflakeService user-defined {@link SnowflakeService}
    * @param <T> Type of the data to be read.
    */
-  public static <T> Read<T> read(SnowflakeService snowflakeService) {
+  public static <T> Read<T> read(
+      SnowflakeService snowflakeService, SnowFlakeCloudProvider snowFlakeCloudProvider) {
     return new AutoValue_SnowflakeIO_Read.Builder<T>()
         .setSnowflakeService(snowflakeService)
+        .setSnowFlakeCloudProvider(snowFlakeCloudProvider)
         .build();
   }
 
@@ -170,7 +167,7 @@ public class SnowflakeIO {
    * @param <T> Type of the data to be read.
    */
   public static <T> Read<T> read() {
-    return read(new SnowflakeServiceImpl());
+    return read(new SnowflakeServiceImpl(), new GCSProvider());
   }
 
   /**
@@ -203,11 +200,10 @@ public class SnowflakeIO {
    */
   public static <T> Write<T> write(SnowflakeService snowflakeService) {
     return new AutoValue_SnowflakeIO_Write.Builder<T>()
-        .setFileNameTemplate(ValueProvider.StaticValueProvider.of("output*"))
-        .setParallelization(ValueProvider.StaticValueProvider.of(true))
-        .setCreateDisposition(
-            ValueProvider.StaticValueProvider.of(CreateDisposition.CREATE_IF_NEEDED))
-        .setWriteDisposition(ValueProvider.StaticValueProvider.of(WriteDisposition.APPEND))
+        .setFileNameTemplate("output*")
+        .setParallelization(true)
+        .setCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
+        .setWriteDisposition(WriteDisposition.APPEND)
         .setSnowflakeService(snowflakeService)
         .build();
   }
@@ -248,6 +244,9 @@ public class SnowflakeIO {
     @Nullable
     abstract SnowflakeService getSnowflakeService();
 
+    @Nullable
+    abstract SnowFlakeCloudProvider getSnowFlakeCloudProvider();
+
     abstract Builder<T> toBuilder();
 
     @AutoValue.Builder
@@ -269,10 +268,13 @@ public class SnowflakeIO {
 
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
+      abstract Builder<T> setSnowFlakeCloudProvider(SnowFlakeCloudProvider snowFlakeCloudProvider);
+
       abstract Read<T> build();
     }
 
     public Read<T> withDataSourceConfiguration(final DataSourceConfiguration config) {
+
       try {
         Connection connection = config.buildDatasource().getConnection();
         connection.close();
@@ -334,7 +336,7 @@ public class SnowflakeIO {
           emptyCollection
               .apply(
                   ParDo.of(
-                      new CopyToExternalLocationFn(
+                      new CopyIntoStageFn(
                           getDataSourceProviderFn(),
                           getQuery(),
                           getTable(),
@@ -352,7 +354,10 @@ public class SnowflakeIO {
 
       emptyCollection
           .apply(Wait.on(output))
-          .apply(ParDo.of(new CleanTmpFilesFromGcsFn(getStagingBucketName(), gcpTmpDirName)));
+          .apply(
+              ParDo.of(
+                  new CleanTmpFilesFromGcsFn(
+                      getStagingBucketName(), gcpTmpDirName, getSnowFlakeCloudProvider())));
 
       return output;
     }
@@ -365,7 +370,7 @@ public class SnowflakeIO {
           );
     }
 
-    private static class CopyToExternalLocationFn extends DoFn<Object, String> {
+    private static class CopyIntoStageFn extends DoFn<Object, String> {
       private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
       private final String query;
       private final String table;
@@ -374,10 +379,7 @@ public class SnowflakeIO {
       private final String tmpDirName;
       private final SnowflakeService snowflakeService;
 
-      private DataSource dataSource;
-      private Connection connection;
-
-      private CopyToExternalLocationFn(
+      private CopyIntoStageFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn,
           String query,
           String table,
@@ -394,24 +396,13 @@ public class SnowflakeIO {
         this.snowflakeService = snowflakeService;
       }
 
-      @Setup
-      public void setup() throws Exception {
-        dataSource = dataSourceProviderFn.apply(null);
-        connection = dataSource.getConnection();
-      }
-
       @ProcessElement
       public void processElement(ProcessContext context) throws Exception {
         String output =
-            snowflakeService.executeCopyIntoLocation(
-                connection, query, table, integrationName, stagingBucketName, tmpDirName);
+            snowflakeService.copyIntoStage(
+                dataSourceProviderFn, query, table, integrationName, stagingBucketName, tmpDirName);
 
         context.output(output);
-      }
-
-      @Teardown
-      public void teardown() throws Exception {
-        connection.close();
       }
     }
 
@@ -441,19 +432,18 @@ public class SnowflakeIO {
     public static class CleanTmpFilesFromGcsFn extends DoFn<Object, Object> {
       private final String bucketName;
       private final String bucketPath;
+      private final SnowFlakeCloudProvider snowFlakeCloudProvider;
 
-      public CleanTmpFilesFromGcsFn(String bucketName, String bucketPath) {
+      public CleanTmpFilesFromGcsFn(
+          String bucketName, String bucketPath, SnowFlakeCloudProvider snowFlakeCloudProvider) {
         this.bucketName = bucketName;
         this.bucketPath = bucketPath;
+        this.snowFlakeCloudProvider = snowFlakeCloudProvider;
       }
 
       @ProcessElement
       public void processElement(ProcessContext c) {
-        Storage storage = StorageOptions.getDefaultInstance().getService();
-        Page<Blob> blobs = storage.list(bucketName, Storage.BlobListOption.prefix(bucketPath));
-        for (Blob blob : blobs.iterateAll()) {
-          storage.delete(blob.getBlobId());
-        }
+        snowFlakeCloudProvider.removeFiles(bucketName, bucketPath);
       }
     }
 
@@ -562,6 +552,13 @@ public class SnowflakeIO {
       abstract Builder setDataSource(DataSource dataSource);
 
       abstract DataSourceConfiguration build();
+    }
+
+    public static DataSourceConfiguration create(DataSource dataSource) {
+      checkArgument(dataSource instanceof Serializable, "dataSource must be Serializable");
+      return new AutoValue_SnowflakeIO_DataSourceConfiguration.Builder()
+          .setDataSource(dataSource)
+          .build();
     }
 
     public static DataSourceConfiguration create(SnowflakeCredentials credentials) {
@@ -681,6 +678,7 @@ public class SnowflakeIO {
     public DataSource buildDatasource() {
       if (getDataSource() == null) {
         SnowflakeBasicDataSource basicDataSource = new SnowflakeBasicDataSource();
+
         if (getUrl() != null) {
           basicDataSource.setUrl(getUrl().get());
         }
@@ -762,25 +760,25 @@ public class SnowflakeIO {
     abstract SerializableFunction<Void, DataSource> getDataSourceProviderFn();
 
     @Nullable
-    abstract ValueProvider<String> getTable();
+    abstract String getTable();
 
     @Nullable
-    abstract ValueProvider<String> getQuery();
+    abstract String getQuery();
 
     @Nullable
-    abstract ValueProvider<Location> getLocation();
+    abstract Location getLocation();
 
     @Nullable
-    abstract ValueProvider<String> getFileNameTemplate();
+    abstract String getFileNameTemplate();
 
     @Nullable
-    abstract ValueProvider<Boolean> getParallelization();
+    abstract Boolean getParallelization();
 
     @Nullable
-    abstract ValueProvider<WriteDisposition> getWriteDisposition();
+    abstract WriteDisposition getWriteDisposition();
 
     @Nullable
-    abstract ValueProvider<CreateDisposition> getCreateDisposition();
+    abstract CreateDisposition getCreateDisposition();
 
     @Nullable
     abstract UserDataMapper getUserDataMapper();
@@ -798,21 +796,21 @@ public class SnowflakeIO {
       abstract Builder<T> setDataSourceProviderFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn);
 
-      abstract Builder<T> setTable(ValueProvider<String> table);
+      abstract Builder<T> setTable(String table);
 
-      abstract Builder<T> setQuery(ValueProvider<String> query);
+      abstract Builder<T> setQuery(String query);
 
-      abstract Builder<T> setLocation(ValueProvider<Location> location);
+      abstract Builder<T> setLocation(Location location);
 
-      abstract Builder<T> setFileNameTemplate(ValueProvider<String> fileNameTemplate);
+      abstract Builder<T> setFileNameTemplate(String fileNameTemplate);
 
-      abstract Builder<T> setParallelization(ValueProvider<Boolean> parallelization);
+      abstract Builder<T> setParallelization(Boolean parallelization);
 
       abstract Builder<T> setUserDataMapper(UserDataMapper userDataMapper);
 
-      abstract Builder<T> setWriteDisposition(ValueProvider<WriteDisposition> writeDisposition);
+      abstract Builder<T> setWriteDisposition(WriteDisposition writeDisposition);
 
-      abstract Builder<T> setCreateDisposition(ValueProvider<CreateDisposition> createDisposition);
+      abstract Builder<T> setCreateDisposition(CreateDisposition createDisposition);
 
       abstract Builder<T> setTableSchema(SFTableSchema tableSchema);
 
@@ -831,63 +829,35 @@ public class SnowflakeIO {
     }
 
     public Write<T> to(String table) {
-      return to(ValueProvider.StaticValueProvider.of(table));
-    }
-
-    public Write<T> to(ValueProvider<String> table) {
       return toBuilder().setTable(table).build();
     }
 
     public Write<T> withQueryTransformation(String query) {
-      return withQueryTransformation(ValueProvider.StaticValueProvider.of(query));
-    }
-
-    public Write<T> withQueryTransformation(ValueProvider<String> query) {
       return toBuilder().setQuery(query).build();
     }
 
     public Write<T> via(Location location) {
-      return via(ValueProvider.StaticValueProvider.of(location));
-    }
-
-    public Write<T> via(ValueProvider<Location> location) {
       return toBuilder().setLocation(location).build();
     }
 
-    public Write<T> withFileNameTemplate(ValueProvider<String> fileNameTemplate) {
+    public Write<T> withFileNameTemplate(String fileNameTemplate) {
       return toBuilder().setFileNameTemplate(fileNameTemplate).build();
     }
 
-    public Write<T> withFileNameTemplate(String fileNameTemplate) {
-      return withFileNameTemplate(ValueProvider.StaticValueProvider.of(fileNameTemplate));
-    }
-
-    public Write<T> withParallelization(ValueProvider<Boolean> parallelization) {
-      return toBuilder().setParallelization(parallelization).build();
-    }
-
     public Write<T> withParallelization(Boolean parallelization) {
-      return withParallelization(ValueProvider.StaticValueProvider.of(parallelization));
+      return toBuilder().setParallelization(parallelization).build();
     }
 
     public Write<T> withUserDataMapper(UserDataMapper userDataMapper) {
       return toBuilder().setUserDataMapper(userDataMapper).build();
     }
 
-    public Write<T> withWriteDisposition(ValueProvider<WriteDisposition> writeDisposition) {
+    public Write<T> withWriteDisposition(WriteDisposition writeDisposition) {
       return toBuilder().setWriteDisposition(writeDisposition).build();
     }
 
-    public Write<T> withWriteDisposition(WriteDisposition writeDisposition) {
-      return withWriteDisposition(ValueProvider.StaticValueProvider.of(writeDisposition));
-    }
-
-    public Write<T> withCreateDisposition(ValueProvider<CreateDisposition> createDisposition) {
-      return toBuilder().setCreateDisposition(createDisposition).build();
-    }
-
     public Write<T> withCreateDisposition(CreateDisposition createDisposition) {
-      return withCreateDisposition(ValueProvider.StaticValueProvider.of(createDisposition));
+      return toBuilder().setCreateDisposition(createDisposition).build();
     }
 
     public Write<T> withTableSchema(SFTableSchema tableSchema) {
@@ -903,8 +873,7 @@ public class SnowflakeIO {
       checkArgument(getTable() != null, "withTable() is required");
 
       if (getQuery() != null) {
-        checkArgument(
-            (getLocation().get().getStage() != null), "withQuery() requires stage as location");
+        checkArgument((getLocation().getStage() != null), "withQuery() requires stage as location");
       }
 
       checkArgument(
@@ -913,7 +882,7 @@ public class SnowflakeIO {
 
       checkArgument(getLocation() != null, "withLocation() is required");
 
-      Location location = getLocation().get();
+      Location location = getLocation();
 
       PCollection files = writeToFiles(input, location.getFilesPath());
 
@@ -963,7 +932,7 @@ public class SnowflakeIO {
     }
 
     private PCollection putFilesToInternalStage(PCollection pcol, Location location) {
-      if (!getParallelization().get()) {
+      if (!getParallelization()) {
         pcol =
             (PCollection)
                 pcol.apply("Combine all files into one flow", Combine.globally(new Concatenate()));
@@ -1053,28 +1022,25 @@ public class SnowflakeIO {
     private final Location location;
     private final String table;
     private final SFTableSchema tableSchema;
-    private final ValueProvider<WriteDisposition> writeDisposition;
-    private final ValueProvider<CreateDisposition> createDisposition;
+    private final WriteDisposition writeDisposition;
+    private final CreateDisposition createDisposition;
     private final SnowflakeService snowflakeService;
-
-    private DataSource dataSource;
-    private Connection connection;
 
     CopyToTableFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
-        ValueProvider<String> table,
-        ValueProvider<String> query,
+        String table,
+        String query,
         Location location,
-        ValueProvider<CreateDisposition> createDisposition,
-        ValueProvider<WriteDisposition> writeDisposition,
+        CreateDisposition createDisposition,
+        WriteDisposition writeDisposition,
         SFTableSchema tableSchema,
         SnowflakeService snowflakeService) {
       this.dataSourceProviderFn = dataSourceProviderFn;
-      this.table = table.get();
+      this.table = table;
       this.tableSchema = tableSchema;
       this.location = location;
       if (query != null) {
-        String formattedQuery = String.format(query.get(), location.getFilesLocationForCopy());
+        String formattedQuery = String.format(query, location.getFilesLocationForCopy());
         this.source = String.format("(%s)", formattedQuery);
       } else {
         String directory = location.getFilesLocationForCopy();
@@ -1087,34 +1053,20 @@ public class SnowflakeIO {
       this.snowflakeService = snowflakeService;
     }
 
-    @Setup
-    public void setup() throws Exception {
-      dataSource = dataSourceProviderFn.apply(null);
-      connection = dataSource.getConnection();
-    }
-
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
       LOG.error("ERROR" + (tableSchema == null));
 
-      snowflakeService.executeCopyToTable(
-          connection,
+      snowflakeService.copyToTable(
+          dataSourceProviderFn,
           (List<String>) context.element(),
-          dataSource,
           table,
           tableSchema,
           source,
           location,
-          createDisposition.get(),
-          writeDisposition.get(),
+          createDisposition,
+          writeDisposition,
           filesPath);
-    }
-
-    @Teardown
-    public void teardown() throws Exception {
-      if (connection != null) {
-        connection.close();
-      }
     }
   }
 
@@ -1122,19 +1074,16 @@ public class SnowflakeIO {
     private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
     private final String stage;
     private final String directory;
-    private final ValueProvider<String> fileNameTemplate;
-    private final ValueProvider<Boolean> parallelization;
+    private final String fileNameTemplate;
+    private final Boolean parallelization;
     private final SnowflakeService snowflakeService;
-
-    private DataSource dataSource;
-    private Connection connection;
 
     PutFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
         String stage,
         String file,
-        ValueProvider<String> fileNameTemplate,
-        ValueProvider<Boolean> parallelization,
+        String fileNameTemplate,
+        Boolean parallelization,
         SnowflakeService snowflakeService) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.stage = stage;
@@ -1144,22 +1093,16 @@ public class SnowflakeIO {
       this.snowflakeService = snowflakeService;
     }
 
-    @Setup
-    public void setup() throws Exception {
-      dataSource = dataSourceProviderFn.apply(null);
-      connection = dataSource.getConnection();
-    }
-
     /* Right now it is paralleled per each created file */
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
-      snowflakeService.executePut(
-          connection,
+      snowflakeService.putOnStage(
+          dataSourceProviderFn,
           context.element().toString(),
           stage,
           directory,
-          fileNameTemplate.get(),
-          parallelization.get(),
+          fileNameTemplate,
+          parallelization,
           resultSet -> {
             assert resultSet != null;
             getFilenamesFromPutOperation((ResultSet) resultSet, context);
@@ -1175,11 +1118,6 @@ public class SnowflakeIO {
       } catch (SQLException e) {
         throw new RuntimeException("Unable run pipeline with PUT operation.", e);
       }
-    }
-
-    @Teardown
-    public void teardown() throws Exception {
-      connection.close();
     }
   }
 }
