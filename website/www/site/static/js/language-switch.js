@@ -17,7 +17,7 @@ $(document).ready(function() {
         var prefix = id + "-";
         return {
             "id": id,
-            "selector": "[class*=" + prefix + "]:not(.no-toggle)",
+            "selector": "[class^=" + prefix + "]:not(.no-toggle)",
             "wrapper": prefix + "switcher", // Parent wrapper-class.
             "default": prefix + def, // Default type to display.
             "dbKey": id, // Local Storage Key
@@ -59,10 +59,6 @@ $(document).ready(function() {
             "addTabs": function() {
                 var _self = this;
 
-                $("code"+_self.selector).each(function() {
-                    $(this).closest(".highlight").addClass(this.classList.value);
-                });
-
                 $("div"+_self.selector).each(function() {
                     if ($(this).prev().is("div"+_self.selector)) {
                         return;
@@ -83,7 +79,7 @@ $(document).ready(function() {
                     return lang;
                 }
 
-                lang.push(el.attr("class").split(" ").filter(item => item.includes("language-"))[0])
+                lang.push(el.attr("class").split(" ")[0])
                 return this.lookup(el.next(), lang)
             },
             "bindEvents": function() {
@@ -108,7 +104,7 @@ $(document).ready(function() {
 
                 if(!isPrefSelected) {
                   pref = this.default;
-
+                  
                   $("." + this.wrapper + " li").each(function() {
                       if ($(this).data("type") === pref) {
                           $(this).addClass("active");
