@@ -40,6 +40,7 @@ import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.Immutabl
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -48,6 +49,7 @@ public class SnowflakeIOReadTest {
   public static final String FAKE_TABLE = "FAKE_TABLE";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
@@ -90,8 +92,10 @@ public class SnowflakeIOReadTest {
     cloudProvider = new FakeSnowflakeCloudProvider();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testConfigIsMissingStagingBucketName() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("withStagingBucketName() is required");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
@@ -104,8 +108,10 @@ public class SnowflakeIOReadTest {
     read.expand(null);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testConfigIsMissingIntegrationName() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("withIntegrationName() is required");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
@@ -118,8 +124,10 @@ public class SnowflakeIOReadTest {
     read.expand(null);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testConfigIsMissingCsvMapper() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("withCsvMapper() is required");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
@@ -132,8 +140,10 @@ public class SnowflakeIOReadTest {
     read.expand(null);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testConfigIsMissingCoder() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("withCoder() is required");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
@@ -146,8 +156,10 @@ public class SnowflakeIOReadTest {
     read.expand(null);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testConfigIsMissingFromTableOrFromQuery() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("fromTable() or fromQuery() is required");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
@@ -160,8 +172,11 @@ public class SnowflakeIOReadTest {
     read.expand(null);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testConfigIsMissingDataSourceConfiguration() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage(
+        "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
@@ -174,8 +189,10 @@ public class SnowflakeIOReadTest {
     read.expand(null);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testConfigContainsFromQueryAndFromTable() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("fromTable() and fromQuery() is not allowed together");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
@@ -190,8 +207,11 @@ public class SnowflakeIOReadTest {
     read.expand(null);
   }
 
-  @Test(expected = PipelineExecutionException.class)
+  @Test
   public void testTableDoesntExist() {
+    exceptionRule.expect(PipelineExecutionException.class);
+    exceptionRule.expectMessage("net.snowflake.client.jdbc.SnowflakeSQLException: !0!");
+
     pipeline.apply(
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
