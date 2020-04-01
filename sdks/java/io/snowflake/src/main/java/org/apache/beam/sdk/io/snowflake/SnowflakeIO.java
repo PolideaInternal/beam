@@ -320,6 +320,9 @@ public class SnowflakeIO {
       // otherwise
       checkArgument(
           getQuery() != null || getTable() != null, "fromTable() or fromQuery() is required");
+      checkArgument(
+          !(getQuery() != null && getTable() != null),
+          "fromTable() and fromQuery() is not allowed together");
       checkArgument(getCsvMapper() != null, "withCsvMapper() is required");
       checkArgument(getCoder() != null, "withCoder() is required");
       checkArgument(getIntegrationName() != null, "withIntegrationName() is required");

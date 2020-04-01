@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
+import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.io.AvroGeneratedUser;
 import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
@@ -39,6 +40,7 @@ import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.Immutabl
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -47,6 +49,8 @@ public class SnowflakeIOReadTest {
   public static final String FAKE_TABLE = "FAKE_TABLE";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
   private static SnowflakeService snowflakeService;
@@ -89,7 +93,139 @@ public class SnowflakeIOReadTest {
   }
 
   @Test
-  public void readTest() {
+  public void testConfigIsMissingStagingBucketName() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("withStagingBucketName() is required");
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test
+  public void testConfigIsMissingIntegrationName() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("withIntegrationName() is required");
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test
+  public void testConfigIsMissingCsvMapper() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("withCsvMapper() is required");
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test
+  public void testConfigIsMissingCoder() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("withCoder() is required");
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper());
+
+    read.expand(null);
+  }
+
+  @Test
+  public void testConfigIsMissingFromTableOrFromQuery() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("fromTable() or fromQuery() is required");
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test
+  public void testConfigIsMissingDataSourceConfiguration() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage(
+        "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test
+  public void testConfigContainsFromQueryAndFromTable() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("fromTable() and fromQuery() is not allowed together");
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromQuery("")
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test
+  public void testTableDoesntExist() {
+    exceptionRule.expect(PipelineExecutionException.class);
+    exceptionRule.expectMessage("net.snowflake.client.jdbc.SnowflakeSQLException: !0!");
+
+    pipeline.apply(
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable("NON_EXIST")
+            .withStagingBucketName(stagingBucketName)
+            .withIntegrationName(integrationName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema())));
+
+    pipeline.run(options);
+  }
+
+  @Test
+  public void testConfigIsProper() {
     PCollection<GenericRecord> items =
         pipeline.apply(
             SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
