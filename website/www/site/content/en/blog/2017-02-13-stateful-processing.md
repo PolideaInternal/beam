@@ -277,6 +277,8 @@ write stateful processing code using Beam's Java SDK.  Here is the code for a
 stateful `DoFn` that assigns an arbitrary-but-consistent index to each element
 on a per key-and-window basis:
 
+{{% classwrapper class="language-java" %}}
+
 ```java
 new DoFn<KV<MyKey, MyValue>, KV<Integer, KV<MyKey, MyValue>>>() {
 
@@ -296,6 +298,10 @@ new DoFn<KV<MyKey, MyValue>, KV<Integer, KV<MyKey, MyValue>>>() {
 }
 ```
 
+{{% /classwrapper %}}
+
+{{% classwrapper class="language-py" %}}
+
 ```py
 class IndexAssigningStatefulDoFn(DoFn):
   INDEX_STATE = CombiningStateSpec('index', sum)
@@ -306,6 +312,8 @@ class IndexAssigningStatefulDoFn(DoFn):
     yield (value, current_index)
     index.add(1)
 ```
+
+{{% /classwrapper %}}
 
 Let's dissect this:
 
@@ -357,6 +365,8 @@ If you try to express the building of your model as a `CombineFn`, you may have
 trouble with `mergeAccumulators`. Assuming you could express that, it might
 look something like this:
 
+{{% classwrapper class="language-java" %}}
+
 ```java
 class ModelFromEventsFn extends CombineFn<Event, Model, Model> {
     @Override
@@ -380,6 +390,10 @@ class ModelFromEventsFn extends CombineFn<Event, Model, Model> {
 }
 ```
 
+{{% /classwrapper %}}
+
+{{% classwrapper class="language-py" %}}
+
 ```py
 class ModelFromEventsFn(apache_beam.core.CombineFn):
 
@@ -397,6 +411,8 @@ class ModelFromEventsFn(apache_beam.core.CombineFn):
     return model
 ```
 
+{{% /classwrapper %}}
+
 Now you have a way to compute the model of a particular user for a window as
 `Combine.perKey(new ModelFromEventsFn())`. How would you apply this model to
 the same stream of events from which it is calculated? A standard way to do
@@ -404,6 +420,8 @@ take the result of a `Combine` transform and use it while processing the
 elements of a `PCollection` is to read it as a side input to a `ParDo`
 transform. So you could side input the model and check the stream of events
 against it, outputting the prediction, like so:
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 PCollection<KV<UserId, Event>> events = ...
@@ -428,6 +446,10 @@ PCollection<KV<UserId, Prediction>> predictions = events
     }));
 ```
 
+{{% /classwrapper %}}
+
+{{% classwrapper class="language-py" %}}
+
 ```py
 # Events is a collection of (user, event) pairs.
 events = (p | ReadFromEventSource() | beam.WindowInto(....))
@@ -449,6 +471,8 @@ def event_prediction(user_event, models):
 predictions = events | beam.Map(event_prediction, user_models)
 ```
 
+{{% classwrapper %}}
+
 In this pipeline, there is just one model emitted by the `Combine.perKey(...)`
 per user, per window, which is then prepared for side input by the `View.asMap()`
 transform. The processing of the `ParDo` over events will block until that side
@@ -465,6 +489,8 @@ generic Beam feature for managing completeness versus latency tradeoffs. So here
 is the same pipeline with an added trigger that outputs a new model one second
 after input arrives:
 
+{{% classwrapper class="language-java" %}}
+
 ```java
 PCollection<KV<UserId, Event>> events = ...
 
@@ -478,6 +504,10 @@ PCollectionView<Map<UserId, Model>> userModels = events
     .apply(View.asMap());
 ```
 
+{{% /classwrapper %}}
+
+{{% classwrapper class="language-py" %}}
+
 ```py
 events = ...
 
@@ -489,6 +519,8 @@ user_models = beam.pvalue.AsDict(
                           trigger.AfterProcessingTime(1)))
                   | beam.CombinePerKey(ModelFromEventsFn()))
 ```
+
+{{% /classwrapper %}}
 
 This is often a pretty nice tradeoff between latency and cost: If a huge flood
 of events comes in a second, then you will only emit one new model, so you
@@ -509,6 +541,8 @@ output, then you cannot use a `Filter` transform to reduce data volume downstrea
 Stateful processing lets you address both the latency problem of side inputs
 and the cost problem of excessive uninteresting output. Here is the code, using
 only features I have already introduced:
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 new DoFn<KV<UserId, Event>, KV<UserId, Prediction>>() {
@@ -543,6 +577,10 @@ new DoFn<KV<UserId, Event>, KV<UserId, Prediction>>() {
 };
 ```
 
+{{% /classwrapper %}}
+
+{{% classwrapper class="language-py" %}}
+
 ```py
 class ModelStatefulFn(beam.DoFn):
 
@@ -570,6 +608,8 @@ class ModelStatefulFn(beam.DoFn):
       previous_pred_state.add(new_prediction)
       yield (user, new_prediction)
 ```
+
+{{% /classwrapper %}}
 
 Let's walk through it,
 
