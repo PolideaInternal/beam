@@ -21,16 +21,7 @@ This guide shows you how to set up your Python development environment, get the 
 
 If you're interested in contributing to the Apache Beam Python codebase, see the [Contribution Guide](/contribute).
 
-- [Set up your environment](#set-up-your-environment)
-  - [Check your Python version](#check-your-python-version)
-  - [Install pip](#install-pip)
-  - [Install Python virtual environment](#install-python-virtual-environment)
-- [Get Apache Beam](#get-apache-beam)
-  - [Create and activate a virtual environment](#create-and-activate-a-virtual-environment)
-  - [Download and install](#download-and-install)
-    - [Extra requirements](#extra-requirements)
-- [Execute a pipeline](#execute-a-pipeline)
-- [Next Steps](#next-steps)
+{{< toc >}}
 
 The Python SDK supports Python 2.7, 3.5, 3.6, and 3.7. New Python SDK releases will stop supporting Python 2.7 in 2020 ([BEAM-8371](https://issues.apache.org/jira/browse/BEAM-8371)). For best results, use Beam with Python 3.
 

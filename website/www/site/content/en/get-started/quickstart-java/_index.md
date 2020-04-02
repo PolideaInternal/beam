@@ -25,12 +25,7 @@ This Quickstart will walk you through executing your first Beam pipeline to run 
 
 If you're interested in contributing to the Apache Beam Java codebase, see the [Contribution Guide](/contribute).
 
-- [Set up your Development Environment](#set-up-your-development-environment)
-- [Get the WordCount Code](#get-the-wordcount-code)
-- [Run WordCount](#run-wordcount)
-- [Inspect the results](#inspect-the-results)
-- [Next Steps](#next-steps)
-
+{{< toc >}}
 
 ## Set up your Development Environment
 

@@ -21,10 +21,7 @@ This Quickstart will walk you through executing your first Beam pipeline to run 
 
 If you're interested in contributing to the Apache Beam Go codebase, see the [Contribution Guide](/contribute).
 
-- [Set up your environment](#set-up-your-environment)
-- [Get the SDK and the examples](#get-the-sdk-and-the-examples)
-- [Run WordCount](#run-wordcount)
-- [Next Steps](#next-steps)
+{{< toc >}}
 
 ## Set up your environment
 

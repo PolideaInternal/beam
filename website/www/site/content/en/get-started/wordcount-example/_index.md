@@ -18,32 +18,7 @@ limitations under the License.
 
 # Apache Beam WordCount Examples
 
-- [MinimalWordCount example](#minimalwordcount-example)
-  - [Creating the pipeline](#creating-the-pipeline)
-  - [Applying pipeline transforms](#applying-pipeline-transforms)
-  - [Running the pipeline](#running-the-pipeline)
-- [WordCount example](#wordcount-example)
-  - [Specifying explicit DoFns](#specifying-explicit-dofns)
-  - [Creating composite transforms](#creating-composite-transforms)
-  - [Using parameterizable PipelineOptions](#using-parameterizable-pipelineoptions)
-- [DebuggingWordCount example](#debuggingwordcount-example)
-  - [Logging](#logging)
-    - [Direct Runner](#direct-runner)
-    - [Cloud Dataflow Runner](#cloud-dataflow-runner)
-    - [Apache Spark Runner](#apache-spark-runner)
-    - [Apache Flink Runner](#apache-flink-runner)
-    - [Apache Apex Runner](#apache-apex-runner)
-    - [Apache Nemo Runner](#apache-nemo-runner)
-  - [Testing your pipeline with asserts](#testing-your-pipeline-with-asserts)
-- [WindowedWordCount example](#windowedwordcount-example)
-  - [Unbounded and bounded datasets](#unbounded-and-bounded-datasets)
-  - [Adding timestamps to data](#adding-timestamps-to-data)
-  - [Windowing](#windowing)
-  - [Reusing PTransforms over windowed PCollections](#reusing-ptransforms-over-windowed-pcollections)
-- [StreamingWordCount example](#streamingwordcount-example)
-  - [Reading an unbounded dataset](#reading-an-unbounded-dataset)
-  - [Writing unbounded results](#writing-unbounded-results)
-- [Next Steps](#next-steps)
+{{< toc >}}
 
 <nav class="language-switcher">
   <strong>Adapt for:</strong>

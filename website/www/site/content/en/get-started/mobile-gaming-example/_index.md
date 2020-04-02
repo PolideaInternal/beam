@@ -18,24 +18,7 @@ limitations under the License.
 
 # Apache Beam Mobile Gaming Pipeline Examples
 
-- [UserScore: Basic Score Processing in Batch](#userscore-basic-score-processing-in-batch)
-    - [What Does UserScore Do?](#what-does-userscore-do)
-    - [Limitations](#limitations)
-- [HourlyTeamScore: Advanced Processing in Batch with Windowing](#hourlyteamscore-advanced-processing-in-batch-with-windowing)
-    - [What Does HourlyTeamScore Do?](#what-does-hourlyteamscore-do)
-      - [Fixed-Time Windowing](#fixed-time-windowing)
-      - [Filtering Based On Event Time](#filtering-based-on-event-time)
-      - [Calculating Score Per Team, Per Window](#calculating-score-per-team-per-window)
-    - [Limitations](#limitations-1)
-- [LeaderBoard: Streaming Processing with Real-Time Game Data](#leaderboard-streaming-processing-with-real-time-game-data)
-  - [What Does LeaderBoard Do?](#what-does-leaderboard-do)
-      - [Calculating User Score based on Processing Time](#calculating-user-score-based-on-processing-time)
-      - [Calculating Team Score based on Event Time](#calculating-team-score-based-on-event-time)
-- [GameStats: Abuse Detection and Usage Analysis](#gamestats-abuse-detection-and-usage-analysis)
-  - [What Does GameStats Do?](#what-does-gamestats-do)
-      - [Abuse Detection](#abuse-detection)
-      - [Analyzing Usage Patterns](#analyzing-usage-patterns)
-- [Next Steps](#next-steps)
+{{< toc >}}
 
 <nav class="language-switcher">
   <strong>Adapt for:</strong>
@@ -216,9 +199,11 @@ Beam's windowing feature uses the [intrinsic timestamp information](/documentati
 
 {{% classwrapper class="language-java" wrapper="p" %}}
 `HourlyTeamScore` uses the [WithTimestamps](https://github.com/apache/beam/blob/master/sdks/java/core/src/main/java/org/apache/beam/sdk/transforms/WithTimestamps.java) and [Window](https://github.com/apache/beam/blob/master/sdks/java/core/src/main/java/org/apache/beam/sdk/transforms/windowing/Window.java) transforms to perform these operations.
+{{% /classwrapper %}}
 
 {{% classwrapper class="language-py" wrapper="p" %}}
 `HourlyTeamScore` uses the `FixedWindows` transform, found in [window.py](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/transforms/window.py), to perform these operations.
+{{% /classwrapper %}}
 
 The following code shows this:
 
