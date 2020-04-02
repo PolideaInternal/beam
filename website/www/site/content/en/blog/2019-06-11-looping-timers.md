@@ -173,6 +173,8 @@ So how do timers help? Well let's have a look at a new transform:
 
 Edit: Looping Timer State changed from Boolean to Long to allow for min value check.  
 
+{{% classwrapper class="language-java" %}}
+
 ```java
 public static class LoopingStatefulTimer extends DoFn<KV<String, Integer>, KV<String, Integer>> {
 
@@ -239,6 +241,8 @@ public static class LoopingStatefulTimer extends DoFn<KV<String, Integer>, KV<St
   }
 ```
 
+{{% /classwrapper %}}
+
 There are two data values that the state API needs to keep:
 
 1. A boolean `timeRunning` value used to avoid resetting the timer if it’s
@@ -276,6 +280,8 @@ In the @OnTimer block, the following occurs:
 
 And that's it, let's add our transform back into the pipeline:
 
+{{% classwrapper class="language-java" %}}
+
 ```java
   // Apply a fixed window of duration 1 min and Sum the results
   p.apply(Create.timestamped(time_1, time_2, time_3)).apply(
@@ -296,6 +302,8 @@ And that's it, let's add our transform back into the pipeline:
      }
   }));
 ```
+
+{{% /classwrapper %}}
 
 1. In the first part of the pipeline we create FixedWindows and reduce the value
    per key down to a single Sum.

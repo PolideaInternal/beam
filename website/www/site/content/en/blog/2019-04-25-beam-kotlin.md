@@ -42,6 +42,8 @@ Here are few brief snippets of code that show how the Kotlin Samples compare to 
 
 ### Java
 
+{{% classwrapper class="language-java" %}}
+
 ```java
  String filename = String.format(
                     "%s-%s-of-%s%s",
@@ -51,14 +53,22 @@ Here are few brief snippets of code that show how the Kotlin Samples compare to 
                     outputFileHints.suggestedFilenameSuffix);
 ```
 
+{{% /classwrapper %}}
+
 ### Kotlin
+
+{{% classwrapper class="language-java" %}}
 
 ```java
  // String templating
  val filename = "$filenamePrefixForWindow(intervalWindow)-$shardNumber-of-$numShards${outputFileHints.suggestedFilenameSuffix)"  
 ```
 
+{{% /classwrapper %}}
+
 ### Java 
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 public static class FormatAsTextFn extends SimpleFunction<KV<String, Long>, String> {
@@ -69,7 +79,11 @@ public static class FormatAsTextFn extends SimpleFunction<KV<String, Long>, Stri
 }
 ```
 
+{{% /classwrapper %}}
+
 ## Kotlin
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 public class FormatAsTextFn : SimpleFunction<KV<String, Long>, String>() {
@@ -77,7 +91,11 @@ public class FormatAsTextFn : SimpleFunction<KV<String, Long>, String>() {
 }
 ```
 
+{{% /classwrapper %}}
+
 ### Java
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 if(tableRow != null){
@@ -85,7 +103,11 @@ if(tableRow != null){
 }
 ```
 
+{{% /classwrapper %}}
+
 ### Kotlin
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 tableRow?.let{
@@ -93,17 +115,27 @@ tableRow?.let{
 }
 ```
 
+{{% /classwrapper %}}
+
 ### Java
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 String tableName = "testTable";
 ```
 
+{{% /classwrapper %}}
+
 ### Kotlin
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 val tableName = "testTable"  // Type inferencing
 ```
+
+{{% /classwrapper %}}
 
 ## Contributors Welcomed!
 
