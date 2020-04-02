@@ -76,3 +76,8 @@ github_project_repo = "https://github.com/apache/beam"
 
 [params]
   release_latest = "2.19.0"
+  # The repository and branch where the files live in Github or Colab. This is used
+  # to serve and stage from your local branch, but publish to the master branch.
+  #   e.g. https://github.com/{{< param branch_repo >}}/path/to/notebook.ipynb
+  #   e.g. https://colab.sandbox.google.com/github/{{< param branch_repo >}}/path/to/notebook.ipynb
+  branch_repo = "apache/beam/blob/master"

@@ -81,6 +81,8 @@ The `TableProvider` classes are under
 
 Our table provider looks like this:
 
+{{% classwrapper class="language-java" %}}
+
 ```java
 @AutoService(TableProvider.class)
 public class GenerateSequenceTableProvider extends InMemoryMetaTableProvider {
@@ -97,6 +99,8 @@ public class GenerateSequenceTableProvider extends InMemoryMetaTableProvider {
 }
 ```
 
+{{% /classwrapper %}}
+
 All it does is give a type to the table - and it implements the
 `buildBeamSqlTable` method, which simply returns a `BeamSqlTable` defined by
 our `GenerateSequenceTable` implementation.
@@ -107,6 +111,8 @@ We want a table implementation that supports streaming properly, so we will
 allow users to define the number of elements to be emitted per second. We will
 define a simple table that emits sequential integers in a streaming fashion.
 This looks like so:
+
+{{% classwrapper class="language-java" %}}
 
 ```java
 class GenerateSequenceTable extends BaseBeamTable implements Serializable {
@@ -144,7 +150,7 @@ class GenerateSequenceTable extends BaseBeamTable implements Serializable {
 }
 ```
 
-
+{{% /classwrapper %}}
 
 ## The real fun
 
