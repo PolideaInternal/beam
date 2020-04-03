@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "The first release of Apache Beam!"
 date:   2016-06-15 00:00:01 -0700
 categories: beam release

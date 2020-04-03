@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Media recap of the Apache Beam graduation"
 slug: "graduation-media-recap.html"
 date:   2017-02-01 00:00:01 -0800

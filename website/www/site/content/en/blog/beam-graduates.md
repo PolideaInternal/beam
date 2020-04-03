@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Apache Beam established as a new top-level project"
 date:   2017-01-10 00:00:01 -0800
 categories: blog

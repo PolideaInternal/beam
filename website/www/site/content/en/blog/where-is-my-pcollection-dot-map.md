@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Where's my PCollection.map()?"
 date:   2016-05-27 09:00:00 -0700
 categories: blog

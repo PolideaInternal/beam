@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Apache Beam publishes the first stable release"
 date:   2017-05-17 00:00:01 -0800
 categories: blog

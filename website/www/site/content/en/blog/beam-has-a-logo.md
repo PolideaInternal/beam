@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Apache Beam has a logo!"
 date:   2016-02-22 10:21:48 -0800
 categories: beam update website

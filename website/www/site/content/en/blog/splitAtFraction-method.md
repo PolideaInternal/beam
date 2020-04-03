@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Dynamic work rebalancing for Beam"
 date:   2016-05-18 11:00:00 -0700
 categories: blog

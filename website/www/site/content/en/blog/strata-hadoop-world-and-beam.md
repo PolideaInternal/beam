@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Strata+Hadoop World and Beam"
 date:   2016-10-11 09:00:00 -0800
 categories: beam update

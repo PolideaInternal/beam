@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Apache Beam 2.12.0"
 date:   2019-04-25 00:00:01 -0800
 categories: blog

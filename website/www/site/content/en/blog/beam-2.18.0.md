@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "Apache Beam 2.18.0"
 date:   2020-01-23 00:00:01 -0800
 categories: blog

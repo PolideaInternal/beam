@@ -1,5 +1,4 @@
 ---
-layout: post
 title:  "A review of input streaming connectors"
 date:   2018-08-20 00:00:01 -0800
 categories: blog
