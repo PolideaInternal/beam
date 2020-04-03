@@ -41,7 +41,7 @@ angledQuotes = false
 latexDashes = true
 
 [permalinks]
-blog = "/blog/:year/:month/:day/:slug/"
+blog = "/blog/:year/:month/:day/:filename/"
 
 # Image processing configuration.
 [imaging]
