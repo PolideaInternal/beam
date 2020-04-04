@@ -17,16 +17,8 @@
  */
 package org.apache.beam.sdk.io.snowflake.test;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.stream.Stream;
 import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
-import org.apache.beam.sdk.values.PCollection;
 
 /** Fake implementation of {@link SnowFlakeCloudProvider} used in test code. */
 public class FakeSnowflakeCloudProvider implements SnowFlakeCloudProvider, Serializable {

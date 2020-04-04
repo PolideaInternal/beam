@@ -26,12 +26,10 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.sql.DataSource;
-
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
 /**
@@ -39,253 +37,254 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
  */
 public class SnowflakeServiceImpl implements SnowflakeService {
 
-    @Override
-    public void putOnStage(
-            SerializableFunction<Void, DataSource> dataSourceProviderFn,
-            String bucketName,
-            String stage,
-            String directory,
-            String fileNameTemplate,
-            Boolean parallelization,
-            Consumer<RunStatementResult> runStatementResultConsumer)
-            throws SQLException {
+  @Override
+  public void putOnStage(
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
+      String bucketName,
+      String stage,
+      String directory,
+      String fileNameTemplate,
+      Boolean parallelization,
+      Consumer<RunStatementResult> runStatementResultConsumer)
+      throws SQLException {
 
-        String query;
-        if (parallelization) {
-            query = String.format("put file://%s %s;", bucketName, stage);
-        } else {
-            query = String.format("put file://%s/%s %s;", directory, fileNameTemplate, stage);
-        }
+    String query;
+    if (parallelization) {
+      query = String.format("put file://%s %s;", bucketName, stage);
+    } else {
+      query = String.format("put file://%s/%s %s;", directory, fileNameTemplate, stage);
+    }
 
-        Consumer resultSetMethod = result -> {
-            RunStatementResult<String> runStatementResult = getFilenamesFromPutOperation((ResultSet) result);
-            runStatementResultConsumer.accept(runStatementResult);
+    Consumer resultSetMethod =
+        result -> {
+          RunStatementResult<String> runStatementResult =
+              getFilenamesFromPutOperation((ResultSet) result);
+          runStatementResultConsumer.accept(runStatementResult);
         };
 
-        runStatement(query, getConnection(dataSourceProviderFn), resultSetMethod);
+    runStatement(query, getConnection(dataSourceProviderFn), resultSetMethod);
+  }
+
+  @Override
+  public String copyIntoStage(
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
+      String query,
+      String table,
+      String integrationName,
+      String stagingBucketName,
+      String tmpDirName)
+      throws SQLException {
+
+    String from;
+    if (query != null) {
+      // Query must be surrounded with brackets
+      from = String.format("(%s)", query);
+    } else {
+      from = table;
     }
 
-    @Override
-    public String copyIntoStage(
-            SerializableFunction<Void, DataSource> dataSourceProviderFn,
-            String query,
-            String table,
-            String integrationName,
-            String stagingBucketName,
-            String tmpDirName)
-            throws SQLException {
+    String externalLocation = String.format("gcs://%s/%s/", stagingBucketName, tmpDirName);
+    String copyQuery =
+        String.format(
+            "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
+            externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
 
-        String from;
-        if (query != null) {
-            // Query must be surrounded with brackets
-            from = String.format("(%s)", query);
-        } else {
-            from = table;
-        }
+    runStatement(copyQuery, getConnection(dataSourceProviderFn), null);
 
-        String externalLocation = String.format("gcs://%s/%s/", stagingBucketName, tmpDirName);
-        String copyQuery =
-                String.format(
-                        "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
-                        externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
+    return String.format("gs://%s/%s/*", stagingBucketName, tmpDirName);
+  }
 
-        runStatement(copyQuery, getConnection(dataSourceProviderFn), null);
+  @Override
+  public void copyToTable(
+      SerializableFunction<Void, DataSource> dataSourceProviderFn,
+      List<String> filesList,
+      String table,
+      SFTableSchema tableSchema,
+      String source,
+      Location location,
+      CreateDisposition createDisposition,
+      WriteDisposition writeDisposition,
+      String filesPath)
+      throws SQLException {
 
-        return String.format("gs://%s/%s/*", stagingBucketName, tmpDirName);
+    String files = String.join(", ", filesList);
+    files = files.replaceAll(String.valueOf(filesPath), "");
+    DataSource dataSource = dataSourceProviderFn.apply(null);
+
+    prepareTableAccordingCreateDisposition(dataSource, table, tableSchema, createDisposition);
+    prepareTableAccordingWriteDisposition(dataSource, table, writeDisposition);
+
+    String query;
+    if (location.isUsingIntegration()) {
+      String integration = location.getIntegration();
+      query =
+          String.format(
+              "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP) STORAGE_INTEGRATION=%s;",
+              table, source, files, CSV_QUOTE_CHAR_FOR_COPY, integration);
+    } else {
+      query =
+          String.format(
+              "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP);",
+              table, source, files, CSV_QUOTE_CHAR_FOR_COPY);
     }
 
-    @Override
-    public void copyToTable(
-            SerializableFunction<Void, DataSource> dataSourceProviderFn,
-            List<String> filesList,
-            String table,
-            SFTableSchema tableSchema,
-            String source,
-            Location location,
-            CreateDisposition createDisposition,
-            WriteDisposition writeDisposition,
-            String filesPath)
-            throws SQLException {
+    runStatement(query, dataSource.getConnection(), null);
+  }
 
-        String files = String.join(", ", filesList);
-        files = files.replaceAll(String.valueOf(filesPath), "");
-        DataSource dataSource = dataSourceProviderFn.apply(null);
+  private void truncateTable(DataSource dataSource, String table) throws SQLException {
+    String query = String.format("TRUNCATE %s;", table);
+    runConnectionWithStatement(dataSource, query, null);
+  }
 
-        prepareTableAccordingCreateDisposition(dataSource, table, tableSchema, createDisposition);
-        prepareTableAccordingWriteDisposition(dataSource, table, writeDisposition);
+  private static void checkIfTableIsEmpty(DataSource dataSource, String table) throws SQLException {
+    String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", table);
+    runConnectionWithStatement(
+        dataSource,
+        selectQuery,
+        resultSet -> {
+          assert resultSet != null;
+          checkIfTableIsEmpty((ResultSet) resultSet);
+        });
+  }
 
-        String query;
-        if (location.isUsingIntegration()) {
-            String integration = location.getIntegration();
-            query =
-                    String.format(
-                            "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP) STORAGE_INTEGRATION=%s;",
-                            table, source, files, CSV_QUOTE_CHAR_FOR_COPY, integration);
-        } else {
-            query =
-                    String.format(
-                            "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP);",
-                            table, source, files, CSV_QUOTE_CHAR_FOR_COPY);
-        }
-
-        runStatement(query, dataSource.getConnection(), null);
+  private static void checkIfTableIsEmpty(ResultSet resultSet) {
+    int columnId = 1;
+    try {
+      if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
+        throw new RuntimeException("Table is not empty. Aborting COPY with disposition EMPTY");
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException("Unable run pipeline with EMPTY disposition.", e);
     }
+  }
 
-    private void truncateTable(DataSource dataSource, String table) throws SQLException {
-        String query = String.format("TRUNCATE %s;", table);
-        runConnectionWithStatement(dataSource, query, null);
+  private static boolean checkIfTableIsEmpty(ResultSet resultSet, int columnId)
+      throws SQLException {
+    int rowCount = resultSet.getInt(columnId);
+    if (rowCount >= 1) {
+      return false;
+      // TODO cleanup stage?
     }
+    return true;
+  }
 
-    private static void checkIfTableIsEmpty(DataSource dataSource, String table) throws SQLException {
-        String selectQuery = String.format("SELECT count(*) FROM %s LIMIT 1;", table);
-        runConnectionWithStatement(
-                dataSource,
-                selectQuery,
-                resultSet -> {
-                    assert resultSet != null;
-                    checkIfTableIsEmpty((ResultSet) resultSet);
-                });
+  private void prepareTableAccordingCreateDisposition(
+      DataSource dataSource,
+      String table,
+      SFTableSchema tableSchema,
+      CreateDisposition createDisposition)
+      throws SQLException {
+    switch (createDisposition) {
+      case CREATE_NEVER:
+        break;
+      case CREATE_IF_NEEDED:
+        createTableIfNotExists(dataSource, table, tableSchema);
+        break;
     }
+  }
 
-    private static void checkIfTableIsEmpty(ResultSet resultSet) {
-        int columnId = 1;
-        try {
-            if (!resultSet.next() || !checkIfTableIsEmpty(resultSet, columnId)) {
-                throw new RuntimeException("Table is not empty. Aborting COPY with disposition EMPTY");
+  private void prepareTableAccordingWriteDisposition(
+      DataSource dataSource, String table, WriteDisposition writeDisposition) throws SQLException {
+    switch (writeDisposition) {
+      case TRUNCATE:
+        truncateTable(dataSource, table);
+        break;
+      case EMPTY:
+        checkIfTableIsEmpty(dataSource, table);
+        break;
+      case APPEND:
+      default:
+        break;
+    }
+  }
+
+  private void createTableIfNotExists(
+      DataSource dataSource, String table, SFTableSchema tableSchema) throws SQLException {
+    String query =
+        String.format(
+            "SELECT EXISTS (SELECT 1 FROM  information_schema.tables  WHERE  table_name = '%s');",
+            table.toUpperCase());
+
+    runConnectionWithStatement(
+        dataSource,
+        query,
+        resultSet -> {
+          assert resultSet != null;
+          if (!checkResultIfTableExists((ResultSet) resultSet)) {
+            try {
+              createTable(dataSource, table, tableSchema);
+            } catch (SQLException e) {
+              throw new RuntimeException("Unable to create table.", e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Unable run pipeline with EMPTY disposition.", e);
-        }
+          }
+        });
+  }
+
+  private static boolean checkResultIfTableExists(ResultSet resultSet) {
+    try {
+      if (resultSet.next()) {
+        return checkIfResultIsTrue(resultSet);
+      } else {
+        throw new RuntimeException("Unable run pipeline with CREATE IF NEEDED - no response.");
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException("Unable run pipeline with CREATE IF NEEDED disposition.", e);
     }
+  }
 
-    private static boolean checkIfTableIsEmpty(ResultSet resultSet, int columnId)
-            throws SQLException {
-        int rowCount = resultSet.getInt(columnId);
-        if (rowCount >= 1) {
-            return false;
-            // TODO cleanup stage?
-        }
-        return true;
+  private void createTable(DataSource dataSource, String table, SFTableSchema tableSchema)
+      throws SQLException {
+    checkArgument(
+        tableSchema != null,
+        "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
+    String query = String.format("CREATE TABLE %s (%s);", table, tableSchema.sql());
+    runConnectionWithStatement(dataSource, query, null);
+  }
+
+  private static boolean checkIfResultIsTrue(ResultSet resultSet) throws SQLException {
+    int columnId = 1;
+    return resultSet.getBoolean(columnId);
+  }
+
+  private static void runConnectionWithStatement(
+      DataSource dataSource, String query, Consumer resultSetMethod) throws SQLException {
+    Connection connection = dataSource.getConnection();
+    runStatement(query, connection, resultSetMethod);
+    connection.close();
+  }
+
+  private static void runStatement(String query, Connection connection, Consumer resultSetMethod)
+      throws SQLException {
+    PreparedStatement statement = connection.prepareStatement(query);
+    try {
+      if (resultSetMethod != null) {
+        ResultSet resultSet = statement.executeQuery();
+        resultSetMethod.accept(resultSet);
+      } else {
+        statement.execute();
+      }
+    } finally {
+      statement.close();
+      connection.close();
     }
+  }
 
-    private void prepareTableAccordingCreateDisposition(
-            DataSource dataSource,
-            String table,
-            SFTableSchema tableSchema,
-            CreateDisposition createDisposition)
-            throws SQLException {
-        switch (createDisposition) {
-            case CREATE_NEVER:
-                break;
-            case CREATE_IF_NEEDED:
-                createTableIfNotExists(dataSource, table, tableSchema);
-                break;
-        }
+  private RunStatementResult<String> getFilenamesFromPutOperation(ResultSet resultSet) {
+    RunStatementResult<String> result = new RunStatementResult();
+    int indexOfNameOfFile = 2;
+    try {
+      while (resultSet.next()) {
+        result.add(resultSet.getString(indexOfNameOfFile));
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException("Unable run pipeline with PUT operation.", e);
     }
+    return result;
+  }
 
-    private void prepareTableAccordingWriteDisposition(
-            DataSource dataSource, String table, WriteDisposition writeDisposition) throws SQLException {
-        switch (writeDisposition) {
-            case TRUNCATE:
-                truncateTable(dataSource, table);
-                break;
-            case EMPTY:
-                checkIfTableIsEmpty(dataSource, table);
-                break;
-            case APPEND:
-            default:
-                break;
-        }
-    }
-
-    private void createTableIfNotExists(
-            DataSource dataSource, String table, SFTableSchema tableSchema) throws SQLException {
-        String query =
-                String.format(
-                        "SELECT EXISTS (SELECT 1 FROM  information_schema.tables  WHERE  table_name = '%s');",
-                        table.toUpperCase());
-
-        runConnectionWithStatement(
-                dataSource,
-                query,
-                resultSet -> {
-                    assert resultSet != null;
-                    if (!checkResultIfTableExists((ResultSet) resultSet)) {
-                        try {
-                            createTable(dataSource, table, tableSchema);
-                        } catch (SQLException e) {
-                            throw new RuntimeException("Unable to create table.", e);
-                        }
-                    }
-                });
-    }
-
-    private static boolean checkResultIfTableExists(ResultSet resultSet) {
-        try {
-            if (resultSet.next()) {
-                return checkIfResultIsTrue(resultSet);
-            } else {
-                throw new RuntimeException("Unable run pipeline with CREATE IF NEEDED - no response.");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Unable run pipeline with CREATE IF NEEDED disposition.", e);
-        }
-    }
-
-    private void createTable(DataSource dataSource, String table, SFTableSchema tableSchema)
-            throws SQLException {
-        checkArgument(
-                tableSchema != null,
-                "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
-        String query = String.format("CREATE TABLE %s (%s);", table, tableSchema.sql());
-        runConnectionWithStatement(dataSource, query, null);
-    }
-
-    private static boolean checkIfResultIsTrue(ResultSet resultSet) throws SQLException {
-        int columnId = 1;
-        return resultSet.getBoolean(columnId);
-    }
-
-    private static void runConnectionWithStatement(
-            DataSource dataSource, String query, Consumer resultSetMethod) throws SQLException {
-        Connection connection = dataSource.getConnection();
-        runStatement(query, connection, resultSetMethod);
-        connection.close();
-    }
-
-    private static void runStatement(String query, Connection connection, Consumer resultSetMethod)
-            throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(query);
-        try {
-            if (resultSetMethod != null) {
-                ResultSet resultSet = statement.executeQuery();
-                resultSetMethod.accept(resultSet);
-            } else {
-                statement.execute();
-            }
-        } finally {
-            statement.close();
-            connection.close();
-        }
-    }
-
-    private RunStatementResult<String> getFilenamesFromPutOperation(ResultSet resultSet) {
-        RunStatementResult<String> result = new RunStatementResult();
-        int indexOfNameOfFile = 2;
-        try {
-            while (resultSet.next()) {
-                result.add(resultSet.getString(indexOfNameOfFile));
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Unable run pipeline with PUT operation.", e);
-        }
-        return result;
-    }
-
-
-    private Connection getConnection(SerializableFunction<Void, DataSource> dataSourceProviderFn)
-            throws SQLException {
-        DataSource dataSource = dataSourceProviderFn.apply(null);
-        return dataSource.getConnection();
-    }
+  private Connection getConnection(SerializableFunction<Void, DataSource> dataSourceProviderFn)
+      throws SQLException {
+    DataSource dataSource = dataSourceProviderFn.apply(null);
+    return dataSource.getConnection();
+  }
 }

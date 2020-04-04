@@ -19,114 +19,108 @@ package org.apache.beam.sdk.io.snowflake.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.Connection;
-import java.sql.Date;
-import java.sql.NClob;
 import java.sql.PreparedStatement;
-import java.sql.Ref;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
 import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
-
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
+import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.values.KV;
-
-import static org.junit.Assert.assertTrue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestUtils {
-    private static final String PRIVATE_KEY_FILE_NAME = "test_rsa_key.p8";
-    private static final String PRIVATE_KEY_PASSPHRASE = "snowflake";
 
-    public static ResultSet runConnectionWithStatement(DataSource dataSource, String query)
-            throws SQLException {
+  private static final Logger LOG = LoggerFactory.getLogger(TestUtils.class);
 
-        Connection connection = dataSource.getConnection();
-        return runStatement(query, connection);
+  private static final String PRIVATE_KEY_FILE_NAME = "test_rsa_key.p8";
+  private static final String PRIVATE_KEY_PASSPHRASE = "snowflake";
+
+  public static ResultSet runConnectionWithStatement(DataSource dataSource, String query)
+      throws SQLException {
+
+    Connection connection = dataSource.getConnection();
+    return runStatement(query, connection);
+  }
+
+  public static ResultSet runStatement(String query, Connection connection) throws SQLException {
+    PreparedStatement statement = connection.prepareStatement(query);
+    try {
+      return statement.executeQuery();
+    } finally {
+      statement.close();
+      connection.close();
     }
+  }
 
-    public static ResultSet runStatement(String query, Connection connection) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(query);
-        try {
-            return statement.executeQuery();
-        } finally {
-            statement.close();
-            connection.close();
-        }
+  public static String getPrivateKeyPath(Class klass) {
+    ClassLoader classLoader = klass.getClassLoader();
+    File file = new File(classLoader.getResource(PRIVATE_KEY_FILE_NAME).getFile());
+    return file.getAbsolutePath();
+  }
+
+  public static String getPrivateKeyPassphrase() {
+    return PRIVATE_KEY_PASSPHRASE;
+  }
+
+  public static void removeDictionary(String dictionary) {
+    Path path = Paths.get(dictionary);
+    try (Stream<Path> stream = Files.walk(path)) {
+      stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+    } catch (IOException e) {
+      LOG.info("Not able to remove files");
     }
+  }
 
-    public static SnowflakeIO.UserDataMapper<Long> getCsvMapper() {
-        return (SnowflakeIO.UserDataMapper<Long>) recordLine -> new String[]{recordLine.toString()};
+  public static boolean isListsEqual(List<?> expected, List<?> actual) {
+    return expected.size() == actual.size()
+        && expected.containsAll(actual)
+        && actual.containsAll(expected);
+  }
+
+  public static String toSnowFlakeRow(String[] strings) {
+    int iMax = strings.length - 1;
+    StringBuilder b = new StringBuilder();
+    for (int i = 0; ; i++) {
+      if (strings[i] != null) {
+        b.append(String.format("'%s'", strings[i]));
+      }
+      if (i == iMax) {
+        return b.toString();
+      }
+      b.append(",");
     }
+  }
 
-    public static SnowflakeIO.UserDataMapper<KV<String, Long>> getLongCsvMapperKV() {
-        return (SnowflakeIO.UserDataMapper<KV<String, Long>>)
-                recordLine -> new Long[]{recordLine.getValue()};
+  public static SnowflakeIO.UserDataMapper<Long> getCsvMapper() {
+    return (SnowflakeIO.UserDataMapper<Long>) recordLine -> new String[] {recordLine.toString()};
+  }
+
+  public static SnowflakeIO.UserDataMapper<KV<String, Long>> getLongCsvMapperKV() {
+    return (SnowflakeIO.UserDataMapper<KV<String, Long>>)
+        recordLine -> new Long[] {recordLine.getValue()};
+  }
+
+  public static SnowflakeIO.UserDataMapper<Long> getLongCsvMapper() {
+    return (SnowflakeIO.UserDataMapper<Long>) recordLine -> new Long[] {recordLine};
+  }
+
+  public static SnowflakeIO.UserDataMapper<String[]> getLStringCsvMapper() {
+    return (SnowflakeIO.UserDataMapper<String[]>) recordLine -> recordLine;
+  }
+
+  public static class ParseToKv extends DoFn<Long, KV<String, Long>> {
+    @ProcessElement
+    public void processElement(ProcessContext c) {
+      KV stringIntKV = KV.of(c.element().toString(), c.element().longValue());
+      c.output(stringIntKV);
     }
-
-    public static SnowflakeIO.UserDataMapper<Long> getLongCsvMapper() {
-        return (SnowflakeIO.UserDataMapper<Long>) recordLine -> new Long[]{recordLine};
-    }
-
-    public static SnowflakeIO.UserDataMapper<String> getStringCsvMapper() {
-        return (SnowflakeIO.UserDataMapper<String>) recordLine -> new String[]{recordLine};
-    }
-
-    public static SnowflakeIO.UserDataMapper<String[]> getLStringCsvMapper() {
-        return (SnowflakeIO.UserDataMapper<String[]>) recordLine -> recordLine;
-    }
-
-    public static String getPrivateKeyPath(Class klass) {
-        ClassLoader classLoader = klass.getClassLoader();
-        File file = new File(classLoader.getResource(PRIVATE_KEY_FILE_NAME).getFile());
-        return file.getAbsolutePath();
-    }
-
-    public static String getPrivateKeyPassphrase() {
-        return PRIVATE_KEY_PASSPHRASE;
-    }
-
-
-    public static void removeDictionary(String dictionary) {
-        Path path = Paths.get(dictionary);
-        try (Stream<Path> stream = Files.walk(path)) {
-            stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-        } catch (IOException e) {
-            System.out.println("elo");
-        }
-    }
-
-    public static boolean isListsEqual(List<?> expected, List<?> actual) {
-        return expected.size() == actual.size() && expected.containsAll(actual) && actual.containsAll(expected);
-    }
-
-    public static String toSnowFlakeRow(String[] a) {
-        int iMax = a.length - 1;
-        StringBuilder b = new StringBuilder();
-        for (int i = 0; ; i++) {
-            if(a[i] != null) {
-                b.append(String.format("'%s'", a[i]));
-            }
-            if (i == iMax)
-                return b.toString();
-            b.append(",");
-        }
-    }
-
-
+  }
 }

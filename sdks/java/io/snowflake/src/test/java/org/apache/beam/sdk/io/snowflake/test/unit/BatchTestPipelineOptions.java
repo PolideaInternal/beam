@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.batch;
+package org.apache.beam.sdk.io.snowflake.test.unit;
 
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.options.Description;
@@ -25,14 +25,4 @@ public interface BatchTestPipelineOptions extends SnowflakePipelineOptions {
   String getTable();
 
   void setTable(String table);
-
-  //  @Description("External location name to connect to.")
-  //  String getExternalLocation();
-  //
-  //  void setExternalLocation(String externalLocation);
-  //
-  //  @Description("Internal (local) location name to connect to.")
-  //  String getInternalLocation();
-  //
-  //  void setInternalLocation(String internalLocation);
 }
