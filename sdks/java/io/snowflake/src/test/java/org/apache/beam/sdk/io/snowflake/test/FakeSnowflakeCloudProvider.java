@@ -26,17 +26,13 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.stream.Stream;
 import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
+import org.apache.beam.sdk.values.PCollection;
 
 /** Fake implementation of {@link SnowFlakeCloudProvider} used in test code. */
 public class FakeSnowflakeCloudProvider implements SnowFlakeCloudProvider, Serializable {
 
   @Override
   public void removeFiles(String bucketName, String pathOnBucket) {
-    Path path = Paths.get(String.format("./%s", bucketName));
-    try (Stream<Path> stream = Files.walk(path)) {
-      stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to remove files", e);
-    }
+    TestUtils.removeDictionary(bucketName);
   }
 }

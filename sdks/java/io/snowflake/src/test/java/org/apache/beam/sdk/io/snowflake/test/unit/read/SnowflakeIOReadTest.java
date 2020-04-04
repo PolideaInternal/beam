@@ -53,9 +53,9 @@ public class SnowflakeIOReadTest {
 
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
+
   private static SnowflakeService snowflakeService;
   private static SnowFlakeCloudProvider cloudProvider;
-  private static FakeSnowflakeDatabase fakeSnowFlakeDatabase;
 
   private static String stagingBucketName;
   private static String integrationName;
@@ -72,8 +72,7 @@ public class SnowflakeIOReadTest {
             new AvroGeneratedUser("Paul", 51, "red"),
             new AvroGeneratedUser("Jackson", 41, "green"));
 
-    fakeSnowFlakeDatabase = FakeSnowflakeDatabase.getInstance();
-    fakeSnowFlakeDatabase.putTable(FAKE_TABLE, testData);
+    FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);

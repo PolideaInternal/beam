@@ -48,7 +48,7 @@ public interface SnowflakeService extends Serializable {
       String directory,
       String fileNameTemplate,
       Boolean parallelization,
-      Consumer resultSetMethod)
+      Consumer<RunStatementResult> runStatementResultConsumer)
       throws SQLException;
 
   void copyToTable(

@@ -187,4 +187,5 @@ public class SnowflakeIOIT {
     return (SnowflakeIO.UserDataMapper<TestRow>)
         (TestRow element) -> new Object[] {element.id(), element.name()};
   }
+
 }

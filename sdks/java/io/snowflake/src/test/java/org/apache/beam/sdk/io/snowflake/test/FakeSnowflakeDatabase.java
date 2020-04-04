@@ -17,47 +17,56 @@
  */
 package org.apache.beam.sdk.io.snowflake.test;
 
+import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 
-/** Fake implementation of SnowFlake warehouse used in test code. */
-public class FakeSnowflakeDatabase {
-  private static FakeSnowflakeDatabase instance = null;
+/**
+ * Fake implementation of SnowFlake warehouse used in test code.
+ */
+public class FakeSnowflakeDatabase implements Serializable {
+    private static Map<String, List<String>> tables = new HashMap<>();
 
-  private Map<String, List<String>> tables;
-
-  private FakeSnowflakeDatabase() {
-    tables = new HashMap<>();
-  }
-
-  public static FakeSnowflakeDatabase getInstance() {
-    if (instance == null) {
-      instance = new FakeSnowflakeDatabase();
-    }
-    return instance;
-  }
-
-  public FakeSnowflakeDatabase(Map<String, List<String>> tables) {
-    this.tables = new HashMap<>();
-  }
-
-  public Map<String, List<String>> getTables() {
-    return tables;
-  }
-
-  public List<String> getTable(String table) throws SnowflakeSQLException {
-    List<String> rows = this.tables.get(table);
-
-    if (rows == null) {
-      throw new SnowflakeSQLException(table, 0);
+    private FakeSnowflakeDatabase() {
+        tables = new HashMap<>();
     }
 
-    return rows;
-  }
+    public static void createTable(String table) {
+        FakeSnowflakeDatabase.tables.put(table, Collections.emptyList());
+    }
 
-  public List<String> putTable(String table, List<String> rows) {
-    return this.tables.put(table, rows);
-  }
+    public static List<String> getElements(String table) throws SnowflakeSQLException {
+        if (!isTableExist(table)) {
+            throw new SnowflakeSQLException(null, "SQL compilation error: Table does not exist", table, 0);
+        }
+
+        return FakeSnowflakeDatabase.tables.get(table);
+    }
+
+    public static List<Long> getElementsAsLong(String table) throws SnowflakeSQLException {
+        List<String> elements = getElements(table);
+        return elements.stream().map(Long::parseLong).collect(Collectors.toList());
+    }
+
+    public static boolean isTableExist(String table) {
+        return FakeSnowflakeDatabase.tables.containsKey(table);
+    }
+
+    public static void createTableWithElements(String table, List<String> rows) throws SnowflakeSQLException {
+        if (!isTableExist(table)) {
+            throw new SnowflakeSQLException(null, "SQL compilation error: Table does not exist", table, 0);
+        }
+        FakeSnowflakeDatabase.tables.put(table, rows);
+    }
+
+    public static void clean() {
+        FakeSnowflakeDatabase.tables = new HashMap<>();
+    }
+
+
 }
