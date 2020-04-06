@@ -53,18 +53,12 @@ required arguments described in the examples.
 
 For example, to run `wordcount`, run:
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 $ go install github.com/apache/beam/sdks/go/examples/wordcount
 $ wordcount --input <PATH_TO_INPUT_FILE> --output counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 $ go install github.com/apache/beam/sdks/go/examples/wordcount
 # As part of the initial setup, for non linux users - install package unix before run
 $ go get -u golang.org/x/sys/unix
@@ -75,17 +69,11 @@ $ wordcount --input gs://dataflow-samples/shakespeare/kinglear.txt \
             --temp_location gs://<your-gcs-bucket>/tmp/ \
             --staging_location gs://<your-gcs-bucket>/binaries/ \
             --worker_harness_container_image=apache/beam_go_sdk:latest
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Go SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## Next Steps
 

@@ -276,9 +276,7 @@ write stateful processing code using Beam's Java SDK.  Here is the code for a
 stateful `DoFn` that assigns an arbitrary-but-consistent index to each element
 on a per key-and-window basis:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 new DoFn<KV<MyKey, MyValue>, KV<Integer, KV<MyKey, MyValue>>>() {
 
   // A state cell holding a single Integer per key+window
@@ -295,13 +293,9 @@ new DoFn<KV<MyKey, MyValue>, KV<Integer, KV<MyKey, MyValue>>>() {
     index.write(current+1);
   }
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class IndexAssigningStatefulDoFn(DoFn):
   INDEX_STATE = CombiningStateSpec('index', sum)
 
@@ -310,9 +304,7 @@ class IndexAssigningStatefulDoFn(DoFn):
     current_index = index.read()
     yield (value, current_index)
     index.add(1)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Let's dissect this:
 
