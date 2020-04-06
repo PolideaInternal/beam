@@ -1,0 +1,19 @@
+{{ $content := .Inner }}
+{{ $ctx := . }}
+{{ with (.Get "class") }}
+    <div class={{ . }}>
+        {{ with ($ctx.Get "lang") }}
+            {{ highlight (trim $content "\n\r") . "" }}
+        {{ else }}
+            {{ (printf "```%s```" $content) | markdownify }}
+        {{ end }}
+    </div>
+{{ else }}
+    {{ with (.Get 0) }}
+        <div class={{ printf "language-%s" . }}>
+            {{ highlight (trim $content "\n\r") . "" }}
+        </div>
+    {{ else }}
+        {{ (printf "```%s```" $content) | markdownify }}
+    {{ end }}
+{{ end }}
