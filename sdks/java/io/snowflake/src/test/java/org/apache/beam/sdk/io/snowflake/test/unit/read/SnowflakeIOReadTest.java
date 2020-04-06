@@ -24,7 +24,7 @@ import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.io.AvroGeneratedUser;
-import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
+import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
@@ -55,7 +55,7 @@ public class SnowflakeIOReadTest {
   private static TpchTestPipelineOptions options;
 
   private static SnowflakeService snowflakeService;
-  private static SnowFlakeCloudProvider cloudProvider;
+  private static SnowflakeCloudProvider cloudProvider;
 
   private static String stagingBucketName;
   private static String integrationName;

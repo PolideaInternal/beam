@@ -81,7 +81,7 @@ public class InternalTest {
 
   @After
   public void tearDown() {
-    TestUtils.removeDictionary(INTERNAL_LOCATION);
+    TestUtils.removeTempDir(INTERNAL_LOCATION);
   }
 
   @Test

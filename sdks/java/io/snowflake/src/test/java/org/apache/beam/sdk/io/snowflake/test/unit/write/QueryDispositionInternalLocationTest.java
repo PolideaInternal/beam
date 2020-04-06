@@ -47,7 +47,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class QueryDispositionInternalLocation {
+public class QueryDispositionInternalLocationTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
   private static final String INTERNAL_LOCATION = "./bucket";
 
@@ -85,7 +85,7 @@ public class QueryDispositionInternalLocation {
 
   @After
   public void tearDown() {
-    TestUtils.removeDictionary(INTERNAL_LOCATION);
+    TestUtils.removeTempDir(INTERNAL_LOCATION);
   }
 
   @Test

@@ -47,7 +47,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class QueryDispositionExternalLocation {
+public class QueryDispositionExternalLocationTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
   private static final String EXTERNAL_LOCATION = "./bucket";
 
@@ -85,7 +85,7 @@ public class QueryDispositionExternalLocation {
 
   @After
   public void tearDown() {
-    TestUtils.removeDictionary(EXTERNAL_LOCATION);
+    TestUtils.removeTempDir(EXTERNAL_LOCATION);
   }
 
   @Test

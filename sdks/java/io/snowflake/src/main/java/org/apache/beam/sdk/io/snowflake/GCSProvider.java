@@ -23,7 +23,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import java.io.Serializable;
 
-public class GCSProvider implements SnowFlakeCloudProvider, Serializable {
+public class GCSProvider implements SnowflakeCloudProvider, Serializable {
 
   @Override
   public void removeFiles(String bucketName, String pathOnBucket) {

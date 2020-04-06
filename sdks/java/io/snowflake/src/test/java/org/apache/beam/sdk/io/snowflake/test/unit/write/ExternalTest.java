@@ -87,7 +87,7 @@ public class ExternalTest {
 
   @After
   public void tearDown() {
-    TestUtils.removeDictionary(EXTERNAL_LOCATION);
+    TestUtils.removeTempDir(EXTERNAL_LOCATION);
   }
 
   @Test

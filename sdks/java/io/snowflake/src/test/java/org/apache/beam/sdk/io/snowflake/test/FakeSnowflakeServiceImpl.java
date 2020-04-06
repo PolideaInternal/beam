@@ -33,8 +33,8 @@ import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
 import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import org.apache.beam.sdk.io.snowflake.RunStatementResult;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
+import org.apache.beam.sdk.io.snowflake.SnowflakeStatementResult;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
@@ -69,13 +69,13 @@ public class FakeSnowflakeServiceImpl implements SnowflakeService {
       String directory,
       String fileNameTemplate,
       Boolean parallelization,
-      Consumer<RunStatementResult> runStatementResultConsumer) {
+      Consumer<SnowflakeStatementResult> runStatementResultConsumer) {
 
-    RunStatementResult<String> runStatementResult = new RunStatementResult<>();
-    Arrays.asList(bucketName.replace("[", "").replace("]", "").replaceAll(" ", "").split(","))
-        .forEach(file -> runStatementResult.add(file));
+    SnowflakeStatementResult<String> snowflakeStatementResult = new SnowflakeStatementResult<>();
+    Arrays.asList(bucketName.replaceAll("[\\[\\]\\ ]", "").split(","))
+        .forEach(file -> snowflakeStatementResult.add(file));
 
-    runStatementResultConsumer.accept(runStatementResult);
+    runStatementResultConsumer.accept(snowflakeStatementResult);
   }
 
   @Override

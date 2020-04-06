@@ -91,7 +91,7 @@ public class ExternalSchemaDispositionTest {
 
   @After
   public void tearDown() {
-    TestUtils.removeDictionary(EXTERNAL_LOCATION);
+    TestUtils.removeTempDir(EXTERNAL_LOCATION);
     FakeSnowflakeDatabase.clean();
   }
 
@@ -108,7 +108,7 @@ public class ExternalSchemaDispositionTest {
             .map(num -> new String[] {"2020-08-25", "2014-01-01 16:00:00", "00:02:03"})
             .collect(Collectors.toList());
     List<String> testDatesSnowFlakeFormat =
-        testDates.stream().map(TestUtils::toSnowFlakeRow).collect(Collectors.toList());
+        testDates.stream().map(TestUtils::toSnowflakeRow).collect(Collectors.toList());
 
     SFTableSchema tableSchema =
         new SFTableSchema(
@@ -146,7 +146,7 @@ public class ExternalSchemaDispositionTest {
             .map(num -> new String[] {null, null, null})
             .collect(Collectors.toList());
     List<String> testNullsSnowFlakeFormat =
-        testNulls.stream().map(TestUtils::toSnowFlakeRow).collect(Collectors.toList());
+        testNulls.stream().map(TestUtils::toSnowflakeRow).collect(Collectors.toList());
 
     SFTableSchema tableSchema =
         new SFTableSchema(
@@ -185,7 +185,7 @@ public class ExternalSchemaDispositionTest {
             .map(num -> new String[] {json, array, json})
             .collect(Collectors.toList());
     List<String> testStructuredDataSnowFlakeFormat =
-        testStructuredData.stream().map(TestUtils::toSnowFlakeRow).collect(Collectors.toList());
+        testStructuredData.stream().map(TestUtils::toSnowflakeRow).collect(Collectors.toList());
 
     SFTableSchema tableSchema =
         new SFTableSchema(

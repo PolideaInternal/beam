@@ -45,7 +45,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       String directory,
       String fileNameTemplate,
       Boolean parallelization,
-      Consumer<RunStatementResult> runStatementResultConsumer)
+      Consumer<SnowflakeStatementResult> runStatementResultConsumer)
       throws SQLException {
 
     String query;
@@ -57,9 +57,9 @@ public class SnowflakeServiceImpl implements SnowflakeService {
 
     Consumer resultSetMethod =
         result -> {
-          RunStatementResult<String> runStatementResult =
+          SnowflakeStatementResult<String> snowflakeStatementResult =
               getFilenamesFromPutOperation((ResultSet) result);
-          runStatementResultConsumer.accept(runStatementResult);
+          runStatementResultConsumer.accept(snowflakeStatementResult);
         };
 
     runStatement(query, getConnection(dataSourceProviderFn), resultSetMethod);
@@ -269,8 +269,8 @@ public class SnowflakeServiceImpl implements SnowflakeService {
     }
   }
 
-  private RunStatementResult<String> getFilenamesFromPutOperation(ResultSet resultSet) {
-    RunStatementResult<String> result = new RunStatementResult();
+  private SnowflakeStatementResult<String> getFilenamesFromPutOperation(ResultSet resultSet) {
+    SnowflakeStatementResult<String> result = new SnowflakeStatementResult();
     int indexOfNameOfFile = 2;
     try {
       while (resultSet.next()) {

@@ -153,10 +153,10 @@ public class SnowflakeIO {
    * @param <T> Type of the data to be read.
    */
   public static <T> Read<T> read(
-      SnowflakeService snowflakeService, SnowFlakeCloudProvider snowFlakeCloudProvider) {
+      SnowflakeService snowflakeService, SnowflakeCloudProvider snowFlakeCloudProvider) {
     return new AutoValue_SnowflakeIO_Read.Builder<T>()
         .setSnowflakeService(snowflakeService)
-        .setSnowFlakeCloudProvider(snowFlakeCloudProvider)
+        .setSnowflakeCloudProvider(snowFlakeCloudProvider)
         .build();
   }
 
@@ -244,7 +244,7 @@ public class SnowflakeIO {
     abstract SnowflakeService getSnowflakeService();
 
     @Nullable
-    abstract SnowFlakeCloudProvider getSnowFlakeCloudProvider();
+    abstract SnowflakeCloudProvider getSnowflakeCloudProvider();
 
     abstract Builder<T> toBuilder();
 
@@ -267,7 +267,7 @@ public class SnowflakeIO {
 
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
-      abstract Builder<T> setSnowFlakeCloudProvider(SnowFlakeCloudProvider snowFlakeCloudProvider);
+      abstract Builder<T> setSnowflakeCloudProvider(SnowflakeCloudProvider snowFlakeCloudProvider);
 
       abstract Read<T> build();
     }
@@ -359,7 +359,7 @@ public class SnowflakeIO {
           .apply(
               ParDo.of(
                   new CleanTmpFilesFromGcsFn(
-                      getStagingBucketName(), gcpTmpDirName, getSnowFlakeCloudProvider())));
+                      getStagingBucketName(), gcpTmpDirName, getSnowflakeCloudProvider())));
 
       return output;
     }
@@ -434,10 +434,10 @@ public class SnowflakeIO {
     public static class CleanTmpFilesFromGcsFn extends DoFn<Object, Object> {
       private final String bucketName;
       private final String bucketPath;
-      private final SnowFlakeCloudProvider snowFlakeCloudProvider;
+      private final SnowflakeCloudProvider snowFlakeCloudProvider;
 
       public CleanTmpFilesFromGcsFn(
-          String bucketName, String bucketPath, SnowFlakeCloudProvider snowFlakeCloudProvider) {
+          String bucketName, String bucketPath, SnowflakeCloudProvider snowFlakeCloudProvider) {
         this.bucketName = bucketName;
         this.bucketPath = bucketPath;
         this.snowFlakeCloudProvider = snowFlakeCloudProvider;

@@ -70,8 +70,8 @@ public class TestUtils {
     return PRIVATE_KEY_PASSPHRASE;
   }
 
-  public static void removeDictionary(String dictionary) {
-    Path path = Paths.get(dictionary);
+  public static void removeTempDir(String dir) {
+    Path path = Paths.get(dir);
     try (Stream<Path> stream = Files.walk(path)) {
       stream.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
     } catch (IOException e) {
@@ -85,7 +85,7 @@ public class TestUtils {
         && actual.containsAll(expected);
   }
 
-  public static String toSnowFlakeRow(String[] strings) {
+  public static String toSnowflakeRow(String[] strings) {
     int iMax = strings.length - 1;
     StringBuilder b = new StringBuilder();
     for (int i = 0; ; i++) {

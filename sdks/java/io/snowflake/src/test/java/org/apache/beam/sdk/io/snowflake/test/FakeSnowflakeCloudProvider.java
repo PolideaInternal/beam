@@ -18,13 +18,13 @@
 package org.apache.beam.sdk.io.snowflake.test;
 
 import java.io.Serializable;
-import org.apache.beam.sdk.io.snowflake.SnowFlakeCloudProvider;
+import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 
-/** Fake implementation of {@link SnowFlakeCloudProvider} used in test code. */
-public class FakeSnowflakeCloudProvider implements SnowFlakeCloudProvider, Serializable {
+/** Fake implementation of {@link SnowflakeCloudProvider} used in test code. */
+public class FakeSnowflakeCloudProvider implements SnowflakeCloudProvider, Serializable {
 
   @Override
   public void removeFiles(String bucketName, String pathOnBucket) {
-    TestUtils.removeDictionary(bucketName);
+    TestUtils.removeTempDir(bucketName);
   }
 }
