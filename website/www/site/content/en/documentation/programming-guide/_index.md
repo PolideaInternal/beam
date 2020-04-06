@@ -1940,7 +1940,8 @@ The following code sample shows how to declare a `PTransform` that accepts a
 {{< highlight py >}}
 <!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_composite_transform
-%}```
+%}```-->
+{{< /highlight >}}
 
 Within your `PTransform` subclass, you'll need to override the `expand` method.
 The `expand` method is where you add the processing logic for the `PTransform`.
@@ -1960,7 +1961,6 @@ The following code sample shows how to override `expand` for the
       // transform logic goes here
       ...
     }
--->
 {{< /highlight >}}
 
 {{< highlight py >}}
