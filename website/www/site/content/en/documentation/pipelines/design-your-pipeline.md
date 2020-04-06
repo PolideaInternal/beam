@@ -60,9 +60,7 @@ PCollection of database table rows.*
 
 The following example code applies two transforms to a single input collection.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PCollection<String> dbRowCollection = ...;
 
 PCollection<String> aCollection = dbRowCollection.apply("aTrans", ParDo.of(new DoFn<String, String>(){
@@ -82,9 +80,7 @@ PCollection<String> bCollection = dbRowCollection.apply("bTrans", ParDo.of(new D
     }
   }
 }));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### A single transform that produces multiple outputs
 
@@ -118,9 +114,7 @@ where each element in the input `PCollection` is processed once.
 The following example code applies one transform that processes each element
 once and outputs two collections.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Define two TupleTags, one for each output.
 final TupleTag<String> startsWithATag = new TupleTag<String>(){};
 final TupleTag<String> startsWithBTag = new TupleTag<String>(){};
@@ -150,9 +144,7 @@ mixedCollection.get(startsWithATag).apply(...);
 
 // Get subset of the output with tag startsWithBTag.
 mixedCollection.get(startsWithBTag).apply(...);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 You can use either mechanism to produce multiple output `PCollection`s. However, using additional outputs makes more sense if the transform's computation per element is time-consuming.
 
@@ -177,9 +169,7 @@ merged both contain the same type.
 
 The following example code applies `Flatten` to merge two collections.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 //merge the two PCollections with Flatten
 PCollectionList<String> collectionList = PCollectionList.of(aCollection).and(bCollection);
 PCollection<String> mergedCollectionWithFlatten = collectionList
@@ -187,9 +177,7 @@ PCollection<String> mergedCollectionWithFlatten = collectionList
 
 // continue with the new merged PCollection
 mergedCollectionWithFlatten.apply(...);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## Multiple sources
 
@@ -201,9 +189,7 @@ Your pipeline can read its input from one or more sources. If your pipeline read
 
 The following example code applies `Join` to join two input collections.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PCollection<KV<String, String>> userAddress = pipeline.apply(JdbcIO.<KV<String, String>>read()...);
 
 PCollection<KV<String, String>> userOrder = pipeline.apply(KafkaIO.<String, String>read()...);
@@ -218,9 +204,7 @@ PCollection<KV<String, CoGbkResult>> joinedCollection =
                        .apply(CoGroupByKey.<String>create());
 
 joinedCollection.apply(...);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## What's next
 

@@ -119,17 +119,13 @@ your pipeline's configuration options programatically, but it's often easier to
 set the options ahead of time (or read them from the command line) and pass them
 to the `Pipeline` object when you create the object.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Start by defining the options for the pipeline.
 PipelineOptions options = PipelineOptionsFactory.create();
 
 // Then create the pipeline.
 Pipeline p = Pipeline.create(options);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -140,14 +136,10 @@ Pipeline p = Pipeline.create(options);
 
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 // In order to start creating the pipeline for execution, a Pipeline object and a Scope object are needed.
 p, s := beam.NewPipelineWithRoot()
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### 2.1. Configuring pipeline options {#configuring-pipeline-options}
 
@@ -170,14 +162,10 @@ you can use to set fields in `PipelineOptions` using command-line arguments.
 To read options from the command-line, construct your `PipelineOptions` object
 as demonstrated in the following example code:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PipelineOptions options =
     PipelineOptionsFactory.fromArgs(args).withValidation().create();
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -188,14 +176,10 @@ PipelineOptions options =
 
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 // If beamx or Go flags are used, flags must be parsed first.
 flag.Parse()
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 This interprets command-line arguments that follow the format:
 
@@ -220,9 +204,7 @@ You can add your own custom options in addition to the standard
 setter methods for each option, as in the following example for
 adding `input` and `output` custom options:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public interface MyOptions extends PipelineOptions {
     String getInput();
     void setInput(String input);
@@ -230,9 +212,7 @@ public interface MyOptions extends PipelineOptions {
     String getOutput();
     void setOutput(String output);
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -243,25 +223,19 @@ public interface MyOptions extends PipelineOptions {
 
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 var (
   input = flag.String("input", "", "")
   output = flag.String("output", "", "")
 )
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 You can also specify a description, which appears when a user passes `--help` as
 a command-line argument, and a default value.
 
 You set the description and default value using annotations, as follows:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public interface MyOptions extends PipelineOptions {
     @Description("Input for the pipeline")
     @Default.String("gs://my-bucket/input")
@@ -273,9 +247,7 @@ public interface MyOptions extends PipelineOptions {
     String getOutput();
     void setOutput(String output);
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -286,16 +258,12 @@ public interface MyOptions extends PipelineOptions {
 
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 var (
   input = flag.String("input", "gs://my-bucket/input", "Input for the pipeline")
   output = flag.String("output", "gs://my-bucket/output", "Output for the pipeline")
 )
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-java" wrapper="p" %}}
 It's recommended that you register your interface with `PipelineOptionsFactory`
@@ -311,16 +279,12 @@ The following example code shows how to register your custom options interface
 with `PipelineOptionsFactory`:
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PipelineOptionsFactory.register(MyOptions.class);
 MyOptions options = PipelineOptionsFactory.fromArgs(args)
                                                 .withValidation()
                                                 .as(MyOptions.class);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Now your pipeline can accept `--input=value` and `--output=value` as command-line arguments.
 
@@ -364,9 +328,7 @@ would apply <span class="language-java">`TextIO.Read`</span>
 <span class="language-py">`io.TextFileSource`</span> to your `Pipeline` to create
 a `PCollection`:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public static void main(String[] args) {
     // Create the pipeline.
     PipelineOptions options =
@@ -377,9 +339,7 @@ public static void main(String[] args) {
     PCollection<String> lines = p.apply(
       "ReadMyFile", TextIO.read().from("gs://some/inputData.txt"));
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -390,13 +350,9 @@ public static void main(String[] args) {
 
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 lines := textio.Read(s, "gs://some/inputData.txt")
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 See the [section on I/O](#pipeline-io) to learn more about how to read from the
 various data sources supported by the Beam SDK.
@@ -424,9 +380,7 @@ itself.
 The following example code shows how to create a `PCollection` from an in-memory
 <span class="language-java">`List`</span><span class="language-py">`list`</span>:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public static void main(String[] args) {
     // Create a Java Collection, in this case a List of Strings.
     final List<String> LINES = Arrays.asList(
@@ -443,9 +397,7 @@ public static void main(String[] args) {
     // Apply Create, passing the list and the coder, to create the PCollection.
     p.apply(Create.of(LINES)).setCoder(StringUtf8Coder.of());
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -569,21 +521,13 @@ slight difference: You apply the transform to the input `PCollection`, passing
 the transform itself as an argument, and the operation returns the output
 `PCollection`. This takes the general form:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 [Output PCollection] = [Input PCollection].apply([Transform])
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 [Output PCollection] = [Input PCollection] | [Transform]
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Because Beam uses a generic `apply` method for `PCollection`, you can both chain
 transforms sequentially and also apply transforms that contain other transforms
@@ -593,25 +537,17 @@ SDKs).
 How you apply your pipeline's transforms determines the structure of your
 pipeline. The best way to think of your pipeline is as a directed acyclic graph, where `PTransform` nodes are subroutines that accept `PCollection` nodes as inputs and emit `PCollection` nodes as outputs. For example, you can chain together transforms to create a pipeline that successively modifies input data:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 [Final Output PCollection] = [Initial Input PCollection].apply([First Transform])
 .apply([Second Transform])
 .apply([Third Transform])
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 [Final Output PCollection] = ([Initial Input PCollection] | [First Transform]
               | [Second Transform]
               | [Third Transform])
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 The graph of this pipeline looks like the following:
 
@@ -625,25 +561,17 @@ collection--remember that a `PCollection` is immutable by definition. This means
 that you can apply multiple transforms to the same input `PCollection` to create
 a branching pipeline, like so:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 [PCollection of database table rows] = [Database Table Reader].apply([Read Transform])
 [PCollection of 'A' names] = [PCollection of database table rows].apply([Transform A])
 [PCollection of 'B' names] = [PCollection of database table rows].apply([Transform B])
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 [PCollection of database table rows] = [Database Table Reader] | [Read Transform]
 [PCollection of 'A' names] = [PCollection of database table rows] | [Transform A]
 [PCollection of 'B' names] = [PCollection of database table rows] | [Transform B]
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 The graph of this branching pipeline looks like the following:
 
@@ -714,9 +642,7 @@ Like all Beam transforms, you apply `ParDo` by calling the `apply` method on the
 input `PCollection` and passing `ParDo` as an argument, as shown in the
 following example code:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // The input PCollection of Strings.
 PCollection<String> words = ...;
 
@@ -728,9 +654,7 @@ PCollection<Integer> wordLengths = words.apply(
     ParDo
     .of(new ComputeWordLengthFn()));        // The DoFn to perform on each element, which
                                             // we define above.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -746,9 +670,7 @@ words = ...
 
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 // words is the input PCollection of strings
 var words beam.PCollection = ...
 
@@ -757,9 +679,7 @@ func computeWordLengthFn(word string) int {
 }
 
 wordLengths := beam.ParDo(s, computeWordLengthFn, words)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 In the example, our input `PCollection` contains `String` values. We apply a
 `ParDo` transform that specifies a function (`ComputeWordLengthFn`) to compute
@@ -786,13 +706,9 @@ the types of the input and output elements. If your `DoFn` processes incoming
 look like this:
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 static class ComputeWordLengthFn extends DoFn<String, Integer> { ... }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-java" wrapper="p" %}}
 Inside your `DoFn` subclass, you'll write a method annotated with
@@ -816,9 +732,7 @@ output is emitted by using `yield` or `return` statement inside `process`
 method.
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 static class ComputeWordLengthFn extends DoFn<String, Integer> {
   @ProcessElement
   public void processElement(@Element String word, OutputReceiver<Integer> out) {
@@ -826,9 +740,7 @@ static class ComputeWordLengthFn extends DoFn<String, Integer> {
     out.output(word.length());
   }
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -877,9 +789,7 @@ Here's the previous example, `ParDo` with `ComputeLengthWordsFn`, with the
 <span class="language-java">an anonymous inner class instance</span>
 <span class="language-py">a lambda function</span>:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // The input PCollection.
 PCollection<String> words = ...;
 
@@ -893,9 +803,7 @@ PCollection<Integer> wordLengths = words.apply(
         out.output(word.length());
       }
     }));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -910,18 +818,14 @@ words = ...
 
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 // words is the input PCollection of strings
 var words beam.PCollection = ...
 
 lengths := beam.ParDo(s, func (word string) int {
       return len(word)
 }, words)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 If your `ParDo` performs a one-to-one mapping of input elements to output
 elements--that is, for each input element, it applies a function that produces
@@ -933,9 +837,7 @@ Java 8 lambda function for additional brevity.</span>
 Here's the previous example using <span class="language-java">`MapElements`</span>
 <span class="language-py">`Map`</span>:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // The input PCollection.
 PCollection<String> words = ...;
 
@@ -944,9 +846,7 @@ PCollection<String> words = ...;
 PCollection<Integer> wordLengths = words.apply(
   MapElements.into(TypeDescriptors.integers())
              .via((String word) -> word.length()));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -1213,9 +1113,7 @@ input/output type.
 
 The following example code shows a simple combine function.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Sum a collection of Integer values. The function SumInts implements the interface SerializableFunction.
 public static class SumInts implements SerializableFunction<Iterable<Integer>, Integer> {
   @Override
@@ -1227,9 +1125,7 @@ public static class SumInts implements SerializableFunction<Iterable<Integer>, I
     return sum;
   }
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -1273,9 +1169,7 @@ corresponding methods:
 The following example code shows how to define a `CombineFn` that computes a
 mean average:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public class AverageFn extends CombineFn<Integer, AverageFn.Accum, Double> {
   public static class Accum {
     int sum = 0;
@@ -1307,9 +1201,7 @@ public class AverageFn extends CombineFn<Integer, AverageFn.Accum, Double> {
     return ((double) accum.sum) / accum.count;
   }
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -1328,17 +1220,13 @@ containing one element. The following example code shows how to apply the Beam
 provided sum combine function to produce a single sum value for a `PCollection`
 of integers.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Sum.SumIntegerFn() combines the elements in the input PCollection. The resulting PCollection, called sum,
 // contains one value: the sum of all the elements in the input PCollection.
 PCollection<Integer> pc = ...;
 PCollection<Integer> sum = pc.apply(
    Combine.globally(new Sum.SumIntegerFn()));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -1365,24 +1253,16 @@ To have `Combine` instead return an empty `PCollection` if the input is empty,
 specify `.withoutDefaults` when you apply your `Combine` transform, as in the
 following code example:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PCollection<Integer> pc = ...;
 PCollection<Integer> sum = pc.apply(
   Combine.globally(new Sum.SumIntegerFn()).withoutDefaults());
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 pc = ...
 sum = pc | beam.CombineGlobally(sum).without_defaults()
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ##### 4.2.4.5. Combine and non-global windowing {#combine-non-global-windowing}
 
@@ -1422,9 +1302,7 @@ create a single, merged value to be paired with each key. This pattern of a
 Beam's Combine PerKey transform. The combine function you supply to Combine
 PerKey must be an associative reduction function or a subclass of `CombineFn`.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // PCollection is grouped by key and the Double values associated with each key are combined into a Double.
 PCollection<KV<String, Double>> salesRecords = ...;
 PCollection<KV<String, Double>> totalSalesPerPerson =
@@ -1437,21 +1315,15 @@ PCollection<KV<String, Integer>> playerAccuracy = ...;
 PCollection<KV<String, Double>> avgAccuracyPerPlayer =
   playerAccuracy.apply(Combine.<String, Integer, Double>perKey(
     new MeanInts())));
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 # PCollection is grouped by key and the numeric values associated with each key
 # are averaged into a float.
 player_accuracies = ...
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:combine_per_key
 %}
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 #### 4.2.5. Flatten {#flatten}
 
@@ -1464,9 +1336,7 @@ is a Beam transform for `PCollection` objects that store the same data type.
 The following example shows how to apply a `Flatten` transform to merge multiple
 `PCollection` objects.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Flatten takes a PCollectionList of PCollection objects of a given type.
 // Returns a single PCollection that contains all of the elements in the PCollection objects in that list.
 PCollection<String> pc1 = ...;
@@ -1475,9 +1345,7 @@ PCollection<String> pc3 = ...;
 PCollectionList<String> collections = PCollectionList.of(pc1).and(pc2).and(pc3);
 
 PCollection<String> merged = collections.apply(Flatten.<String>pCollections());
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 
 {{% classwrapper class="language-py" %}}
@@ -1531,9 +1399,7 @@ for instance).
 
 The following example divides a `PCollection` into percentile groups.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Provide an int value with the desired number of result partitions, and a PartitionFn that represents the
 // partitioning function. In this example, we define the PartitionFn in-line. Returns a PCollectionList
 // containing each of the resulting partitions as individual PCollection objects.
@@ -1548,9 +1414,7 @@ PCollectionList<Student> studentsByPercentile =
 
 // You can extract each partition from the PCollectionList using the get method, as follows:
 PCollection<Student> fortiethPercentile = studentsByPercentile.get(4);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -1651,9 +1515,7 @@ determined by the input data, or depend on a different branch of your pipeline.
 
 #### 4.4.1. Passing side inputs to ParDo {#side-inputs-pardo}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   // Pass side inputs to your ParDo transform by invoking .withSideInputs.
   // Inside your DoFn, access the side input by using the method DoFn.ProcessContext.sideInput.
 
@@ -1682,9 +1544,7 @@ determined by the input data, or depend on a different branch of your pipeline.
           }
       }).withSideInputs(maxWordLengthCutOffView)
   );
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -1747,9 +1607,7 @@ together.
 
 #### 4.5.1. Tags for multiple outputs {#output-tags}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // To emit elements to multiple output PCollections, create a TupleTag object to identify each collection
 // that your ParDo produces. For example, if your ParDo produces three output PCollections (the main output
 // and two additional outputs), you must create three TupleTags. The following example code shows how to
@@ -1795,9 +1653,7 @@ together.
           // Specify the tags for the two additional outputs as a TupleTagList.
                           TupleTagList.of(wordLengthsAboveCutOffTag)
                                       .and(markedWordsTag)));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -1820,9 +1676,7 @@ together.
 
 #### 4.5.2. Emitting to multiple outputs in your DoFn {#multiple-outputs-dofn}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Inside your ParDo's DoFn, you can emit an element to a specific output PCollection by providing a
 // MultiOutputReceiver to your process method, and passing in the appropriate TupleTag to obtain an OutputReceiver.
 // After your ParDo, extract the resulting output PCollections from the returned PCollectionTuple.
@@ -1843,9 +1697,7 @@ together.
          out.get(markedWordsTag).output(word);
        }
      }}));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -1887,19 +1739,13 @@ To access the timestamp of an input element, add a parameter annotated with `@Ti
 To access the timestamp of an input element, add a keyword parameter default to `DoFn.TimestampParam`. For example:
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 .of(new DoFn<String, String>() {
      public void processElement(@Element String word, @Timestamp Instant timestamp) {
   }})
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 import apache_beam as beam
 
 class ProcessRecord(beam.DoFn):
@@ -1908,9 +1754,7 @@ class ProcessRecord(beam.DoFn):
      # access timestamp of element.
      pass  
   
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-java" wrapper="p" %}}
 **Window:**
@@ -1928,19 +1772,13 @@ If an element falls in multiple windows (for example, this will happen when usin
 `process` method will be invoked multiple time for the element, once for each window.
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 .of(new DoFn<String, String>() {
      public void processElement(@Element String word, IntervalWindow window) {
   }})
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 import apache_beam as beam
 
 class ProcessRecord(beam.DoFn):
@@ -1949,9 +1787,7 @@ class ProcessRecord(beam.DoFn):
      # access window e.g window.end.micros
      pass  
   
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-java" wrapper="p" %}}
 **PaneInfo:**
@@ -1966,19 +1802,13 @@ you can determine whether this is an early or a late firing, and how many times 
 This feature implementation in python sdk is not fully completed, see more at [BEAM-3759](https://issues.apache.org/jira/browse/BEAM-3759).
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 .of(new DoFn<String, String>() {
      public void processElement(@Element String word, PaneInfo paneInfo) {
   }})
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 import apache_beam as beam
 
 class ProcessRecord(beam.DoFn):
@@ -1987,9 +1817,7 @@ class ProcessRecord(beam.DoFn):
      # access pane info e.g pane_info.is_first, pane_info.is_last, pane_info.timing
      pass  
   
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-java" wrapper="p" %}}
 **PipelineOptions:**
@@ -1997,15 +1825,11 @@ The `PipelineOptions` for the current pipeline can always be accessed in a proce
 as a parameter:
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 .of(new DoFn<String, String>() {
      public void processElement(@Element String word, PipelineOptions options) {
   }})
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-java" wrapper="p" %}}
 `@OnTimer` methods can also access many of these parameters. Timestamp, Window, key, `PipelineOptions`, `OutputReceiver`, and
@@ -2022,9 +1846,7 @@ Timers and States are explained in more detail in the
 [Timely (and Stateful) Processing with Apache Beam](/blog/2017/08/28/timely-processing.html) blog post.
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 
 class StatefulDoFn(beam.DoFn):
   """An example stateful DoFn with state and timer"""
@@ -2080,9 +1902,7 @@ class StatefulDoFn(beam.DoFn):
       # Some business logic
       return True
 
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### 4.6. Composite transforms {#composite-transforms}
 
@@ -2120,9 +1940,7 @@ Your composite transform's parameters and return value must match the initial
 input type and final return type for the entire transform, even if the
 transform's intermediate data changes type multiple times.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   public static class CountWords extends PTransform<PCollection<String>,
       PCollection<KV<String, Long>>> {
     @Override
@@ -2139,9 +1957,7 @@ transform's intermediate data changes type multiple times.
       return wordCounts;
     }
   }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -2168,16 +1984,12 @@ of the multi-collection types for the relevant type parameter.
 The following code sample shows how to declare a `PTransform` that accepts a
 `PCollection` of `String`s for input, and outputs a `PCollection` of `Integer`s:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   static class ComputeWordLengths
     extends PTransform<PCollection<String>, PCollection<Integer>> {
     ...
   }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -2194,9 +2006,7 @@ value.
 The following code sample shows how to override `expand` for the
 `ComputeWordLengths` class declared in the previous example:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   static class ComputeWordLengths
       extends PTransform<PCollection<String>, PCollection<Integer>> {
     @Override
@@ -2253,21 +2063,13 @@ representation of the data for use by your pipeline. You can use a read
 transform at any point while constructing your pipeline to create a new
 `PCollection`, though it will be most common at the start of your pipeline.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PCollection<String> lines = p.apply(TextIO.read().from("gs://some/inputData.txt"));
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 lines = pipeline | beam.io.ReadFromText('gs://some/inputData.txt')
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### 5.2. Writing output data {#pipeline-io-writing-data}
 
@@ -2276,21 +2078,13 @@ You will most often use write transforms at the end of your pipeline to output
 your pipeline's final results. However, you can use a write transform to output
 a `PCollection`'s data at any point in your pipeline.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 output.apply(TextIO.write().to("gs://some/outputData"));
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 output | beam.io.WriteToText('gs://some/outputData')
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### 5.3. File-based input and output data {#file-based-data}
 
@@ -2302,14 +2096,10 @@ filesystem-specific consistency models. The following TextIO example uses a glob
 operator (\*) to read all matching input files that have prefix "input-" and the
 suffix ".csv" in the given location:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 p.apply("ReadFromText",
     TextIO.read().from("protocol://my_bucket/path/to/input-*.csv"));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -2335,15 +2125,11 @@ The following write transform example writes multiple output files to a
 location. Each file has the prefix "numbers", a numeric tag, and the suffix
 ".csv".
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 records.apply("WriteToText",
     TextIO.write().to("protocol://my_bucket/path/to/numbers")
                 .withSuffix(".csv"));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -2609,25 +2395,17 @@ The following example code demonstrates how to set a default Coder, in this case
 <span class="language-java">Integer</span><span class="language-py">int</span>
 values for a pipeline.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PipelineOptions options = PipelineOptionsFactory.create();
 Pipeline p = Pipeline.create(options);
 
 CoderRegistry cr = p.getCoderRegistry();
 cr.registerCoder(Integer.class, BigEndianIntegerCoder.class);
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 apache_beam.coders.registry.register_coder(int, BigEndianIntegerCoder)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 #### 6.2.3. Annotating a custom data type with a default coder {#annotating-custom-type-default-coder}
 
@@ -2638,16 +2416,12 @@ example, let's say you have a custom data type for which you want to use
 `SerializableCoder`. You can use the `@DefaultCoder` annotation as follows:
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 @DefaultCoder(AvroCoder.class)
 public class MyCustomDataType {
   ...
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-java" wrapper="p" %}}
 If you've created a custom coder to match your data type, and you want to use
@@ -2655,9 +2429,7 @@ the `@DefaultCoder` annotation, your coder class must implement a static
 `Coder.of(Class<T>)` factory method.
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public class MyCustomCoder implements Coder {
   public static Coder<T> of(Class<T> clazz) {...}
   ...
@@ -2667,9 +2439,7 @@ public class MyCustomCoder implements Coder {
 public class MyCustomDataType {
   ...
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" wrapper="p" %}}
 The Beam SDK for Python does not support annotating data types with a default
@@ -2894,15 +2664,11 @@ for more information.
 The following example code shows how to apply `Window` to divide a `PCollection`
 into fixed windows, each 60 seconds in length:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
     PCollection<String> items = ...;
     PCollection<String> fixedWindowedItems = items.apply(
         Window.<String>into(FixedWindows.of(Duration.standardSeconds(60))));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -2919,15 +2685,11 @@ The following example code shows how to apply `Window` to divide a `PCollection`
 into sliding time windows. Each window is 30 seconds in length, and a new window
 begins every five seconds:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
     PCollection<String> items = ...;
     PCollection<String> slidingWindowedItems = items.apply(
         Window.<String>into(SlidingWindows.of(Duration.standardSeconds(30)).every(Duration.standardSeconds(5))));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -2944,15 +2706,11 @@ The following example code shows how to apply `Window` to divide a `PCollection`
 into session windows, where each session must be separated by a time gap of at
 least 10 minutes (600 seconds):
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
     PCollection<String> items = ...;
     PCollection<String> sessionWindowedItems = items.apply(
         Window.<String>into(Sessions.withGapDuration(Duration.standardSeconds(600))));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -2972,15 +2730,11 @@ If your `PCollection` is bounded (the size is fixed), you can assign all the
 elements to a single global window. The following example code shows how to set
 a single global window for a `PCollection`:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
     PCollection<String> items = ...;
     PCollection<String> batchItems = items.apply(
         Window.<String>into(new GlobalWindows()));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -3040,21 +2794,15 @@ you set your `PCollection`'s windowing strategy. The following code example
 demonstrates a windowing strategy that will allow late data up to two days after
 the end of a window.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
     PCollection<String> items = ...;
     PCollection<String> fixedWindowedItems = items.apply(
         Window.<String>into(FixedWindows.of(Duration.standardMinutes(1)))
               .withAllowedLateness(Duration.standardDays(2)));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
    pc = [Initial PCollection]
    pc | beam.WindowInto(
               FixedWindows(60),
@@ -3062,9 +2810,7 @@ the end of a window.
               accumulation_mode=accumulation_mode,
               timestamp_combiner=timestamp_combiner,
               allowed_lateness=Duration(seconds=2*24*60*60)) # 2 days
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 When you set `.withAllowedLateness` on a `PCollection`, that allowed lateness
 propagates forward to any subsequent `PCollection` derived from the first
@@ -3092,9 +2838,7 @@ records in from a file, the file source doesn't assign timestamps automatically.
 You can parse the timestamp field from each record and use a `ParDo` transform
 with a `DoFn` to attach the timestamps to each element in your `PCollection`.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
       PCollection<LogEntry> unstampedLogs = ...;
       PCollection<LogEntry> stampedLogs =
           unstampedLogs.apply(ParDo.of(new DoFn<LogEntry, LogEntry>() {
@@ -3106,9 +2850,7 @@ with a `DoFn` to attach the timestamps to each element in your `PCollection`.
               out.outputWithTimestamp(element, logTimeStamp);
             }
           }));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -3192,9 +2934,7 @@ before or after the end of the window.
 The following example shows a billing scenario, and uses both early and late
 firings:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   // Create a bill at the end of the month.
   AfterWatermark.pastEndOfWindow()
       // During the month, get near real-time estimates.
@@ -3204,9 +2944,7 @@ firings:
               .plusDuration(Duration.standardMinutes(1))
       // Fire on any late data so the bill can be corrected.
       .withLateFirings(AfterPane.elementCountAtLeast(1))
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -3281,17 +3019,13 @@ element in that window has been processed. The `accumulation_mode` parameter
 sets the window's **accumulation mode**.
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   PCollection<String> pc = ...;
   pc.apply(Window.<String>into(FixedWindows.of(1, TimeUnit.MINUTES))
                                .triggering(AfterProcessingTime.pastFirstElementInPane()
                                                               .plusDelayOf(Duration.standardMinutes(1)))
                                .discardingFiredPanes());
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -3374,21 +3108,15 @@ results immediately whenever late data arrives.
 You set the allowed lateness by using `.withAllowedLateness()` when you set your
 windowing function:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   PCollection<String> pc = ...;
   pc.apply(Window.<String>into(FixedWindows.of(1, TimeUnit.MINUTES))
                               .triggering(AfterProcessingTime.pastFirstElementInPane()
                                                              .plusDelayOf(Duration.standardMinutes(1)))
                               .withAllowedLateness(Duration.standardMinutes(30));
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
   pc = [Initial PCollection]
   pc | beam.WindowInto(
             FixedWindows(60),
@@ -3396,9 +3124,7 @@ windowing function:
             allowed_lateness=1800) # 30 minutes
      | ...
   
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 This allowed lateness propagates to all `PCollection`s derived as a result of
 applying transforms to the original `PCollection`. If you want to change the
@@ -3461,9 +3187,7 @@ example trigger code fires on the following conditions:
     trigger stops executing
 {{% /classwrapper %}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   .apply(Window
       .configure()
       .triggering(AfterWatermark
@@ -3472,9 +3196,7 @@ example trigger code fires on the following conditions:
                 .pastFirstElementInPane()
                 .plusDelayOf(Duration.standardMinutes(10))))
       .withAllowedLateness(Duration.standardDays(2)));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -3490,15 +3212,11 @@ You can also build other sorts of composite triggers. The following example code
 shows a simple composite trigger that fires whenever the pane has at least 100
 elements, or after a minute.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   Repeatedly.forever(AfterFirst.of(
       AfterPane.elementCountAtLeast(100),
       AfterProcessingTime.pastFirstElementInPane().plusDelayOf(Duration.standardMinutes(1))))
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{% classwrapper class="language-py" %}}
 
@@ -3542,9 +3260,7 @@ There are three types of metrics that are supported for the moment: `Counter`, `
 
 **Counter**: A metric that reports a single long value and can be incremented or decremented.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 Counter counter = Metrics.counter( "namespace", "counter1");
 
 @ProcessElement
@@ -3553,15 +3269,11 @@ public void processElement(ProcessContext context) {
   counter.inc();
   ...
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 **Distribution**: A metric that reports information about the distribution of reported values.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 Distribution distribution = Metrics.distribution( "namespace", "distribution1");
 
 @ProcessElement
@@ -3571,16 +3283,12 @@ public void processElement(ProcessContext context) {
     distribution.update(element);
     ...
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 **Gauge**: A metric that reports the latest value out of reported values. Since metrics are 
 collected from many workers the value may not be the absolute last, but one of the latest values.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 Gauge gauge = Metrics.gauge( "namespace", "gauge1");
 
 @ProcessElement
@@ -3590,18 +3298,14 @@ public void processElement(ProcessContext context) {
   gauge.set(element);
   ...
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### 9.3 Querying metrics {#querying-metrics}
 `PipelineResult` has a method `metrics()` which returns a `MetricResults` object that allows 
 accessing metrics. The main method available in `MetricResults` allows querying for all metrics 
 matching a given filter.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public interface PipelineResult {
   MetricResults metrics();
 }
@@ -3622,16 +3326,12 @@ public interface MetricResult<T> {
   T getCommitted();
   T getAttempted();
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### 9.4 Using metrics in pipeline {#using-metrics}
 Below, there is a simple example of how to use a `Counter` metric in a user pipeline.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // creating a pipeline with custom metrics DoFn
 pipeline
     .apply(...)
@@ -3664,6 +3364,4 @@ public class MyMetricsDoFn extends DoFn<Integer, Integer> {
     context.output(context.element());
   }
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}

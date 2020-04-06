@@ -32,9 +32,7 @@ You can try Apache Beam using our interactive notebooks, which are hosted in [Co
 
 This interactive notebook shows you what a simple, minimal version of WordCount looks like.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 package samples.quickstart;
 
 import org.apache.beam.sdk.Pipeline;
@@ -70,9 +68,7 @@ public class WordCount {
     pipeline.run();
   }
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{< classwrapper class="language-java" wrapper="p" >}}
 <a class="button button--primary" target="_blank"
@@ -89,9 +85,7 @@ public class WordCount {
 To learn how to install and run the Apache Beam Java SDK on your own computer, follow the instructions in the <a href="/get-started/quickstart-java">Java Quickstart</a>.
 {{< /classwrapper >}}
 
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 import apache_beam as beam
 import re
 
@@ -108,9 +102,7 @@ with beam.Pipeline() as pipeline:
       | 'Format results' >> beam.Map(lambda word_count: str(word_count))
       | 'Write results' >> beam.io.WriteToText(outputs_prefix)
   )
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{< classwrapper class="language-py" wrapper="p" >}}
 <a class="button button--primary" target="_blank"
@@ -127,9 +119,7 @@ with beam.Pipeline() as pipeline:
 To learn how to install and run the Apache Beam Python SDK on your own computer, follow the instructions in the <a href="/get-started/quickstart-py">Python Quickstart</a>.
 {{< /classwrapper >}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 package main
 
 import (
@@ -175,9 +165,7 @@ func main() {
 
 	direct.Execute(context.Background(), pipeline)
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 {{< classwrapper class="language-go" wrapper="p" >}}
 <a class="button button--primary" target="_blank"

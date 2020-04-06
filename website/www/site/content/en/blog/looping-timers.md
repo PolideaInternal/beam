@@ -172,9 +172,7 @@ So how do timers help? Well let's have a look at a new transform:
 
 Edit: Looping Timer State changed from Boolean to Long to allow for min value check.  
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public static class LoopingStatefulTimer extends DoFn<KV<String, Integer>, KV<String, Integer>> {
 
     Instant stopTimerTime;
@@ -238,9 +236,7 @@ public static class LoopingStatefulTimer extends DoFn<KV<String, Integer>, KV<St
       }
     }
   }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 There are two data values that the state API needs to keep:
 
@@ -279,9 +275,7 @@ In the @OnTimer block, the following occurs:
 
 And that's it, let's add our transform back into the pipeline:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   // Apply a fixed window of duration 1 min and Sum the results
   p.apply(Create.timestamped(time_1, time_2, time_3)).apply(
     Window.<KV<String, Integer>>into(FixedWindows.<Integer>of(Duration.standardMinutes(1))))
@@ -300,9 +294,7 @@ And that's it, let's add our transform back into the pipeline:
 
      }
   }));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 1. In the first part of the pipeline we create FixedWindows and reduce the value
    per key down to a single Sum.

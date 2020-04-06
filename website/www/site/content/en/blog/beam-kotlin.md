@@ -41,100 +41,68 @@ Here are few brief snippets of code that show how the Kotlin Samples compare to 
 
 ### Java
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
  String filename = String.format(
                     "%s-%s-of-%s%s",
                     filenamePrefixForWindow(intervalWindow),
                     shardNumber,
                     numShards,
                     outputFileHints.suggestedFilenameSuffix);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Kotlin
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
  // String templating
  val filename = "$filenamePrefixForWindow(intervalWindow)-$shardNumber-of-$numShards${outputFileHints.suggestedFilenameSuffix)"  
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Java 
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public static class FormatAsTextFn extends SimpleFunction<KV<String, Long>, String> {
     @Override
     public String apply(KV<String, Long> input) {
         return input.getKey() + ": " + input.getValue();
     }
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## Kotlin
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public class FormatAsTextFn : SimpleFunction<KV<String, Long>, String>() {
     override fun apply(input: KV<String, Long>) = "${input.key} : ${input.value}"  //Single line functions
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Java
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 if(tableRow != null){
     formatAndInsert(tableRow);
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Kotlin
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 tableRow?.let{
     formatAndInsert(it)  // No need for null checks
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Java
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 String tableName = "testTable";
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Kotlin
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 val tableName = "testTable"  // Type inferencing
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## Contributors Welcomed!
 

@@ -51,40 +51,30 @@ The Beam SDK for Java provides a convenient way to test an individual `DoFn` cal
 
 To create a `DoFnTester`, first create an instance of the `DoFn` you want to test. You then use that instance when you create a `DoFnTester` using the `.of()` static factory method:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 static class MyDoFn extends DoFn<String, Integer> { ... }
   MyDoFn myDoFn = ...;
 
   DoFnTester<String, Integer> fnTester = DoFnTester.of(myDoFn);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Creating Test Inputs
 
 You'll need to create one or more test inputs for `DoFnTester` to send to your `DoFn`. To create test inputs, simply create one or more input variables of the same input type that your `DoFn` accepts. In the case above:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 static class MyDoFn extends DoFn<String, Integer> { ... }
 MyDoFn myDoFn = ...;
 DoFnTester<String, Integer> fnTester = DoFnTester.of(myDoFn);
 
 String testInput = "test1";
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 #### Side Inputs
 
 If your `DoFn` accepts side inputs, you can create those side inputs by using the method `DoFnTester.setSideInputs`.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 static class MyDoFn extends DoFn<String, Integer> { ... }
 MyDoFn myDoFn = ...;
 DoFnTester<String, Integer> fnTester = DoFnTester.of(myDoFn);
@@ -92,9 +82,7 @@ DoFnTester<String, Integer> fnTester = DoFnTester.of(myDoFn);
 PCollectionView<List<Integer>> sideInput = ...;
 Iterable<Integer> value = ...;
 fnTester.setSideInputInGlobalWindow(sideInput, value);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 See the `ParDo` documentation on [side inputs](/documentation/programming-guide/#side-inputs) for more information.
 
@@ -109,9 +97,7 @@ Suppose your `DoFn` produces outputs of type `String` and `Integer`. You create
 `TupleTag` objects for each, and bundle them into a `TupleTagList`, then set it
 for the `DoFnTester` as follows:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 static class MyDoFn extends DoFn<String, Integer> { ... }
 MyDoFn myDoFn = ...;
 DoFnTester<String, Integer> fnTester = DoFnTester.of(myDoFn);
@@ -121,9 +107,7 @@ TupleTag<Integer> tag2 = ...;
 TupleTagList tags = TupleTagList.of(tag1).and(tag2);
 
 fnTester.setOutputTags(tags);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 See the `ParDo` documentation on [additional outputs](/documentation/programming-guide/#additional-outputs) for more information.
 
@@ -133,24 +117,18 @@ To process the inputs (and thus run the test on your `DoFn`), you call the metho
 
 `DoFnTester.processBundle` returns a `List` of outputs—that is, objects of the same type as the `DoFn`'s specified output type. For a `DoFn<String, Integer>`, `processBundle` returns a `List<Integer>`:
 
-{{% classwrapper class="language-java" %}}
-
-```java  
+{{< highlight java >}}  
 static class MyDoFn extends DoFn<String, Integer> { ... }
 MyDoFn myDoFn = ...;
 DoFnTester<String, Integer> fnTester = DoFnTester.of(myDoFn);
 
 String testInput = "test1";
 List<Integer> testOutputs = fnTester.processBundle(testInput);
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To check the results of `processBundle`, you use JUnit's `Assert.assertThat` method to test if the `List` of outputs contains the values you expect:
 
-{{% classwrapper class="language-java" %}}
-
-```java  
+{{< highlight java >}}  
 String testInput = "test1";
 List<Integer> testOutputs = fnTester.processBundle(testInput);
 
@@ -158,9 +136,7 @@ Assert.assertThat(testOutputs, Matchers.hasItems(...));
 
 // Process a larger batch in a single step.
 Assert.assertThat(fnTester.processBundle("input1", "input2", "input3"), Matchers.hasItems(...));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## Testing Composite Transforms
 
@@ -178,13 +154,9 @@ To test a composite transform you've created, you can use the following pattern:
 
 You create a `TestPipeline` as follows:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 Pipeline p = TestPipeline.create();
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 > **Note:** Read about testing unbounded pipelines in Beam in [this blog post](/blog/2016/10/20/test-stream.html).
 
@@ -197,9 +169,7 @@ You can use the `Create` transform to create a `PCollection` out of a standard i
 
 For a given `PCollection`, you can use `PAssert` to verify the contents as follows:
 
-{{% classwrapper class="language-java" %}}
-
-```java  
+{{< highlight java >}}  
 PCollection<String> output = ...;
 
 // Check whether a PCollection contains some elements in any order.
@@ -208,24 +178,18 @@ PAssert.that(output)
   "elem1",
   "elem3",
   "elem2");
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Any code that uses `PAssert` must link in `JUnit` and `Hamcrest`. If you're using Maven, you can link in `Hamcrest` by adding the following dependency to your project's `pom.xml` file:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 <dependency>
     <groupId>org.hamcrest</groupId>
     <artifactId>hamcrest-all</artifactId>
     <version>1.3</version>
     <scope>test</scope>
 </dependency>
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 For more information on how these classes work, see the [org.apache.beam.sdk.testing](https://beam.apache.org/releases/javadoc/{{ site.release_latest }}/index.html?org/apache/beam/sdk/testing/package-summary.html) package documentation.
 
@@ -233,9 +197,7 @@ For more information on how these classes work, see the [org.apache.beam.sdk.tes
 
 The following code shows a complete test for a composite transform. The test applies the `Count` transform to an input `PCollection` of `String` elements. The test uses the `Create` transform to create the input `PCollection` from a Java `List<String>`.
 
-{{% classwrapper class="language-java" %}}
-
-```java  
+{{< highlight java >}}  
 public class CountTest {
 
 // Our static input data, which will make up the initial PCollection.
@@ -269,9 +231,7 @@ public void testCount() {
   // Run the pipeline.
   p.run();
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## Testing a Pipeline End-to-End
 
@@ -290,9 +250,7 @@ The following example code shows how one might test the [WordCount example pipel
 
 `WordCount`'s final transform (from the composite transform `CountWords`) produces a `PCollection<String>` of formatted word counts suitable for printing. Rather than write that `PCollection` to an output text file, our test pipeline uses `PAssert` to verify that the elements of the `PCollection` match those of a static `String` array containing our expected output data.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public class WordCountTest {
 
     // Our static input data, which will comprise the initial PCollection.
@@ -324,6 +282,4 @@ public class WordCountTest {
       p.run();
     }
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}

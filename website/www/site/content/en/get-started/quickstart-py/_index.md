@@ -46,21 +46,13 @@ pip --version
 If you do not have `pip` version 7.0.0 or newer, run the following command to
 install it. This command might require administrative privileges.
 
-{{% classwrapper class="shell-unix" %}}
-
-```
+{{< highlight class="shell-unix" >}}
 pip install --upgrade pip
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="shell-PowerShell" %}}
-
-```
+{{< highlight class="shell-PowerShell" >}}
 PS> python -m pip install --upgrade pip
-```
-
-{{% /classwrapper%}}
+{{< /highlight >}}
 
 
 ### Install Python virtual environment
@@ -70,41 +62,25 @@ for initial experiments. If you do not have `virtualenv` version 13.1.0 or
 newer, run the following command to install it. This command might require
 administrative privileges.
 
-{{% classwrapper class="shell-unix" %}}
-
-```
+{{< highlight class="shell-unix" >}}
 pip install --upgrade virtualenv
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="shell-PowerShell" %}}
-
-```
+{{< highlight class="shell-PowerShell" >}}
 PS> python -m pip install --upgrade virtualenv
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 If you do not want to use a Python virtual environment (not recommended), ensure
 `setuptools` is installed on your machine. If you do not have `setuptools`
 version 17.1 or newer, run the following command to install it.
 
-{{% classwrapper class="shell-unix" %}}
-
-```
+{{< highlight class="shell-unix" >}}
 pip install --upgrade setuptools
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="shell-PowerShell" %}}
-
-```
+{{< highlight class="shell-PowerShell" >}}
 PS> python -m pip install --upgrade setuptools
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## Get Apache Beam
 
@@ -112,21 +88,13 @@ PS> python -m pip install --upgrade setuptools
 
 A virtual environment is a directory tree containing its own Python distribution. To create a virtual environment, create a directory and run:
 
-{{% classwrapper class="shell-unix" %}}
-
-```
+{{< highlight class="shell-unix" >}}
 virtualenv /path/to/directory
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="shell-PowerShell" %}}
-
-```
+{{< highlight class="shell-PowerShell" >}}
 PS> virtualenv C:\path\to\directory
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 A virtual environment needs to be activated for each shell that is to use it.
 Activating it sets some environment variables that point to the virtual
@@ -134,21 +102,13 @@ environment's directories.
 
 To activate a virtual environment in Bash, run:
 
-{{% classwrapper class="shell-unix" %}}
-
-```
+{{< highlight class="shell-unix" >}}
 . /path/to/directory/bin/activate
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="shell-PowerShell" %}}
-
-```
+{{< highlight class="shell-PowerShell" >}}
 PS> C:\path\to\directory\Scripts\activate.ps1
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 That is, execute the `activate` script under the virtual environment directory you created.
 
@@ -158,21 +118,13 @@ For instructions using other shells, see the [virtualenv documentation](https://
 
 Install the latest Python SDK from PyPI:
 
-{{% classwrapper class="shell-unix" %}}
-
-```
+{{< highlight class="shell-unix" >}}
 pip install apache-beam
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="shell-PowerShell" %}}
-
-```
+{{< highlight class="shell-PowerShell" >}}
 PS> python -m pip install apache-beam
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 #### Extra requirements
 
@@ -198,52 +150,30 @@ The Apache Beam [examples](https://github.com/apache/beam/tree/master/sdks/pytho
 
 For example, run `wordcount.py` with the following command:
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 python -m apache_beam.examples.wordcount --input /path/to/inputfile --output /path/to/write/counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 Currently, running wordcount.py on Flink requires a full download of the Beam source code.
 See https://beam.apache.org/roadmap/portability/#python-on-flink for more information.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 Currently, running wordcount.py on Flink requires a full download of the Beam source code.
 See https://beam.apache.org/documentation/runners/flink/ for more information.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 Currently, running wordcount.py on Spark requires a full download of the Beam source code.
 See https://beam.apache.org/roadmap/portability/#python-on-spark for more information.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 # As part of the initial setup, install Google Cloud Platform specific extra components. Make sure you
 # complete the setup steps at /documentation/runners/dataflow/#setup
 pip install apache-beam[gcp]
@@ -252,17 +182,11 @@ python -m apache_beam.examples.wordcount --input gs://dataflow-samples/shakespea
                                          --runner DataflowRunner \
                                          --project your-gcp-project \
                                          --temp_location gs://<your-gcs-bucket>/tmp/
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Python SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 After the pipeline completes, you can view the output files at your specified
 output path. For example, if you specify `/dir1/counts` for the `--output`
