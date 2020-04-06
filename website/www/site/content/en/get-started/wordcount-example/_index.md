@@ -129,13 +129,11 @@ sections, we will specify the pipeline's runner.
  PipelineOptions options = PipelineOptionsFactory.create();
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_options
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{% classwrapper class="language-java language-py" wrapper="p" %}}
 The next step is to create a `Pipeline` object with the options we've just
@@ -153,13 +151,11 @@ The scope allows grouping into composite transforms.
 Pipeline p = Pipeline.create(options);
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_create
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 p := beam.NewPipeline
@@ -193,13 +189,11 @@ The MinimalWordCount pipeline contains five transforms:
 p.apply(TextIO.read().from("gs://apache-beam-samples/shakespeare/*"))
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_read
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 lines := textio.Read(s, "gs://apache-beam-samples/shakespeare/*")
@@ -221,14 +215,12 @@ lines := textio.Read(s, "gs://apache-beam-samples/shakespeare/*")
         .via((String line) -> Arrays.asList(line.split("[^\\p{L}]+"))))
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 # The Flatmap transform is a simplified version of ParDo.
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_pardo
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 words := beam.ParDo(s, func(line string, emit func(string)) {
@@ -253,13 +245,11 @@ words := beam.ParDo(s, func(line string, emit func(string)) {
 .apply(Count.<String>perElement())
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_count
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 counted := stats.Count(s, words)
@@ -279,13 +269,11 @@ counted := stats.Count(s, words)
     .via((KV<String, Long> wordCount) -> wordCount.getKey() + ": " + wordCount.getValue()))
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_map
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 formatted := beam.ParDo(s, func(w string, c int) string {
@@ -302,13 +290,11 @@ formatted := beam.ParDo(s, func(w string, c int) string {
 .apply(TextIO.write().to("wordcounts"));
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_write
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 textio.Write(s, "wordcounts.txt", formatted)
@@ -338,13 +324,11 @@ Run the pipeline by passing it to a runner.
 p.run().waitUntilFinish();
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_run
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 direct.Execute(context.Background(), p)
@@ -567,15 +551,13 @@ static class ExtractWordsFn extends DoFn<String, String> {
 }
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 # In this example, the DoFns are defined as classes:
 
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_wordcount_dofn
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 // In this example, extractFn is a DoFn that is defined as a function:
@@ -642,13 +624,11 @@ public static void main(String[] args) throws IOException {
 }
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_wordcount_composite
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 func CountWords(s beam.Scope, lines beam.PCollection) beam.PCollection {
@@ -695,13 +675,11 @@ public static void main(String[] args) {
 }
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_wordcount_options
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 var input = flag.String("input", "gs://apache-beam-samples/shakespeare/kinglear.txt", "File(s) to read.")
@@ -907,13 +885,11 @@ public class DebuggingWordCount {
 }
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:example_wordcount_debugging_logging
-%}``` -->
-
-{{% /classwrapper %}}
+%}-->
+{{< /highlight >}}
 
 {{< highlight go >}}
 type filterFn struct {
