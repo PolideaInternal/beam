@@ -36,9 +36,9 @@ how to implement Beam concepts in your pipelines.
   </ul>
 </nav>
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 The Python SDK supports Python 2.7, 3.5, 3.6, and 3.7. New Python SDK releases will stop supporting Python 2.7 in 2020 ([BEAM-8371](https://issues.apache.org/jira/browse/BEAM-8371)). For best results, use Beam with Python 3.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ## 1. Overview {#overview}
 
@@ -257,19 +257,19 @@ var (
 )
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 It's recommended that you register your interface with `PipelineOptionsFactory`
 and then pass the interface when creating the `PipelineOptions` object. When you
 register your interface with `PipelineOptionsFactory`, the `--help` can find
 your custom options interface and add it to the output of the `--help` command.
 `PipelineOptionsFactory` will also validate that your custom options are
 compatible with all other registered options.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 The following example code shows how to register your custom options interface
 with `PipelineOptionsFactory`:
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 PipelineOptionsFactory.register(MyOptions.class);
@@ -349,23 +349,23 @@ various data sources supported by the Beam SDK.
 
 #### 3.1.2. Creating a PCollection from in-memory data {#creating-pcollection-in-memory}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 To create a `PCollection` from an in-memory Java `Collection`, you use the
 Beam-provided `Create` transform. Much like a data adapter's `Read`, you apply
 `Create` directly to your `Pipeline` object itself.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 As parameters, `Create` accepts the Java `Collection` and a `Coder` object. The
 `Coder` specifies how the elements in the `Collection` should be
 [encoded](#element-type).
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 To create a `PCollection` from an in-memory `list`, you use the Beam-provided
 `Create` transform. Apply this transform directly to your `Pipeline` object
 itself.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 The following example code shows how to create a `PCollection` from an in-memory
 <span class="language-java">`List`</span><span class="language-py">`list`</span>:
@@ -683,20 +683,20 @@ define your pipeline's exact data processing tasks.
 > for writing user code for Beam transforms](#requirements-for-writing-user-code-for-beam-transforms)
 > and ensure that your code follows them.
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 A `DoFn` processes one element at a time from the input `PCollection`. When you
 create a subclass of `DoFn`, you'll need to provide type parameters that match
 the types of the input and output elements. If your `DoFn` processes incoming
 `String` elements and produces `Integer` elements for the output collection
 (like our previous example, `ComputeWordLengthFn`), your class declaration would
 look like this:
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 static class ComputeWordLengthFn extends DoFn<String, Integer> { ... }
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 Inside your `DoFn` subclass, you'll write a method annotated with
 `@ProcessElement` where you provide the actual processing logic. You don't need
 to manually extract the elements from the input collection; the Beam SDKs handle
@@ -707,16 +707,16 @@ provides a method for emitting elements. The parameter types must match the inpu
 and output types of your `DoFn` or the framework will raise an error. Note: @Element and
 OutputReceiver were introduced in Beam 2.5.0; if using an earlier release of Beam, a
 ProcessContext parameter should be used instead.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 Inside your `DoFn` subclass, you'll write a method `process` where you provide
 the actual processing logic. You don't need to manually extract the elements
 from the input collection; the Beam SDKs handle that for you. Your `process`
 method should accept an object of type `element`. This is the input element and
 output is emitted by using `yield` or `return` statement inside `process`
 method.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 static class ComputeWordLengthFn extends DoFn<String, Integer> {
@@ -735,11 +735,11 @@ static class ComputeWordLengthFn extends DoFn<String, Integer> {
 -->
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 > **Note:** If the elements in your input `PCollection` are key/value pairs, you
 > can access the key or value by using `element.getKey()` or
 > `element.getValue()`, respectively.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 A given `DoFn` instance generally gets invoked one or more times to process some
 arbitrary bundle of elements. However, Beam doesn't guarantee an exact number of
@@ -753,13 +753,13 @@ requirements to ensure that Beam and the processing back-end can safely
 serialize and cache the values in your pipeline. Your method should meet the
 following requirements:
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 * You should not in any way modify an element returned by
   the `@Element` annotation or `ProcessContext.sideInput()` (the incoming
   elements from the input collection).
 * Once you output a value using `OutputReceiver.output()` you should not modify
   that value in any way.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ##### 4.2.1.3. Lightweight DoFns and other abstractions {#lightweight-dofns}
 
@@ -841,10 +841,10 @@ words = ...
 %}-->
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 > **Note:** You can use Java 8 lambda functions with several other Beam
 > transforms, including `Filter`, `FlatMapElements`, and `Partition`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ##### 4.2.1.4. DoFn lifecycle {#dofn}
 Here is a sequence diagram that shows the lifecycle of the DoFn during
@@ -1667,25 +1667,25 @@ together.
 
 #### 4.5.3. Accessing additional parameters in your DoFn {#other-dofn-parameters}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 In addition to the element and the `OutputReceiver`, Beam will populate other parameters to your DoFn's `@ProcessElement` method.
 Any combination of these parameters can be added to your process method in any order.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 In addition to the element, Beam will populate other parameters to your DoFn's `process` method.
 Any combination of these parameters can be added to your process method in any order.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 **Timestamp:**
 To access the timestamp of an input element, add a parameter annotated with `@Timestamp` of type `Instant`. For example:
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 **Timestamp:**
 To access the timestamp of an input element, add a keyword parameter default to `DoFn.TimestampParam`. For example:
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 .of(new DoFn<String, String>() {
@@ -1704,21 +1704,21 @@ class ProcessRecord(beam.DoFn):
   
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 **Window:**
 To access the window an input element falls into, add a parameter of the type of the window used for the input `PCollection`.
 If the parameter is a window type (a subclass of `BoundedWindow`) that does not match the input `PCollection`, then an error
 will be raised. If an element falls in multiple windows (for example, this will happen when using `SlidingWindows`), then the
 `@ProcessElement` method will be invoked multiple time for the element, once for each window. For example, when fixed windows
 are being used, the window is of type `IntervalWindow`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 **Window:**
 To access the window an input element falls into, add a keyword parameter default to `DoFn.WindowParam`.
 If an element falls in multiple windows (for example, this will happen when using `SlidingWindows`), then the
 `process` method will be invoked multiple time for the element, once for each window.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 .of(new DoFn<String, String>() {
@@ -1737,18 +1737,18 @@ class ProcessRecord(beam.DoFn):
   
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 **PaneInfo:**
 When triggers are used, Beam provides a `PaneInfo` object that contains information about the current firing. Using `PaneInfo`
 you can determine whether this is an early or a late firing, and how many times this window has already fired for this key.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 **PaneInfo:**
 When triggers are used, Beam provides a `DoFn.PaneInfoParam` object that contains information about the current firing. Using `DoFn.PaneInfoParam`
 you can determine whether this is an early or a late firing, and how many times this window has already fired for this key. 
 This feature implementation in python sdk is not fully completed, see more at [BEAM-3759](https://issues.apache.org/jira/browse/BEAM-3759).
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 .of(new DoFn<String, String>() {
@@ -1767,11 +1767,11 @@ class ProcessRecord(beam.DoFn):
   
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 **PipelineOptions:**
 The `PipelineOptions` for the current pipeline can always be accessed in a process method by adding it 
 as a parameter:
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 .of(new DoFn<String, String>() {
@@ -1779,20 +1779,20 @@ as a parameter:
   }})
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 `@OnTimer` methods can also access many of these parameters. Timestamp, Window, key, `PipelineOptions`, `OutputReceiver`, and
 `MultiOutputReceiver` parameters can all be accessed in an `@OnTimer` method. In addition, an `@OnTimer` method can take
 a parameter of type `TimeDomain` which tells whether the timer is based on event time or processing time.
 Timers are explained in more detail in the
 [Timely (and Stateful) Processing with Apache Beam](/blog/2017/08/28/timely-processing.html) blog post.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 **Timer and State:**
 In addition to aforementioned parameters, user defined Timer and State parameters can be used in a Stateful DoFn.
 Timers and States are explained in more detail in the
 [Timely (and Stateful) Processing with Apache Beam](/blog/2017/08/28/timely-processing.html) blog post.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight py >}}
 
@@ -1920,12 +1920,12 @@ class and override the `expand` method to specify the actual processing logic.
 You can then use this transform just as you would a built-in transform from the
 Beam SDK.
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 For the `PTransform` class type parameters, you pass the `PCollection` types
 that your transform takes as input, and produces as output. To take multiple
 `PCollection`s as input, or produce multiple `PCollection`s as output, use one
 of the multi-collection types for the relevant type parameter.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 The following code sample shows how to declare a `PTransform` that accepts a
 `PCollection` of `String`s for input, and outputs a `PCollection` of `Integer`s:
@@ -2095,15 +2095,15 @@ the elements of a given `PCollection` may be encoded and decoded.
 > typically be done explicitly, using transforms such as `ParDo` or
 > `MapElements`.
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 In the Beam SDK for Java, the type `Coder` provides the methods required for
 encoding and decoding data. The SDK for Java provides a number of Coder
 subclasses that work with a variety of standard Java types, such as Integer,
 Long, Double, StringUtf8 and more. You can find all of the available Coder
 subclasses in the [Coder package](https://github.com/apache/beam/tree/master/sdks/java/core/src/main/java/org/apache/beam/sdk/coders).
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 In the Beam SDK for Python, the type `Coder` provides the methods required for
 encoding and decoding data. The SDK for Python provides a number of Coder
 subclasses that work with a variety of standard Python types, such as primitive
@@ -2111,7 +2111,7 @@ types, Tuple, Iterable, StringUtf8 and more. You can find all of the available
 Coder subclasses in the
 [apache_beam.coders](https://github.com/apache/beam/tree/master/sdks/python/apache_beam/coders)
 package.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 > Note that coders do not necessarily have a 1:1 relationship with types. For
 > example, the Integer type can have multiple valid coders, and input and output
@@ -2127,34 +2127,34 @@ based on its element type or the transform that produces it, however, in some
 cases the pipeline author will need to specify a `Coder` explicitly, or develop
 a `Coder` for their custom type.
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 You can explicitly set the coder for an existing `PCollection` by using the
 method `PCollection.setCoder`. Note that you cannot call `setCoder` on a
 `PCollection` that has been finalized (e.g. by calling `.apply` on it).
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 You can get the coder for an existing `PCollection` by using the method
 `getCoder`. This method will fail with an `IllegalStateException` if a coder has
 not been set and cannot be inferred for the given `PCollection`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 Beam SDKs use a variety of mechanisms when attempting to automatically infer the
 `Coder` for a `PCollection`.
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 Each pipeline object has a `CoderRegistry`. The `CoderRegistry` represents a
 mapping of Java types to the default coders that the pipeline should use for
 `PCollection`s of each type.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 The Beam SDK for Python has a `CoderRegistry` that represents a mapping of
 Python types to the default coder that should be used for `PCollection`s of each
 type.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 By default, the Beam SDK for Java automatically infers the `Coder` for the
 elements of a `PCollection` produced by a `PTransform` using the type parameter
 from the transform's function object, such as `DoFn`. In the case of `ParDo`,
@@ -2163,9 +2163,9 @@ of type `Integer` and produces an output element of type `String`. In such a
 case, the SDK for Java will automatically infer the default `Coder` for the
 output `PCollection<String>` (in the default pipeline `CoderRegistry`, this is
 `StringUtf8Coder`).
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 By default, the Beam SDK for Python automatically infers the `Coder` for the
 elements of an output `PCollection` using the typehints from the transform's
 function object, such as `DoFn`. In the case of `ParDo`, for example a `DoFn`
@@ -2174,7 +2174,7 @@ with the typehints `@beam.typehints.with_input_types(int)` and
 and produces an output element of type str. In such a case, the Beam SDK for
 Python will automatically infer the default `Coder` for the output `PCollection`
 (in the default pipeline `CoderRegistry`, this is `BytesCoder`).
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 > NOTE: If you create your `PCollection` from in-memory data by using the
 > `Create` transform, you cannot rely on coder inference and default coders.
@@ -2182,10 +2182,10 @@ Python will automatically infer the default `Coder` for the output `PCollection`
 > may not be able to infer a coder if the argument list contains a value whose
 > exact run-time class doesn't have a default coder registered.
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 When using `Create`, the simplest way to ensure that you have the correct coder
 is by invoking `withCoder` when you apply the `Create` transform.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ### 6.2. Default coders and the CoderRegistry {#default-coders-and-the-coderregistry}
 
@@ -2200,7 +2200,7 @@ types for any pipeline you create using the Beam SDK for
 <span class="language-java">Java</span><span class="language-py">Python</span>.
 The following table shows the standard mapping:
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 <table>
   <thead>
     <tr class="header">
@@ -2263,9 +2263,9 @@ The following table shows the standard mapping:
     </tr>
   </tbody>
 </table>
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 <table>
   <thead>
     <tr class="header">
@@ -2296,24 +2296,24 @@ The following table shows the standard mapping:
     </tr>
   </tbody>
 </table>
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 #### 6.2.1. Looking up a default coder {#default-coder-lookup}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 You can use the method `CoderRegistry.getCoder` to determine the default
 Coder for a Java type. You can access the `CoderRegistry` for a given pipeline
 by using the method `Pipeline.getCoderRegistry`. This allows you to determine
 (or set) the default Coder for a Java type on a per-pipeline basis: i.e. "for
 this pipeline, verify that Integer values are encoded using
 `BigEndianIntegerCoder`."
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 You can use the method `CoderRegistry.get_coder` to determine the default Coder
 for a Python type. You can use `coders.registry` to access the `CoderRegistry`.
 This allows you to determine (or set) the default Coder for a Python type.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 #### 6.2.2. Setting the default coder for a type {#setting-default-coder}
 
@@ -2347,12 +2347,12 @@ apache_beam.coders.registry.register_coder(int, BigEndianIntegerCoder)
 
 #### 6.2.3. Annotating a custom data type with a default coder {#annotating-custom-type-default-coder}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 If your pipeline program defines a custom data type, you can use the
 `@DefaultCoder` annotation to specify the coder to use with that type. For
 example, let's say you have a custom data type for which you want to use
 `SerializableCoder`. You can use the `@DefaultCoder` annotation as follows:
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 @DefaultCoder(AvroCoder.class)
@@ -2361,11 +2361,11 @@ public class MyCustomDataType {
 }
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 If you've created a custom coder to match your data type, and you want to use
 the `@DefaultCoder` annotation, your coder class must implement a static
 `Coder.of(Class<T>)` factory method.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 public class MyCustomCoder implements Coder {
@@ -2379,11 +2379,11 @@ public class MyCustomDataType {
 }
 {{< /highlight >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 The Beam SDK for Python does not support annotating data types with a default
 coder. If you would like to set a default coder, use the method described in the
 previous section, *Setting the default coder for a type*.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ## 7. Windowing {#windowing}
 
@@ -2928,22 +2928,22 @@ When you set a windowing function for a `PCollection` by using the
 <span class="language-java">`Window`</span><span class="language-py">`WindowInto`</span>
 transform, you can also specify a trigger.
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 You set the trigger(s) for a `PCollection` by invoking the method
 `.triggering()` on the result of your `Window.into()` transform. This code
 sample sets a time-based trigger for a `PCollection`, which emits results one
 minute after the first element in that window has been processed.  The last line
 in the code sample, `.discardingFiredPanes()`, sets the window's **accumulation
 mode**.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 You set the trigger(s) for a `PCollection` by setting the `trigger` parameter
 when you use the `WindowInto` transform. This code sample sets a time-based
 trigger for a `PCollection`, which emits results one minute after the first
 element in that window has been processed. The `accumulation_mode` parameter
 sets the window's **accumulation mode**.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
   PCollection<String> pc = ...;
@@ -2967,18 +2967,18 @@ pane. Since a trigger can fire multiple times, the accumulation mode determines
 whether the system *accumulates* the window panes as the trigger fires, or
 *discards* them.
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 To set a window to accumulate the panes that are produced when the trigger
 fires, invoke`.accumulatingFiredPanes()` when you set the trigger. To set a
 window to discard fired panes, invoke `.discardingFiredPanes()`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 To set a window to accumulate the panes that are produced when the trigger
 fires, set the `accumulation_mode` parameter to `ACCUMULATING` when you set the
 trigger. To set a window to discard fired panes, set `accumulation_mode` to
 `DISCARDING`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 Let's look an example that uses a `PCollection` with fixed-time windowing and a
 data-based trigger. This is something you might do if, for example, each window
@@ -3106,10 +3106,10 @@ example trigger code fires on the following conditions:
 
 *   Any time late data arrives, after a ten-minute delay
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 *   After two days, we assume no more data of interest will arrive, and the
     trigger stops executing
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
   .apply(Window

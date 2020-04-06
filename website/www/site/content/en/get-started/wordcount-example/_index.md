@@ -54,14 +54,14 @@ MinimalWordCount demonstrates a simple pipeline that uses the Direct Runner to
 read from a text file, apply transforms to tokenize and count the words, and
 write the data to an output text file.
 
-{{% classwrapper class="language-java language-go" wrapper="p" %}}
+{{< paragraph class="language-java language-go" >}}
 This example hard-codes the locations for its input and output files and doesn't
 perform any error checking; it is intended to only show you the "bare bones" of
 creating a Beam pipeline. This lack of parameterization makes this particular
 pipeline less portable across different runners than standard Beam pipelines. In
 later examples, we will parameterize the pipeline's input and output sources and
 show other best practices.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.MinimalWordCount
@@ -76,20 +76,20 @@ $ go install github.com/apache/beam/sdks/go/examples/minimal_wordcount
 $ minimal_wordcount
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 To view the full code in Java, see
 **[MinimalWordCount](https://github.com/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/MinimalWordCount.java).**
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 To view the full code in Python, see
 **[wordcount_minimal.py](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/examples/wordcount_minimal.py).**
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 To view the full code in Go, see
 **[minimal_wordcount.go](https://github.com/apache/beam/blob/master/sdks/go/examples/minimal_wordcount/minimal_wordcount.go).**
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 **Key Concepts:**
 
@@ -106,20 +106,20 @@ excerpts from the MinimalWordCount pipeline.
 
 ### Creating the pipeline
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 In this example, the code first creates a `PipelineOptions` object. This object
 lets us set various options for our pipeline, such as the pipeline runner that
 will execute our pipeline and any runner-specific configuration required by the
 chosen runner. In this example we set these options programmatically, but more
 often, command-line arguments are used to set `PipelineOptions`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 You can specify a runner for executing your pipeline, such as the
 `DataflowRunner` or `SparkRunner`. If you omit specifying a runner, as in this
 example, your pipeline executes locally using the `DirectRunner`. In the next
 sections, we will specify the pipeline's runner.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
  // Create a PipelineOptions object. This object lets us set various execution
@@ -135,17 +135,17 @@ sections, we will specify the pipeline's runner.
 %}-->
 {{< /highlight >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 The next step is to create a `Pipeline` object with the options we've just
 constructed. The Pipeline object builds up the graph of transformations to be
 executed, associated with that particular pipeline.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 The first step is to create a `Pipeline` object. It builds up the graph of
 transformations to be executed, associated with that particular pipeline.
 The scope allows grouping into composite transforms.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 Pipeline p = Pipeline.create(options);
@@ -300,25 +300,25 @@ formatted := beam.ParDo(s, func(w string, c int) string {
 textio.Write(s, "wordcounts.txt", formatted)
 {{< /highlight >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 Note that the `Write` transform produces a trivial result value of type `PDone`,
 which in this case is ignored.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 Note that the `Write` transform returns no PCollections.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ### Running the pipeline
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 Run the pipeline by calling the `run` method, which sends your pipeline to be
 executed by the pipeline runner that you specified in your `PipelineOptions`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 Run the pipeline by passing it to a runner.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 p.run().waitUntilFinish();
@@ -334,12 +334,12 @@ p.run().waitUntilFinish();
 direct.Execute(context.Background(), p)
 {{< /highlight >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 Note that the `run` method is asynchronous. For a blocking execution, call the
 <span class="language-java">`waitUntilFinish`</span>
 <span class="language-py">`wait_until_finish`</span> method on the result object
 returned by the call to `run`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ## WordCount example
 
@@ -519,7 +519,7 @@ pipeline code into smaller sections.
 
 ### Specifying explicit DoFns
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 When using `ParDo` transforms, you need to specify the processing operation that
 gets applied to each element in the input `PCollection`. This processing
 operation is a subclass of the SDK class `DoFn`. You can create the `DoFn`
@@ -527,16 +527,16 @@ subclasses for each `ParDo` inline, as an anonymous inner class instance, as is
 done in the previous example (MinimalWordCount). However, it's often a good
 idea to define the `DoFn` at the global level, which makes it easier to unit
 test and can make the `ParDo` code more readable.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 When using `ParDo` transforms, you need to specify the processing operation that
 gets applied to each element in the input `PCollection`. This processing
 operation is either a named function or a struct with specially-named methods. You
 can use anomynous functions (but not closures). However, it's often a good
 idea to define the `DoFn` at the global level, which makes it easier to unit
 test and can make the `ParDo` code more readable.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 // In this example, ExtractWordsFn is a DoFn that is defined as a static class:
@@ -569,29 +569,29 @@ func extractFn(ctx context.Context, line string, emit func(string)) {
 
 ### Creating composite transforms
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 If you have a processing operation that consists of multiple transforms or
 `ParDo` steps, you can create it as a subclass of `PTransform`. Creating a
 `PTransform` subclass allows you to encapsulate complex transforms, can make
 your pipeline's structure more clear and modular, and makes unit testing easier.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 If you have a processing operation that consists of multiple transforms or
 `ParDo` steps, you can use a normal Go function to encapsulate them. You can
 furthermore use a named subscope to group them as a composite transform visible
 for monitoring.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 In this example, two transforms are encapsulated as the `PTransform` subclass
 `CountWords`. `CountWords` contains the `ParDo` that runs `ExtractWordsFn` and
 the SDK-provided `Count` transform.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 In this example, two transforms are encapsulated as a `CountWords` function.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 When `CountWords` is defined, we specify its ultimate input and output; the
 input is the `PCollection<String>` for the extraction operation, and the output
@@ -649,14 +649,14 @@ the more common way is to define your own configuration options via command-line
 argument parsing. Defining your configuration options via the command-line makes
 the code more easily portable across different runners.
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 Add arguments to be processed by the command-line parser, and specify default
 values for them. You can then access the options values in your pipeline code.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 You can use the standard `flag` package for this purpose.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 public static interface WordCountOptions extends PipelineOptions {
@@ -924,7 +924,7 @@ that Cloud Dataflow has spun up to complete your job. Logging statements in your
 pipeline's `DoFn` instances will appear in Stackdriver Logging as your pipeline
 runs.
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 You can also control the worker log levels. Cloud Dataflow workers that execute
 user code are configured to log to Stackdriver Logging by default at "INFO" log
 level and higher. You can override log levels for specific logging namespaces by
@@ -933,16 +933,16 @@ For example, by specifying `--workerLogLevelOverrides={"org.apache.beam.examples
 when executing a pipeline using the Cloud Dataflow service, Stackdriver Logging
 will contain only "DEBUG" or higher level logs for the package in addition to
 the default "INFO" or higher level logs.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 The default Cloud Dataflow worker logging configuration can be overridden by
 specifying `--defaultWorkerLogLevel=<one of TRACE, DEBUG, INFO, WARN, ERROR>`.
 For example, by specifying `--defaultWorkerLogLevel=DEBUG` when executing a
 pipeline with the Cloud Dataflow service, Cloud Logging will contain all "DEBUG"
 or higher level logs. Note that changing the default worker log level to TRACE
 or DEBUG significantly increases the amount of logs output.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 #### Apache Spark Runner
 
@@ -971,30 +971,30 @@ all be found under the directory.
 
 ### Testing your pipeline with asserts
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 <span class="language-java">`PAssert`</span><span class="language-py">`assert_that`</span>
 is a set of convenient PTransforms in the style of Hamcrest's collection
 matchers that can be used when writing pipeline level tests to validate the
 contents of PCollections. Asserts are best used in unit tests with small datasets.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 The `passert` package contains convenient PTransforms that can be used when
 writing pipeline level tests to validate the contents of PCollections. Asserts
 are best used in unit tests with small datasets.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 The following example verifies that the set of filtered words matches our
 expected counts. The assert does not produce any output, and the pipeline only
 succeeds if all of the expectations are met.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py language-go" wrapper="p" %}}
+{{< paragraph class="language-py language-go" >}}
 The following example verifies that two collections contain the same values. The
 assert does not produce any output, and the pipeline only succeeds if all of the
 expectations are met.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 {{< highlight java >}}
 public static void main(String[] args) {
@@ -1020,10 +1020,10 @@ with TestPipeline() as p:
 passert.Equals(s, formatted, "Flourish: 3", "stomach: 1")
 {{< /highlight >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 See [DebuggingWordCountTest](https://github.com/apache/beam/blob/master/examples/java/src/test/java/org/apache/beam/examples/DebuggingWordCountTest.java)
 for an example unit test.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ## WindowedWordCount example
 
@@ -1338,10 +1338,10 @@ func (f *addTimestampFn) ProcessElement(x beam.X) (beam.EventTime, beam.X) {
 }
 {{< /highlight >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 Note that the use of the `beam.X` "type variable" allows the transform to be
 used for any type.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ### Windowing
 

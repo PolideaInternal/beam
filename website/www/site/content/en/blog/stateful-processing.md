@@ -446,9 +446,7 @@ def event_prediction(user_event, models):
 
 # Predictions is a collection of (user, prediction) pairs.
 predictions = events | beam.Map(event_prediction, user_models)
-```
-
-{{% classwrapper %}}
+{{< /highlight >}}
 
 In this pipeline, there is just one model emitted by the `Combine.perKey(...)`
 per user, per window, which is then prepared for side input by the `View.asMap()`

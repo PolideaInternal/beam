@@ -70,7 +70,7 @@ public class WordCount {
 }
 {{< /highlight >}}
 
-{{< classwrapper class="language-java" wrapper="p" >}}
+{{< paragraph class="language-java" >}}
 <a class="button button--primary" target="_blank"
   href="https://colab.sandbox.google.com/github/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-java.ipynb">
   Run in Colab
@@ -79,11 +79,11 @@ public class WordCount {
   href="https://github.com/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-java.ipynb">
   View on GitHub
 </a>
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
-{{< classwrapper class="language-java" wrapper="p" >}}
+{{< paragraph class="language-java" >}}
 To learn how to install and run the Apache Beam Java SDK on your own computer, follow the instructions in the <a href="/get-started/quickstart-java">Java Quickstart</a>.
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
 {{< highlight py >}}
 import apache_beam as beam
@@ -104,7 +104,7 @@ with beam.Pipeline() as pipeline:
   )
 {{< /highlight >}}
 
-{{< classwrapper class="language-py" wrapper="p" >}}
+{{< paragraph class="language-py" >}}
 <a class="button button--primary" target="_blank"
   href="https://colab.sandbox.google.com/github/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-py.ipynb">
   Run in Colab
@@ -113,11 +113,11 @@ with beam.Pipeline() as pipeline:
   href="https://github.com/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-py.ipynb">
   View on GitHub
 </a>
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
-{{< classwrapper class="language-py" wrapper="p" >}}
+{{< paragraph class="language-py" >}}
 To learn how to install and run the Apache Beam Python SDK on your own computer, follow the instructions in the <a href="/get-started/quickstart-py">Python Quickstart</a>.
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
 {{< highlight go >}}
 package main
@@ -167,7 +167,7 @@ func main() {
 }
 {{< /highlight >}}
 
-{{< classwrapper class="language-go" wrapper="p" >}}
+{{< paragraph class="language-go" >}}
 <a class="button button--primary" target="_blank"
   href="https://colab.sandbox.google.com/github/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-go.ipynb">
   Run in Colab
@@ -176,11 +176,11 @@ func main() {
   href="https://github.com/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-go.ipynb">
   View on GitHub
 </a>
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
-{{< classwrapper class="language-go" wrapper="p" >}}
+{{< paragraph class="language-go" >}}
 To learn how to install and run the Apache Beam Go SDK on your own computer, follow the instructions in the <a href="/get-started/quickstart-go">Go Quickstart</a>.
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
 For a more detailed explanation about how WordCount works, see the [WordCount Example Walkthrough](/get-started/wordcount-example).
 
