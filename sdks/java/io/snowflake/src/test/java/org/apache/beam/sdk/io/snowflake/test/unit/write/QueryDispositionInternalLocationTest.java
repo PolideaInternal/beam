@@ -15,26 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.batch;
+package org.apache.beam.sdk.io.snowflake.test.unit.write;
 
-import static org.junit.Assume.assumeNotNull;
+import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.sql.SQLException;
-import javax.sql.DataSource;
-import net.snowflake.client.jdbc.internal.apache.commons.io.FileUtils;
-import org.apache.beam.sdk.PipelineResult;
-import org.apache.beam.sdk.io.GenerateSequence;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
-import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
+import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
+import org.apache.beam.sdk.io.snowflake.test.unit.BatchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
+import org.apache.beam.sdk.transforms.Create;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -44,122 +47,116 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class QueryDispositionWriteInternalLocationIT {
-  @Rule public final transient TestPipeline pipeline = TestPipeline.create();
-  private static DataSource dataSource;
+public class QueryDispositionInternalLocationTest {
+  private static final String FAKE_TABLE = "FAKE_TABLE";
+  private static final String INTERNAL_LOCATION = "./bucket";
 
-  static BatchTestPipelineOptions options;
-  static SnowflakeIO.DataSourceConfiguration dc;
-  static Location locationSpec;
+  @Rule public final transient TestPipeline pipeline = TestPipeline.create();
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
+  private static BatchTestPipelineOptions options;
+  private static SnowflakeIO.DataSourceConfiguration dc;
+  private static Location locationSpec;
+
+  private static SnowflakeService snowflakeService;
+  private static List<Long> testData;
 
   @BeforeClass
   public static void setupAll() {
     PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
 
-    Assume.assumeNotNull(options.getServerName());
-
-    dc =
-        SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
-            .withServerName(options.getServerName())
-            .withDatabase(options.getDatabase())
-            .withWarehouse(options.getWarehouse())
-            .withSchema(options.getSchema());
-
-    dataSource = dc.buildDatasource();
-    locationSpec = LocationFactory.of(options);
+    snowflakeService = new FakeSnowflakeServiceImpl();
+    testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
   }
 
   @Before
   public void setup() {
-    assumeNotNull(options.getInternalLocation());
+
+    options.setInternalLocation(INTERNAL_LOCATION);
+    options.setServerName("NULL.snowflakecomputing.com");
+    options.setStage("STAGE");
+    locationSpec = LocationFactory.of(options);
+
+    dc =
+        SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
+            .withServerName(options.getServerName());
   }
 
   @After
-  public void tearDown() throws Exception {
-    if (options.getInternalLocation() != null) {
-      File directory = new File(options.getInternalLocation());
-      FileUtils.deleteDirectory(directory);
-    }
-
-    TestUtils.runConnectionWithStatement(
-        dataSource, String.format("TRUNCATE %s;", options.getTable()));
+  public void tearDown() {
+    TestUtils.removeTempDir(INTERNAL_LOCATION);
   }
 
   @Test
   public void writeWithWriteTruncateDispositionSuccess() throws SQLException {
-    String query = String.format("CREATE OR REPLACE stage %s;", options.getStage());
-    TestUtils.runConnectionWithStatement(dataSource, query);
 
-    query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
-    TestUtils.runConnectionWithStatement(dataSource, query);
+    FakeSnowflakeDatabase.createTableWithElements(FAKE_TABLE, Arrays.asList("NOT_EMPTY"));
 
     pipeline
-        .apply(GenerateSequence.from(0).to(100))
+        .apply(Create.of(testData))
         .apply(
             "Truncate before write",
-            SnowflakeIO.<Long>write()
+            SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to(options.getTable())
+                .to(FAKE_TABLE)
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
-                .withUserDataMapper(TestUtils.getCsvMapper())
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withWriteDisposition(WriteDisposition.TRUNCATE)
                 .withParallelization(false));
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
-  }
+    pipeline.run(options).waitUntilFinish();
 
-  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+    List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
+
+    assertTrue(TestUtils.isListsEqual(testData, actualData));
+  }
 
   @Test
   public void writeWithWriteEmptyDispositionWithNotEmptyTableFails() throws SQLException {
-    String query = String.format("INSERT INTO %s VALUES ('test')", options.getTable());
-    TestUtils.runConnectionWithStatement(dataSource, query);
+    FakeSnowflakeDatabase.createTableWithElements(FAKE_TABLE, Arrays.asList("NOT_EMPTY"));
 
     exceptionRule.expect(RuntimeException.class);
     exceptionRule.expectMessage(
         "java.lang.RuntimeException: Table is not empty. Aborting COPY with disposition EMPTY");
 
     pipeline
-        .apply(GenerateSequence.from(0).to(100))
+        .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write()
+            SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to(options.getTable())
+                .to(FAKE_TABLE)
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
-                .withUserDataMapper(TestUtils.getCsvMapper())
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withWriteDisposition(WriteDisposition.EMPTY)
                 .withParallelization(false));
 
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
+    pipeline.run(options).waitUntilFinish();
   }
 
   @Test
   public void writeWithWriteEmptyDispositionWithEmptyTableSuccess() throws SQLException {
-    String query = String.format("CREATE OR REPLACE stage %s;", options.getStage());
-    TestUtils.runConnectionWithStatement(dataSource, query);
-
-    TestUtils.runConnectionWithStatement(
-        dataSource, String.format("TRUNCATE %s;", options.getTable()));
+    FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
     pipeline
-        .apply(GenerateSequence.from(0).to(100))
+        .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write()
+            SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to(options.getTable())
+                .to(FAKE_TABLE)
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
-                .withUserDataMapper(TestUtils.getCsvMapper())
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withWriteDisposition(WriteDisposition.EMPTY)
                 .withParallelization(false));
 
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
+    pipeline.run(options).waitUntilFinish();
+
+    List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
+
+    assertTrue(TestUtils.isListsEqual(testData, actualData));
   }
 }

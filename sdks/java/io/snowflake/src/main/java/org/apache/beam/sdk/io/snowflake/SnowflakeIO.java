@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.PrivateKey;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -154,10 +153,10 @@ public class SnowflakeIO {
    * @param <T> Type of the data to be read.
    */
   public static <T> Read<T> read(
-      SnowflakeService snowflakeService, SnowFlakeCloudProvider snowFlakeCloudProvider) {
+      SnowflakeService snowflakeService, SnowflakeCloudProvider snowFlakeCloudProvider) {
     return new AutoValue_SnowflakeIO_Read.Builder<T>()
         .setSnowflakeService(snowflakeService)
-        .setSnowFlakeCloudProvider(snowFlakeCloudProvider)
+        .setSnowflakeCloudProvider(snowFlakeCloudProvider)
         .build();
   }
 
@@ -245,7 +244,7 @@ public class SnowflakeIO {
     abstract SnowflakeService getSnowflakeService();
 
     @Nullable
-    abstract SnowFlakeCloudProvider getSnowFlakeCloudProvider();
+    abstract SnowflakeCloudProvider getSnowflakeCloudProvider();
 
     abstract Builder<T> toBuilder();
 
@@ -268,7 +267,7 @@ public class SnowflakeIO {
 
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
-      abstract Builder<T> setSnowFlakeCloudProvider(SnowFlakeCloudProvider snowFlakeCloudProvider);
+      abstract Builder<T> setSnowflakeCloudProvider(SnowflakeCloudProvider snowFlakeCloudProvider);
 
       abstract Read<T> build();
     }
@@ -360,7 +359,7 @@ public class SnowflakeIO {
           .apply(
               ParDo.of(
                   new CleanTmpFilesFromGcsFn(
-                      getStagingBucketName(), gcpTmpDirName, getSnowFlakeCloudProvider())));
+                      getStagingBucketName(), gcpTmpDirName, getSnowflakeCloudProvider())));
 
       return output;
     }
@@ -435,10 +434,10 @@ public class SnowflakeIO {
     public static class CleanTmpFilesFromGcsFn extends DoFn<Object, Object> {
       private final String bucketName;
       private final String bucketPath;
-      private final SnowFlakeCloudProvider snowFlakeCloudProvider;
+      private final SnowflakeCloudProvider snowFlakeCloudProvider;
 
       public CleanTmpFilesFromGcsFn(
-          String bucketName, String bucketPath, SnowFlakeCloudProvider snowFlakeCloudProvider) {
+          String bucketName, String bucketPath, SnowflakeCloudProvider snowFlakeCloudProvider) {
         this.bucketName = bucketName;
         this.bucketPath = bucketPath;
         this.snowFlakeCloudProvider = snowFlakeCloudProvider;
@@ -883,8 +882,6 @@ public class SnowflakeIO {
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
 
-      checkArgument(getLocation() != null, "withLocation() is required");
-
       Location location = getLocation();
 
       PCollection files = writeToFiles(input, location.getFilesPath());
@@ -1083,14 +1080,14 @@ public class SnowflakeIO {
 
     PutFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn,
-        String stage,
-        String file,
+        String files,
+        String directory,
         String fileNameTemplate,
         Boolean parallelization,
         SnowflakeService snowflakeService) {
       this.dataSourceProviderFn = dataSourceProviderFn;
-      this.stage = stage;
-      this.directory = file;
+      this.stage = files;
+      this.directory = directory;
       this.fileNameTemplate = fileNameTemplate;
       this.parallelization = parallelization;
       this.snowflakeService = snowflakeService;
@@ -1106,21 +1103,9 @@ public class SnowflakeIO {
           directory,
           fileNameTemplate,
           parallelization,
-          resultSet -> {
-            assert resultSet != null;
-            getFilenamesFromPutOperation((ResultSet) resultSet, context);
+          result -> {
+            result.getAll().forEach(file -> context.output((OutputT) file));
           });
-    }
-
-    void getFilenamesFromPutOperation(ResultSet resultSet, ProcessContext context) {
-      int indexOfNameOfFile = 2;
-      try {
-        while (resultSet.next()) {
-          context.output((OutputT) resultSet.getString(indexOfNameOfFile));
-        }
-      } catch (SQLException e) {
-        throw new RuntimeException("Unable run pipeline with PUT operation.", e);
-      }
     }
   }
 }

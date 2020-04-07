@@ -17,20 +17,29 @@
  */
 package org.apache.beam.sdk.io.snowflake;
 
-import com.google.api.gax.paging.Page;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
-import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
-public class GCSProvider implements SnowflakeCloudProvider, Serializable {
+/**
+ * POJO class used to pass data between {@link org.apache.beam.sdk.io.snowflake.SnowflakeService}
+ * and {@link org.apache.beam.sdk.io.snowflake.SnowflakeIO} .
+ */
+public class SnowflakeStatementResult<T> {
+  private List<T> values;
 
-  @Override
-  public void removeFiles(String bucketName, String pathOnBucket) {
-    Storage storage = StorageOptions.getDefaultInstance().getService();
-    Page<Blob> blobs = storage.list(bucketName, Storage.BlobListOption.prefix(pathOnBucket));
-    for (Blob blob : blobs.iterateAll()) {
-      storage.delete(blob.getBlobId());
-    }
+  public SnowflakeStatementResult() {
+    values = new ArrayList<>();
+  }
+
+  public boolean addAll(List<T> values) {
+    return this.values.addAll(values);
+  }
+
+  public boolean add(T value) {
+    return this.values.add(value);
+  }
+
+  public List<T> getAll() {
+    return this.values;
   }
 }

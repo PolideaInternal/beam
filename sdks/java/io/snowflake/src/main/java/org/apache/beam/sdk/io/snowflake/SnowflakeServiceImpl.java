@@ -45,7 +45,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       String directory,
       String fileNameTemplate,
       Boolean parallelization,
-      Consumer resultSetMethod)
+      Consumer<SnowflakeStatementResult> runStatementResultConsumer)
       throws SQLException {
 
     String query;
@@ -54,6 +54,13 @@ public class SnowflakeServiceImpl implements SnowflakeService {
     } else {
       query = String.format("put file://%s/%s %s;", directory, fileNameTemplate, stage);
     }
+
+    Consumer resultSetMethod =
+        result -> {
+          SnowflakeStatementResult<String> snowflakeStatementResult =
+              getFilenamesFromPutOperation((ResultSet) result);
+          runStatementResultConsumer.accept(snowflakeStatementResult);
+        };
 
     runStatement(query, getConnection(dataSourceProviderFn), resultSetMethod);
   }
@@ -260,6 +267,19 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       statement.close();
       connection.close();
     }
+  }
+
+  private SnowflakeStatementResult<String> getFilenamesFromPutOperation(ResultSet resultSet) {
+    SnowflakeStatementResult<String> result = new SnowflakeStatementResult();
+    int indexOfNameOfFile = 2;
+    try {
+      while (resultSet.next()) {
+        result.add(resultSet.getString(indexOfNameOfFile));
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException("Unable run pipeline with PUT operation.", e);
+    }
+    return result;
   }
 
   private Connection getConnection(SerializableFunction<Void, DataSource> dataSourceProviderFn)

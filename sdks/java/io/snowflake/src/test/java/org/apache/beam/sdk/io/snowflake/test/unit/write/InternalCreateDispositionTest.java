@@ -15,27 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.test.batch;
+package org.apache.beam.sdk.io.snowflake.test.unit.write;
 
 import static org.apache.beam.sdk.io.snowflake.test.TestUtils.getCsvMapper;
-import static org.junit.Assume.assumeNotNull;
-import static org.junit.Assume.assumeTrue;
 
-import java.io.File;
 import java.sql.SQLException;
-import javax.sql.DataSource;
-import net.snowflake.client.jdbc.internal.apache.commons.io.FileUtils;
-import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
-import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
+import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
+import org.apache.beam.sdk.io.snowflake.test.unit.BatchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.junit.After;
@@ -48,109 +46,90 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class CreateDispositionWriteInternalLocationIT {
+public class InternalCreateDispositionTest {
+  private static final String FAKE_TABLE = "FAKE_TABLE";
+  private static final String INTERNAL_LOCATION = "./bucket";
+
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
-  private static DataSource dataSource;
-
-  static BatchTestPipelineOptions options;
-  static SnowflakeIO.DataSourceConfiguration dc;
-  static Location locationSpec;
-
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
+  private static BatchTestPipelineOptions options;
+  private static SnowflakeIO.DataSourceConfiguration dc;
+  private static Location locationSpec;
+
+  private static SnowflakeService snowflakeService;
 
   @BeforeClass
   public static void setupAll() {
     PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
+    options.setInternalLocation(INTERNAL_LOCATION);
+    options.setServerName("NULL.snowflakecomputing.com");
+    options.setStage("STAGE");
 
-    assumeNotNull(options.getServerName());
+    locationSpec = LocationFactory.of(options);
+
+    snowflakeService = new FakeSnowflakeServiceImpl();
 
     dc =
-        SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
-            .withServerName(options.getServerName())
-            .withDatabase(options.getDatabase())
-            .withWarehouse(options.getWarehouse())
-            .withSchema(options.getSchema());
-
-    dataSource = dc.buildDatasource();
-    locationSpec = LocationFactory.of(options);
+        SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
+            .withServerName(options.getServerName());
   }
 
   @Before
-  public void setup() {
-    assumeNotNull(options.getInternalLocation());
-  }
+  public void setup() {}
 
   @After
-  public void tearDown() throws Exception {
-    if (options.getInternalLocation() != null) {
-      File directory = new File(options.getInternalLocation());
-      FileUtils.deleteDirectory(directory);
-    }
+  public void tearDown() {
+    TestUtils.removeTempDir(INTERNAL_LOCATION);
+    FakeSnowflakeDatabase.clean();
   }
 
   @Test
   public void writeWithWriteCreateDispositionWithAlreadyCreatedTableSuccess() throws SQLException {
-    assumeTrue(options.getInternalLocation() != null);
-
-    locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+    FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write()
+            SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to(options.getTable())
+                .to(FAKE_TABLE)
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
-
-    TestUtils.runConnectionWithStatement(
-        dataSource, String.format("TRUNCATE %s;", options.getTable()));
+    pipeline.run(options).waitUntilFinish();
   }
 
   @Test
   public void writeWithWriteCreateDispositionWithCreatedTableWithoutSchemaFails() {
-    assumeTrue(options.getInternalLocation() != null);
-
-    locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
 
     exceptionRule.expect(RuntimeException.class);
     exceptionRule.expectMessage(
-        "java.lang.IllegalArgumentException: The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
+        "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write()
+            SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to("test_example_fail")
+                .to("NO_EXIST_TABLE")
                 .via(locationSpec)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
+    pipeline.run(options).waitUntilFinish();
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreatedTableWithSchemaSuccess()
-      throws SQLException {
-    assumeTrue(options.getInternalLocation() != null);
-
-    locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+  public void writeWithWriteCreateDispositionWithCreatedTableWithSchemaSuccess() {
 
     SFTableSchema tableSchema = new SFTableSchema(SFColumn.of("id", new SFVarchar()));
 
@@ -158,9 +137,9 @@ public class CreateDispositionWriteInternalLocationIT {
         .apply(GenerateSequence.from(0).to(100))
         .apply(
             "Copy IO",
-            SnowflakeIO.<Long>write()
+            SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to("test_example_success")
+                .to("NO_EXIST_TABLE")
                 .via(locationSpec)
                 .withTableSchema(tableSchema)
                 .withFileNameTemplate("output*")
@@ -168,66 +147,48 @@ public class CreateDispositionWriteInternalLocationIT {
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
-
-    TestUtils.runConnectionWithStatement(
-        dataSource, String.format("DROP TABLE IF EXISTS test_example_success;"));
+    pipeline.run(options).waitUntilFinish();
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreateNeverSuccess() throws SQLException {
-    assumeTrue(options.getInternalLocation() != null);
+  public void writeWithWriteCreateDispositionWithCreateNeverSuccess() {
 
-    locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
+    FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write()
+            SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to(options.getTable())
+                .to(FAKE_TABLE)
                 .via(locationSpec)
                 .withUserDataMapper(getCsvMapper())
                 .withFileNameTemplate("output*")
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
                 .withParallelization(false));
 
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
-
-    TestUtils.runConnectionWithStatement(
-        dataSource, String.format("TRUNCATE %s;", options.getTable()));
+    pipeline.run(options).waitUntilFinish();
   }
 
   @Test
   public void writeWithWriteCreateDispositionWithCreateNeededFails() {
-    assumeTrue(options.getInternalLocation() != null);
-
-    locationSpec =
-        LocationFactory.getInternalLocation(options.getStage(), options.getInternalLocation());
-
     exceptionRule.expect(RuntimeException.class);
-    exceptionRule.expectMessage(
-        "net.snowflake.client.jdbc.SnowflakeSQLException: SQL compilation error:"
-            + "\nTable 'TEST_FAILURE' does not exist");
+    exceptionRule.expectMessage("SQL compilation error: Table does not exist");
 
     pipeline
         .apply(GenerateSequence.from(0).to(100))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write()
+            SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to("test_failure")
+                .to("NO_EXIST_TABLE")
                 .via(locationSpec)
                 .withUserDataMapper(getCsvMapper())
                 .withFileNameTemplate("output*")
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
                 .withParallelization(false));
 
-    PipelineResult pipelineResult = pipeline.run(options);
-    pipelineResult.waitUntilFinish();
+    pipeline.run(options).waitUntilFinish();
   }
 }
