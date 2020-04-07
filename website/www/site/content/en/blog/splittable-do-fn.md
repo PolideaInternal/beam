@@ -345,9 +345,7 @@ smaller restrictions, and a few others.
 The "Hello World" of SDF is a counter, which takes pairs *(x, N)* as input and
 produces pairs *(x, 0), (x, 1), …, (x, N-1)* as output.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 class CountFn<T> extends DoFn<KV<T, Long>, KV<T, Long>> {
   @ProcessElement
   public void process(ProcessContext c, OffsetRangeTracker tracker) {
@@ -365,13 +363,9 @@ class CountFn<T> extends DoFn<KV<T, Long>, KV<T, Long>> {
 PCollection<KV<String, Long>> input = …;
 PCollection<KV<String, Long>> output = input.apply(
     ParDo.of(new CountFn<String>());
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class CountFn(DoFn):
   def process(element, tracker=DoFn.RestrictionTrackerParam)
     for i in xrange(*tracker.current_restriction()):
@@ -381,9 +375,7 @@ class CountFn(DoFn):
         
   def get_initial_restriction(element):
     return (0, element[1])
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 This short `DoFn` subsumes the functionality of
 [CountingSource](https://github.com/apache/beam/blob/master/sdks/java/core/src/main/java/org/apache/beam/sdk/io/CountingSource.java),
@@ -405,9 +397,7 @@ A slightly more complex example is the `ReadFn` considered above, which reads
 data from Avro files and illustrates the idea of *blocks*: we provide pseudocode
 to illustrate the approach.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 class ReadFn extends DoFn<String, AvroRecord> {
   @ProcessElement
   void process(ProcessContext c, OffsetRangeTracker tracker) {
@@ -433,13 +423,9 @@ class ReadFn extends DoFn<String, AvroRecord> {
     return new OffsetRange(0, new File(filename).getSize());
   }
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class AvroReader(DoFn):
   def process(filename, tracker=DoFn.RestrictionTrackerParam)
     with fileio.ChannelFactory.open(filename) as file:
@@ -459,9 +445,7 @@ class AvroReader(DoFn):
         
   def get_initial_restriction(self, filename):
     return (0, fileio.ChannelFactory.size_in_bytes(filename))
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 This hypothetical `DoFn` reads records from a single Avro file. Notably missing
 is the code for expanding a filepattern: it no longer needs to be part of this

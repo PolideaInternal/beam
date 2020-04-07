@@ -124,9 +124,7 @@ For example, if we create a TestStream where all the data arrives before the
 watermark and provide the result PCollection as input to the CalculateTeamScores
 PTransform:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 TestStream<GameActionInfo> infos = TestStream.create(AvroCoder.of(GameActionInfo.class))
     .addElements(new GameActionInfo("sky", "blue", 12, new Instant(0L)),
                  new GameActionInfo("navy", "blue", 3, new Instant(0L)),
@@ -138,25 +136,19 @@ TestStream<GameActionInfo> infos = TestStream.create(AvroCoder.of(GameActionInfo
 
 PCollection<KV<String, Integer>> teamScores = p.apply(createEvents)
     .apply(new CalculateTeamScores(TEAM_WINDOW_DURATION, ALLOWED_LATENESS));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 we can then assert that the result PCollection contains elements that arrived:
 
 <img class="center-block" src="/images/blog/test-stream/elements-all-on-time.png" alt="Elements all arrive before the watermark, and are produced in the on-time pane" width="442">
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Only one value is emitted for the blue team
 PAssert.that(teamScores)
        .inWindow(window)
        .containsInAnyOrder(KV.of("blue", 18));
 p.run();
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Some elements are late, but arrive before the end of the window
 
@@ -166,9 +158,7 @@ of the window (shown below to the left of the red watermark), which demonstrates
 the system to be on time, as it arrives before the watermark passes the end of
 the window
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 TestStream<GameActionInfo> infos = TestStream.create(AvroCoder.of(GameActionInfo.class))
     .addElements(new GameActionInfo("sky", "blue", 3, new Instant(0L)),
                  new GameActionInfo("navy", "blue", 3, new Instant(0L).plus(Duration.standardMinutes(3))))
@@ -180,23 +170,17 @@ TestStream<GameActionInfo> infos = TestStream.create(AvroCoder.of(GameActionInfo
 
 PCollection<KV<String, Integer>> teamScores = p.apply(createEvents)
     .apply(new CalculateTeamScores(TEAM_WINDOW_DURATION, ALLOWED_LATENESS));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 <img class="center-block" src="/images/blog/test-stream/elements-unobservably-late.png" alt="An element arrives late, but before the watermark passes the end of the window, and is produced in the on-time pane" width="442">
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // Only one value is emitted for the blue team
 PAssert.that(teamScores)
        .inWindow(window)
        .containsInAnyOrder(KV.of("blue", 18));
 p.run();
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Elements are late, and arrive after the end of the window
 
@@ -204,9 +188,7 @@ By advancing the watermark farther in time before adding the late data, we can
 demonstrate the triggering behavior that causes the system to emit an on-time
 pane, and then after the late data arrives, a pane that refines the result.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 TestStream<GameActionInfo> infos = TestStream.create(AvroCoder.of(GameActionInfo.class))
     .addElements(new GameActionInfo("sky", "blue", 3, new Instant(0L)),
                  new GameActionInfo("navy", "blue", 3, new Instant(0L).plus(Duration.standardMinutes(3))))
@@ -218,15 +200,11 @@ TestStream<GameActionInfo> infos = TestStream.create(AvroCoder.of(GameActionInfo
 
 PCollection<KV<String, Integer>> teamScores = p.apply(createEvents)
     .apply(new CalculateTeamScores(TEAM_WINDOW_DURATION, ALLOWED_LATENESS));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 <img class="center-block" src="/images/blog/test-stream/elements-observably-late.png" alt="Elements all arrive before the watermark, and are produced in the on-time pane" width="442">
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // An on-time pane is emitted with the events that arrived before the window closed
 PAssert.that(teamScores)
        .inOnTimePane(window)
@@ -236,9 +214,7 @@ PAssert.that(teamScores)
        .inFinalPane(window)
        .containsInAnyOrder(KV.of("blue", 18));
 p.run();
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Elements are late, and after the end of the window plus the allowed lateness
 
@@ -246,9 +222,7 @@ If we push the watermark even further into the future, beyond the maximum
 configured allowed lateness, we can demonstrate that the late element is dropped
 by the system.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 TestStream<GameActionInfo> infos = TestStream.create(AvroCoder.of(GameActionInfo.class))
     .addElements(new GameActionInfo("sky", "blue", 3, Duration.ZERO),
                  new GameActionInfo("navy", "blue", 3, Duration.standardMinutes(3)))
@@ -265,24 +239,18 @@ TestStream<GameActionInfo> infos = TestStream.create(AvroCoder.of(GameActionInfo
 
 PCollection<KV<String, Integer>> teamScores = p.apply(createEvents)
     .apply(new CalculateTeamScores(TEAM_WINDOW_DURATION, ALLOWED_LATENESS));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 <img class="center-block" src="/images/blog/test-stream/elements-droppably-late.png" alt="Elements all arrive before the watermark, and are produced in the on-time pane" width="442">
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // An on-time pane is emitted with the events that arrived before the window closed
 PAssert.that(teamScores)
        .inWindow(window)
        .containsInAnyOrder(KV.of("blue", 6));
 
 p.run();
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Elements arrive before the end of the window, and some processing time passes
 Using additional methods, we can demonstrate the behavior of speculative
@@ -290,9 +258,7 @@ triggers by advancing the processing time of the TestStream. If we add elements
 to an input PCollection, occasionally advancing the processing time clock, and
 apply `CalculateUserScores`
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 TestStream.create(AvroCoder.of(GameActionInfo.class))
     .addElements(new GameActionInfo("scarlet", "red", 3, new Instant(0L)),
                  new GameActionInfo("scarlet", "red", 2, new Instant(0L).plus(Duration.standardMinutes(1))))
@@ -304,15 +270,11 @@ TestStream.create(AvroCoder.of(GameActionInfo.class))
 
 PCollection<KV<String, Integer>> userScores =
     p.apply(infos).apply(new CalculateUserScores(ALLOWED_LATENESS));
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 <img class="center-block" src="/images/blog/test-stream/elements-processing-speculative.png" alt="Elements all arrive before the watermark, and are produced in the on-time pane" width="442">
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PAssert.that(userScores)
        .inEarlyGlobalWindowPanes()
        .containsInAnyOrder(KV.of("scarlet", 5),
@@ -320,9 +282,7 @@ PAssert.that(userScores)
                            KV.of("oxblood", 2));
 
 p.run();
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## TestStream - Under the Hood
 

@@ -33,6 +33,10 @@ unsafe= true
 [markup.highlight]
 noClasses = false
 
+[markup]
+  [markup.tableOfContents]
+    endLevel = 4
+
 ## Configuration for BlackFriday markdown parser: https://github.com/russross/blackfriday
 [blackfriday]
 plainIDAnchors = true

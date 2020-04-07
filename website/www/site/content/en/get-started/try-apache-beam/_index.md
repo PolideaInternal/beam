@@ -19,22 +19,13 @@ limitations under the License.
 
 You can try Apache Beam using our interactive notebooks, which are hosted in [Colab](https://colab.research.google.com). The notebooks allow you to interactively play with the code and see how your changes affect the pipeline. You don't need to install anything or modify your computer in any way to use these notebooks.
 
-<nav class="language-switcher">
-  <strong>Adapt for:</strong>
-  <ul>
-    <li data-type="language-java" class="active">Java SDK</li>
-    <li data-type="language-py">Python SDK</li>
-    <li data-type="language-go">Go SDK</li>
-  </ul>
-</nav>
+{{< language-switcher java py go >}}
 
 ## Interactive WordCount in Colab
 
 This interactive notebook shows you what a simple, minimal version of WordCount looks like.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 package samples.quickstart;
 
 import org.apache.beam.sdk.Pipeline;
@@ -70,11 +61,9 @@ public class WordCount {
     pipeline.run();
   }
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{< classwrapper class="language-java" wrapper="p" >}}
+{{< paragraph class="language-java" >}}
 <a class="button button--primary" target="_blank"
   href="https://colab.sandbox.google.com/github/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-java.ipynb">
   Run in Colab
@@ -83,15 +72,13 @@ public class WordCount {
   href="https://github.com/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-java.ipynb">
   View on GitHub
 </a>
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
-{{< classwrapper class="language-java" wrapper="p" >}}
+{{< paragraph class="language-java" >}}
 To learn how to install and run the Apache Beam Java SDK on your own computer, follow the instructions in the <a href="/get-started/quickstart-java">Java Quickstart</a>.
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 import apache_beam as beam
 import re
 
@@ -108,11 +95,9 @@ with beam.Pipeline() as pipeline:
       | 'Format results' >> beam.Map(lambda word_count: str(word_count))
       | 'Write results' >> beam.io.WriteToText(outputs_prefix)
   )
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{< classwrapper class="language-py" wrapper="p" >}}
+{{< paragraph class="language-py" >}}
 <a class="button button--primary" target="_blank"
   href="https://colab.sandbox.google.com/github/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-py.ipynb">
   Run in Colab
@@ -121,15 +106,13 @@ with beam.Pipeline() as pipeline:
   href="https://github.com/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-py.ipynb">
   View on GitHub
 </a>
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
-{{< classwrapper class="language-py" wrapper="p" >}}
+{{< paragraph class="language-py" >}}
 To learn how to install and run the Apache Beam Python SDK on your own computer, follow the instructions in the <a href="/get-started/quickstart-py">Python Quickstart</a>.
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 package main
 
 import (
@@ -175,11 +158,9 @@ func main() {
 
 	direct.Execute(context.Background(), pipeline)
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{< classwrapper class="language-go" wrapper="p" >}}
+{{< paragraph class="language-go" >}}
 <a class="button button--primary" target="_blank"
   href="https://colab.sandbox.google.com/github/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-go.ipynb">
   Run in Colab
@@ -188,11 +169,11 @@ func main() {
   href="https://github.com/{{< param branch_repo >}}/examples/notebooks/get-started/try-apache-beam-go.ipynb">
   View on GitHub
 </a>
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
-{{< classwrapper class="language-go" wrapper="p" >}}
+{{< paragraph class="language-go" >}}
 To learn how to install and run the Apache Beam Go SDK on your own computer, follow the instructions in the <a href="/get-started/quickstart-go">Go Quickstart</a>.
-{{< /classwrapper >}}
+{{< /paragraph >}}
 
 For a more detailed explanation about how WordCount works, see the [WordCount Example Walkthrough](/get-started/wordcount-example).
 
