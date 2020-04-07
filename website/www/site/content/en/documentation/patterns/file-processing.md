@@ -19,13 +19,7 @@ limitations under the License.
 
 This page describes common file processing tasks. For more information on file-based I/O, see [Pipeline I/O](/documentation/programming-guide/#pipeline-io) and [File-based input and output data](/documentation/programming-guide/#file-based-data).
 
-<nav class="language-switcher">
-  <strong>Adapt for:</strong>
-  <ul>
-    <li data-type="language-java" class="active">Java SDK</li>
-    <li data-type="language-py">Python SDK</li>
-  </ul>
-</nav>
+{{< language-switcher java py >}}
 
 ## Processing files as they arrive
 

@@ -28,13 +28,7 @@ programmatically building your Beam pipeline. As the programming guide is filled
 out, the text will include code samples in multiple languages to help illustrate
 how to implement Beam concepts in your pipelines.
 
-<nav class="language-switcher">
-  <strong>Adapt for:</strong>
-  <ul>
-    <li data-type="language-java" class="active">Java SDK</li>
-    <li data-type="language-py">Python SDK</li>
-  </ul>
-</nav>
+{{< language-switcher java py >}}
 
 {{< paragraph class="language-py" >}}
 The Python SDK supports Python 2.7, 3.5, 3.6, and 3.7. New Python SDK releases will stop supporting Python 2.7 in 2020 ([BEAM-8371](https://issues.apache.org/jira/browse/BEAM-8371)). For best results, use Beam with Python 3.

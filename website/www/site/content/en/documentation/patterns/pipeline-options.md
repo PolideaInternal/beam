@@ -19,13 +19,7 @@ limitations under the License.
 
 The samples on this page show you common pipeline configurations. For more information about pipeline configuration options, see [Creating a pipeline](/documentation/programming-guide/#creating-a-pipeline) and [Configuring pipeline options](/documentation/programming-guide/#configuring-pipeline-options).
 
-<nav class="language-switcher">
-  <strong>Adapt for:</strong>
-  <ul>
-    <li data-type="language-java" class="active">Java SDK</li>
-    <li data-type="language-py">Python SDK</li>
-  </ul>
-</nav>
+{{< language-switcher java py >}}
 
 ## Retroactively logging runtime parameters
 

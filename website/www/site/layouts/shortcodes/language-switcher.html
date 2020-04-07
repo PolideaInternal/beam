@@ -10,22 +10,19 @@
  limitations under the License. See accompanying LICENSE file.
 */}}
 
-{{ $content := .Inner }}
-{{ $ctx := . }}
-{{ with (.Get "class") }}
-    <div class={{ . }}>
-        {{ with ($ctx.Get "lang") }}
-            {{ highlight (trim $content "\n\r") . "" }}
-        {{ else }}
-            {{ (printf "```%s```" $content) | markdownify }}
-        {{ end }}
-    </div>
-{{ else }}
-    {{ with (.Get 0) }}
-        <div class={{ printf "language-%s" . }}>
-            {{ highlight (trim $content "\n\r") . "" }}
-        </div>
-    {{ else }}
-        {{ (printf "```%s```" $content) | markdownify }}
+<nav class="language-switcher">
+  <strong>Adapt for:</strong>
+  <ul>
+    {{ range $lang := .Params }}
+      {{ if eq $lang "java" }}
+        <li data-type="language-java" class="active">Java SDK</li>
+      {{ end }}
+      {{ if eq $lang "py" }}
+        <li data-type="language-py">Python SDK</li>
+      {{ end }}
+      {{ if eq $lang "go" }}
+        <li data-type="language-go">Go SDK</li>
+      {{ end }}
     {{ end }}
-{{ end }}
+  </ul>
+</nav>

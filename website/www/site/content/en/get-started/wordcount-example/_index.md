@@ -20,14 +20,7 @@ limitations under the License.
 
 {{< toc >}}
 
-<nav class="language-switcher">
-  <strong>Adapt for:</strong>
-  <ul>
-    <li data-type="language-java">Java SDK</li>
-    <li data-type="language-py">Python SDK</li>
-    <li data-type="language-go">Go SDK</li>
-  </ul>
-</nav>
+{{< language-switcher java py go >}}
 
 The WordCount examples demonstrate how to set up a processing pipeline that can
 read text, tokenize the text lines into individual words, and perform a
