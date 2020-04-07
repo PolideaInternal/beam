@@ -356,9 +356,7 @@ If you try to express the building of your model as a `CombineFn`, you may have
 trouble with `mergeAccumulators`. Assuming you could express that, it might
 look something like this:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 class ModelFromEventsFn extends CombineFn<Event, Model, Model> {
     @Override
     public abstract Model createAccumulator() {
@@ -379,13 +377,9 @@ class ModelFromEventsFn extends CombineFn<Event, Model, Model> {
     public abstract Model extractOutput(Model accumulator) {
       return accumulator; }
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class ModelFromEventsFn(apache_beam.core.CombineFn):
 
   def create_accumulator(self):
@@ -400,9 +394,7 @@ class ModelFromEventsFn(apache_beam.core.CombineFn):
 
   def extract_output(self, model):
     return model
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Now you have a way to compute the model of a particular user for a window as
 `Combine.perKey(new ModelFromEventsFn())`. How would you apply this model to
@@ -412,9 +404,7 @@ elements of a `PCollection` is to read it as a side input to a `ParDo`
 transform. So you could side input the model and check the stream of events
 against it, outputting the prediction, like so:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PCollection<KV<UserId, Event>> events = ...
 
 final PCollectionView<Map<UserId, Model>> userModels = events
@@ -435,13 +425,9 @@ PCollection<KV<UserId, Prediction>> predictions = events
         … c.output(KV.of(userId, model.prediction(event))) … 
       }
     }));
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 # Events is a collection of (user, event) pairs.
 events = (p | ReadFromEventSource() | beam.WindowInto(....))
 
@@ -460,9 +446,7 @@ def event_prediction(user_event, models):
 
 # Predictions is a collection of (user, prediction) pairs.
 predictions = events | beam.Map(event_prediction, user_models)
-```
-
-{{% classwrapper %}}
+{{< /highlight >}}
 
 In this pipeline, there is just one model emitted by the `Combine.perKey(...)`
 per user, per window, which is then prepared for side input by the `View.asMap()`
@@ -480,9 +464,7 @@ generic Beam feature for managing completeness versus latency tradeoffs. So here
 is the same pipeline with an added trigger that outputs a new model one second
 after input arrives:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PCollection<KV<UserId, Event>> events = ...
 
 PCollectionView<Map<UserId, Model>> userModels = events
@@ -493,13 +475,9 @@ PCollectionView<Map<UserId, Model>> userModels = events
 
     .apply(Combine.perKey(new ModelFromEventsFn()))
     .apply(View.asMap());
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 events = ...
 
 user_models = beam.pvalue.AsDict(
@@ -509,9 +487,7 @@ user_models = beam.pvalue.AsDict(
                           trigger.AfterCount(1),
                           trigger.AfterProcessingTime(1)))
                   | beam.CombinePerKey(ModelFromEventsFn()))
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 This is often a pretty nice tradeoff between latency and cost: If a huge flood
 of events comes in a second, then you will only emit one new model, so you
@@ -533,9 +509,7 @@ Stateful processing lets you address both the latency problem of side inputs
 and the cost problem of excessive uninteresting output. Here is the code, using
 only features I have already introduced:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 new DoFn<KV<UserId, Event>, KV<UserId, Prediction>>() {
 
   @StateId("model")
@@ -566,13 +540,9 @@ new DoFn<KV<UserId, Event>, KV<UserId, Prediction>>() {
     }
   }
 };
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class ModelStatefulFn(beam.DoFn):
 
   PREVIOUS_PREDICTION = BagStateSpec('previous_pred_state', PredictionCoder())
@@ -598,9 +568,7 @@ class ModelStatefulFn(beam.DoFn):
       previous_pred_state.clear()
       previous_pred_state.add(new_prediction)
       yield (user, new_prediction)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Let's walk through it,
 

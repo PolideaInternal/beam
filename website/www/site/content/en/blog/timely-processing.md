@@ -184,9 +184,7 @@ Let's set up the state we need to track batches of elements. As each element
 comes in, we will write the element to a buffer while tracking the number of
 elements we have buffered. Here are the state cells in code:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 new DoFn<Event, EnrichedEvent>() {
 
   @StateId("buffer")
@@ -197,13 +195,9 @@ new DoFn<Event, EnrichedEvent>() {
 
   … TBD … 
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class StatefulBufferingFn(beam.DoFn):
 
   BUFFER_STATE = BagStateSpec('buffer', EventCoder())
@@ -211,9 +205,7 @@ class StatefulBufferingFn(beam.DoFn):
   COUNT_STATE = CombiningValueStateSpec('count',
                                         VarIntCoder(),
                                         combiners.SumCombineFn())
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Walking through the code, we have:
 
@@ -225,9 +217,7 @@ method. We will choose a limit on the size of the buffer, `MAX_BUFFER_SIZE`. If
 our buffer reaches this size, we will perform a single RPC to enrich all the
 events, and output.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 new DoFn<Event, EnrichedEvent>() {
 
   private static final int MAX_BUFFER_SIZE = 500;
@@ -260,13 +250,9 @@ new DoFn<Event, EnrichedEvent>() {
 
   … TBD … 
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class StatefulBufferingFn(beam.DoFn):
 
   MAX_BUFFER_SIZE = 500;
@@ -291,9 +277,7 @@ class StatefulBufferingFn(beam.DoFn):
         yield event
       count_state.clear()
       buffer_state.clear()
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Here is an illustration to accompany the code:
 
@@ -335,9 +319,7 @@ completeness for a `PCollection` - such as when a window expires.
 For our example, let us add an event time timer so that when the window expires,
 any events remaining in the buffer are processed.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 new DoFn<Event, EnrichedEvent>() {
   …
 
@@ -369,13 +351,9 @@ new DoFn<Event, EnrichedEvent>() {
     }
   }
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class StatefulBufferingFn(beam.DoFn):
   …
 
@@ -402,9 +380,7 @@ class StatefulBufferingFn(beam.DoFn):
 
     buffer_state.clear()
     count_state.clear()
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Let's unpack the pieces of this snippet:
 
@@ -459,9 +435,7 @@ timer has not been set, then we set it for the current moment plus
 `MAX_BUFFER_DURATION`. After the allotted processing time has passed, a
 callback will fire and enrich and emit any buffered elements.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 new DoFn<Event, EnrichedEvent>() {
   …
 
@@ -503,13 +477,9 @@ new DoFn<Event, EnrichedEvent>() {
 
   … same expiry as above …
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class StatefulBufferingFn(beam.DoFn):
   …
 
@@ -542,9 +512,7 @@ class StatefulBufferingFn(beam.DoFn):
     buffer_state.clear()
     count_state.clear()
 
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Here is an illustration of the final code:
 
