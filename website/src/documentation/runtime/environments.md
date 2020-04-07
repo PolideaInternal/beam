@@ -73,7 +73,7 @@ python -m apache_beam.examples.wordcount \
 
 ```
 # Start a Flink job server on localhost:8099
-./gradlew :runners:flink:1.7:job-server:runShadow
+./gradlew :runners:flink:1.8:job-server:runShadow
 
 # Run a pipeline on the Flink job server
 python -m apache_beam.examples.wordcount \
@@ -109,6 +109,7 @@ python -m apache_beam.examples.wordcount \
 --output=/path/to/write/counts \
 --runner=DataflowRunner \
 --project={gcp_project_id} \
+--region={gce_region_id} \
 --temp_location={gcs_location} \ \
 --experiment=beam_fn_api \
 --sdk_location=[…]/beam/sdks/python/container/py{version}/build/target/apache-beam.tar.gz \
