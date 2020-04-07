@@ -29,41 +29,12 @@ import javax.sql.DataSource;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
 /**
  * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in production.
  */
 public class SnowflakeServiceImpl implements SnowflakeService {
-
-  @Override
-  public void putOnStage(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String bucketName,
-      String stage,
-      String directory,
-      String fileNameTemplate,
-      Boolean parallelization,
-      Consumer<SnowflakeStatementResult> runStatementResultConsumer)
-      throws SQLException {
-
-    String query;
-    if (parallelization) {
-      query = String.format("put file://%s %s;", bucketName, stage);
-    } else {
-      query = String.format("put file://%s/%s %s;", directory, fileNameTemplate, stage);
-    }
-
-    Consumer resultSetMethod =
-        result -> {
-          SnowflakeStatementResult<String> snowflakeStatementResult =
-              getFilenamesFromPutOperation((ResultSet) result);
-          runStatementResultConsumer.accept(snowflakeStatementResult);
-        };
-
-    runStatement(query, getConnection(dataSourceProviderFn), resultSetMethod);
-  }
 
   @Override
   public String copyIntoStage(
@@ -101,22 +72,21 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       String table,
       SFTableSchema tableSchema,
       String source,
-      Location location,
       CreateDisposition createDisposition,
       WriteDisposition writeDisposition,
-      String filesPath)
+      Location location)
       throws SQLException {
 
     String files = String.join(", ", filesList);
-    files = files.replaceAll(String.valueOf(filesPath), "");
+    files = files.replaceAll(String.valueOf(location.getExternalLocation()), "");
     DataSource dataSource = dataSourceProviderFn.apply(null);
 
     prepareTableAccordingCreateDisposition(dataSource, table, tableSchema, createDisposition);
     prepareTableAccordingWriteDisposition(dataSource, table, writeDisposition);
 
     String query;
-    if (location.isUsingIntegration()) {
-      String integration = location.getIntegration();
+    if (location.isStorageIntegration()) {
+      String integration = location.getStorageIntegration();
       query =
           String.format(
               "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP) STORAGE_INTEGRATION=%s;",

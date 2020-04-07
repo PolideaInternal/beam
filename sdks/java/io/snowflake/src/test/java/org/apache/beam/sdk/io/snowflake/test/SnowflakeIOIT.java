@@ -30,6 +30,7 @@ import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.common.HashingFn;
 import org.apache.beam.sdk.io.common.IOTestPipelineOptions;
 import org.apache.beam.sdk.io.common.TestRow;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
@@ -39,8 +40,6 @@ import org.apache.beam.sdk.io.snowflake.data.numeric.SFInteger;
 import org.apache.beam.sdk.io.snowflake.data.text.SFString;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.ExternalIntegrationLocation;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Combine;
@@ -102,8 +101,8 @@ public class SnowflakeIOIT {
     writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
 
     location =
-        new ExternalIntegrationLocation(
-            storageIntegration, String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
+        new Location(
+            null, storageIntegration, String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
             .withDatabase(options.getDatabase())
@@ -144,7 +143,7 @@ public class SnowflakeIOIT {
                 .withWriteDisposition(WriteDisposition.TRUNCATE)
                 .withUserDataMapper(getUserDataMapper())
                 .to(tableName)
-                .via(location)
+                .withLocation(location)
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withTableSchema(
                     SFTableSchema.of(

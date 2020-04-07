@@ -20,6 +20,7 @@ package org.apache.beam.sdk.io.snowflake.test.tpch;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.parquet.ParquetIO;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
@@ -27,7 +28,6 @@ import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFNumber;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.values.PCollection;
@@ -111,7 +111,7 @@ public class TpchWriteQueryIT {
             .withQueryTransformation(QUERY_TRANSFORMATION)
             .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
             .withTableSchema(tableSchema)
-            .via(LocationFactory.of(options))
+            .withLocation(new Location(options))
             .withUserDataMapper(TpchTestUtils.getUserDataMapper()));
 
     PipelineResult pipelineResult = pipeline.run(options);

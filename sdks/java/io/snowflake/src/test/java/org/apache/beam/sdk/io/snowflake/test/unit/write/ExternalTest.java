@@ -24,11 +24,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
@@ -59,16 +58,13 @@ public class ExternalTest {
 
   private static BatchTestPipelineOptions options;
   private static SnowflakeIO.DataSourceConfiguration dc;
-  private static Location locationSpec;
+  private static Location location;
 
   private static SnowflakeService snowflakeService;
   private static List<Long> testData;
 
   @BeforeClass
   public static void setupAll() {
-    PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
-    options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
-
     snowflakeService = new FakeSnowflakeServiceImpl();
     testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
   }
@@ -77,6 +73,8 @@ public class ExternalTest {
   public void setup() {
     FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
+    PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
+    options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
     options.setExternalLocation(EXTERNAL_LOCATION);
     options.setServerName("NULL.snowflakecomputing.com");
 
@@ -93,7 +91,7 @@ public class ExternalTest {
   @Test
   public void writeToExternalWithStageTest() throws SnowflakeSQLException {
     options.setStage("STAGE");
-    locationSpec = LocationFactory.of(options);
+    location = new Location(options);
 
     pipeline
         .apply(Create.of(testData))
@@ -103,7 +101,7 @@ public class ExternalTest {
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .to(FAKE_TABLE)
-                .via(locationSpec));
+                .withLocation(location));
     pipeline.run(options).waitUntilFinish();
 
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
@@ -114,7 +112,7 @@ public class ExternalTest {
   @Test
   public void writeToExternalWithIntegrationTest() throws SnowflakeSQLException {
     options.setStorageIntegration("STORAGE_INTEGRATION");
-    locationSpec = LocationFactory.of(options);
+    location = new Location(options);
 
     pipeline
         .apply(Create.of(testData))
@@ -124,7 +122,7 @@ public class ExternalTest {
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .to(FAKE_TABLE)
-                .via(locationSpec));
+                .withLocation(location));
     pipeline.run(options).waitUntilFinish();
 
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
@@ -135,7 +133,7 @@ public class ExternalTest {
   @Test
   public void writeToExternalWithStageWithMapperTest() throws SnowflakeSQLException {
     options.setStage("STAGE");
-    locationSpec = LocationFactory.of(options);
+    location = new Location(options);
 
     pipeline
         .apply(Create.of(testData))
@@ -143,7 +141,7 @@ public class ExternalTest {
             "External text write IO",
             SnowflakeIO.<Long>write(snowflakeService)
                 .to(FAKE_TABLE)
-                .via(locationSpec)
+                .withLocation(location)
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper()));
 
@@ -157,7 +155,7 @@ public class ExternalTest {
   @Test
   public void writeToExternalWithStageKVInput() throws SnowflakeSQLException {
     options.setStage("STAGE");
-    locationSpec = LocationFactory.of(options);
+    location = new Location(options);
 
     pipeline
         .apply(Create.of(testData))
@@ -168,7 +166,7 @@ public class ExternalTest {
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapperKV())
                 .to(FAKE_TABLE)
-                .via(locationSpec));
+                .withLocation(location));
 
     pipeline.run(options).waitUntilFinish();
   }
@@ -176,17 +174,17 @@ public class ExternalTest {
   @Test
   public void writeToExternalWithIntegrationWithoutStageFails() {
     options.setStorageIntegration("STORAGE_INTEGRATION");
-    locationSpec = LocationFactory.of(options);
+    location = new Location(options);
 
     exceptionRule.expect(IllegalArgumentException.class);
     exceptionRule.expectMessage("withQuery() requires stage as location");
 
     String query = "select t.$1 from %s t";
-    ;
+
     SnowflakeIO.Write<Long> write =
         SnowflakeIO.<Long>write(snowflakeService)
             .to(FAKE_TABLE)
-            .via(locationSpec)
+            .withLocation(location)
             .withUserDataMapper(TestUtils.getLongCsvMapper())
             .withQueryTransformation(query)
             .withWriteDisposition(WriteDisposition.APPEND)
@@ -198,7 +196,7 @@ public class ExternalTest {
   @Test
   public void writeToExternalWithTransformationTest() throws SQLException {
     options.setStage("STAGE");
-    locationSpec = LocationFactory.of(options);
+    location = new Location(options);
 
     String query = "select t.$1 from %s t";
     pipeline
@@ -208,7 +206,7 @@ public class ExternalTest {
             "Write SnowflakeIO",
             SnowflakeIO.<KV<String, Long>>write(snowflakeService)
                 .to(FAKE_TABLE)
-                .via(locationSpec)
+                .withLocation(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapperKV())
                 .withDataSourceConfiguration(dc)
                 .withQueryTransformation(query));

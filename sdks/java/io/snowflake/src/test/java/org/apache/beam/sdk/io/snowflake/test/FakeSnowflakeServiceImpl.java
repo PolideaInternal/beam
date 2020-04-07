@@ -27,18 +27,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
 import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
-import org.apache.beam.sdk.io.snowflake.SnowflakeStatementResult;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
 /**
@@ -62,33 +59,15 @@ public class FakeSnowflakeServiceImpl implements SnowflakeService {
   }
 
   @Override
-  public void putOnStage(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String bucketName,
-      String stage,
-      String directory,
-      String fileNameTemplate,
-      Boolean parallelization,
-      Consumer<SnowflakeStatementResult> runStatementResultConsumer) {
-
-    SnowflakeStatementResult<String> snowflakeStatementResult = new SnowflakeStatementResult<>();
-    Arrays.asList(bucketName.replaceAll("[\\[\\]\\ ]", "").split(","))
-        .forEach(file -> snowflakeStatementResult.add(file));
-
-    runStatementResultConsumer.accept(snowflakeStatementResult);
-  }
-
-  @Override
   public void copyToTable(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
       String table,
       SFTableSchema tableSchema,
       String source,
-      Location location,
       CreateDisposition createDisposition,
       WriteDisposition writeDisposition,
-      String filesPath)
+      Location location)
       throws SQLException {
 
     List<String> rows = new ArrayList<>();

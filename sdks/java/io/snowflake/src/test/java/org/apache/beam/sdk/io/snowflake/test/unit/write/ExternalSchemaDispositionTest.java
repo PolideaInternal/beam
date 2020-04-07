@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
@@ -36,8 +37,6 @@ import org.apache.beam.sdk.io.snowflake.data.structured.SFObject;
 import org.apache.beam.sdk.io.snowflake.data.structured.SFVariant;
 import org.apache.beam.sdk.io.snowflake.data.text.SFText;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
@@ -65,7 +64,7 @@ public class ExternalSchemaDispositionTest {
 
   private static BatchTestPipelineOptions options;
   private static SnowflakeIO.DataSourceConfiguration dc;
-  private static Location locationSpec;
+  private static Location location;
 
   private static SnowflakeService snowflakeService;
 
@@ -77,7 +76,7 @@ public class ExternalSchemaDispositionTest {
     options.setServerName("NULL.snowflakecomputing.com");
     options.setStage("STAGE");
 
-    locationSpec = LocationFactory.of(options);
+    location = new Location(options);
 
     snowflakeService = new FakeSnowflakeServiceImpl();
 
@@ -124,7 +123,7 @@ public class ExternalSchemaDispositionTest {
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
-                .via(locationSpec)
+                .withLocation(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLStringCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -162,7 +161,7 @@ public class ExternalSchemaDispositionTest {
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
-                .via(locationSpec)
+                .withLocation(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -201,7 +200,7 @@ public class ExternalSchemaDispositionTest {
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
-                .via(locationSpec)
+                .withLocation(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)

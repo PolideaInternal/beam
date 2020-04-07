@@ -24,14 +24,13 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
@@ -59,7 +58,7 @@ public class ExternalCreateDispositionTest {
 
   private static BatchTestPipelineOptions options;
   private static SnowflakeIO.DataSourceConfiguration dc;
-  private static Location locationSpec;
+  private static Location location;
 
   private static SnowflakeService snowflakeService;
   private static List<Long> testData;
@@ -72,7 +71,7 @@ public class ExternalCreateDispositionTest {
     options.setServerName("NULL.snowflakecomputing.com");
     options.setStage("STAGE");
 
-    locationSpec = LocationFactory.of(options);
+    location = new Location(options);
 
     snowflakeService = new FakeSnowflakeServiceImpl();
     testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
@@ -103,7 +102,7 @@ public class ExternalCreateDispositionTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .via(locationSpec)
+                .withLocation(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -130,7 +129,7 @@ public class ExternalCreateDispositionTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
-                .via(locationSpec)
+                .withLocation(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -152,7 +151,7 @@ public class ExternalCreateDispositionTest {
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
-                .via(locationSpec)
+                .withLocation(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -176,7 +175,7 @@ public class ExternalCreateDispositionTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .via(locationSpec)
+                .withLocation(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
@@ -201,7 +200,7 @@ public class ExternalCreateDispositionTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
-                .via(locationSpec)
+                .withLocation(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)

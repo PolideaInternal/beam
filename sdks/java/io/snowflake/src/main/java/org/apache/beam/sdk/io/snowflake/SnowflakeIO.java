@@ -49,7 +49,6 @@ import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCre
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.transforms.Combine;
 import org.apache.beam.sdk.transforms.Create;
@@ -838,7 +837,7 @@ public class SnowflakeIO {
       return toBuilder().setQuery(query).build();
     }
 
-    public Write<T> via(Location location) {
+    public Write<T> withLocation(Location location) {
       return toBuilder().setLocation(location).build();
     }
 
@@ -868,32 +867,30 @@ public class SnowflakeIO {
 
     @Override
     public PDone expand(PCollection<T> input) {
-      checkArgument((getLocation() != null), "withLocation() is required");
+      Location location = getLocation();
 
-      checkArgument((getUserDataMapper() != null), "withUserDataMapper() is required");
+      checkArgument(
+          location.getStorageIntegration() != null || location.getStage() != null,
+          "withStorageIntegration() or withStage is required");
+
+      checkArgument(getUserDataMapper() != null, "withUserDataMapper() is required");
 
       checkArgument(getTable() != null, "withTable() is required");
 
       if (getQuery() != null) {
-        checkArgument((getLocation().getStage() != null), "withQuery() requires stage as location");
+        checkArgument(location.getStage() != null, "withQuery() requires stage as location");
       }
 
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
 
-      Location location = getLocation();
-
-      PCollection files = writeToFiles(input, location.getFilesPath());
-
-      if (location.isInternal()) {
-        files = putFilesToInternalStage(files, location);
-      }
+      PCollection files = writeToFiles(input, location.getExternalLocation());
 
       files =
           (PCollection)
               files.apply("Create list of files to copy", Combine.globally(new Concatenate()));
-      PCollection out = (PCollection) files.apply("Copy files to table", copyToTable(location));
+      PCollection out = (PCollection) files.apply("Copy files to table", copyToTable());
       out.setCoder(StringUtf8Coder.of());
 
       return PDone.in(out.getPipeline());
@@ -931,37 +928,13 @@ public class SnowflakeIO {
               .apply("Parse KV filenames to Strings", ParDo.of(new Parse()));
     }
 
-    private PCollection putFilesToInternalStage(PCollection pcol, Location location) {
-      if (!getParallelization()) {
-        pcol =
-            (PCollection)
-                pcol.apply("Combine all files into one flow", Combine.globally(new Concatenate()));
-      }
-
-      pcol = (PCollection) pcol.apply("Put files on stage", putToInternalStage(location));
-
-      pcol.setCoder(StringUtf8Coder.of());
-      return pcol;
-    }
-
-    private ParDo.SingleOutput<Object, Object> putToInternalStage(Location location) {
-      return ParDo.of(
-          new PutFn<>(
-              getDataSourceProviderFn(),
-              location.getFilesLocationForCopy(),
-              location.getFilesPath(),
-              getFileNameTemplate(),
-              getParallelization(),
-              getSnowflakeService()));
-    }
-
-    private ParDo.SingleOutput<Object, Object> copyToTable(Location location) {
+    private ParDo.SingleOutput<Object, Object> copyToTable() {
       return ParDo.of(
           new CopyToTableFn<>(
               getDataSourceProviderFn(),
               getTable(),
               getQuery(),
-              location,
+              getLocation(),
               getCreateDisposition(),
               getWriteDisposition(),
               getTableSchema(),
@@ -1018,9 +991,8 @@ public class SnowflakeIO {
   private static class CopyToTableFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
     private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
     private final String source;
-    private final String filesPath;
-    private final Location location;
     private final String table;
+    private final Location location;
     private final SFTableSchema tableSchema;
     private final WriteDisposition writeDisposition;
     private final CreateDisposition createDisposition;
@@ -1047,7 +1019,6 @@ public class SnowflakeIO {
         this.source = directory.replace("gs://", "gcs://");
       }
 
-      this.filesPath = location.getFilesPath();
       this.createDisposition = createDisposition;
       this.writeDisposition = writeDisposition;
       this.snowflakeService = snowflakeService;
@@ -1063,49 +1034,9 @@ public class SnowflakeIO {
           table,
           tableSchema,
           source,
-          location,
           createDisposition,
           writeDisposition,
-          filesPath);
-    }
-  }
-
-  private static class PutFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
-    private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
-    private final String stage;
-    private final String directory;
-    private final String fileNameTemplate;
-    private final Boolean parallelization;
-    private final SnowflakeService snowflakeService;
-
-    PutFn(
-        SerializableFunction<Void, DataSource> dataSourceProviderFn,
-        String files,
-        String directory,
-        String fileNameTemplate,
-        Boolean parallelization,
-        SnowflakeService snowflakeService) {
-      this.dataSourceProviderFn = dataSourceProviderFn;
-      this.stage = files;
-      this.directory = directory;
-      this.fileNameTemplate = fileNameTemplate;
-      this.parallelization = parallelization;
-      this.snowflakeService = snowflakeService;
-    }
-
-    /* Right now it is paralleled per each created file */
-    @ProcessElement
-    public void processElement(ProcessContext context) throws Exception {
-      snowflakeService.putOnStage(
-          dataSourceProviderFn,
-          context.element().toString(),
-          stage,
-          directory,
-          fileNameTemplate,
-          parallelization,
-          result -> {
-            result.getAll().forEach(file -> context.output((OutputT) file));
-          });
+          location);
     }
   }
 }
