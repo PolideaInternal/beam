@@ -1,5 +1,0 @@
-{{ if eq (.Get "wrapper") "p"}}
-  <p class="{{ .Get `class` }}">{{ .Inner | markdownify }}</p>
-{{ else }}
-  <div class="{{ .Get `class` }}">{{ .Inner }}</div>
-{{ end }}

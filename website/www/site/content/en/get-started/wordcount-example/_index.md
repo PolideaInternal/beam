@@ -18,41 +18,9 @@ limitations under the License.
 
 # Apache Beam WordCount Examples
 
-- [MinimalWordCount example](#minimalwordcount-example)
-  - [Creating the pipeline](#creating-the-pipeline)
-  - [Applying pipeline transforms](#applying-pipeline-transforms)
-  - [Running the pipeline](#running-the-pipeline)
-- [WordCount example](#wordcount-example)
-  - [Specifying explicit DoFns](#specifying-explicit-dofns)
-  - [Creating composite transforms](#creating-composite-transforms)
-  - [Using parameterizable PipelineOptions](#using-parameterizable-pipelineoptions)
-- [DebuggingWordCount example](#debuggingwordcount-example)
-  - [Logging](#logging)
-    - [Direct Runner](#direct-runner)
-    - [Cloud Dataflow Runner](#cloud-dataflow-runner)
-    - [Apache Spark Runner](#apache-spark-runner)
-    - [Apache Flink Runner](#apache-flink-runner)
-    - [Apache Apex Runner](#apache-apex-runner)
-    - [Apache Nemo Runner](#apache-nemo-runner)
-  - [Testing your pipeline with asserts](#testing-your-pipeline-with-asserts)
-- [WindowedWordCount example](#windowedwordcount-example)
-  - [Unbounded and bounded datasets](#unbounded-and-bounded-datasets)
-  - [Adding timestamps to data](#adding-timestamps-to-data)
-  - [Windowing](#windowing)
-  - [Reusing PTransforms over windowed PCollections](#reusing-ptransforms-over-windowed-pcollections)
-- [StreamingWordCount example](#streamingwordcount-example)
-  - [Reading an unbounded dataset](#reading-an-unbounded-dataset)
-  - [Writing unbounded results](#writing-unbounded-results)
-- [Next Steps](#next-steps)
+{{< toc >}}
 
-<nav class="language-switcher">
-  <strong>Adapt for:</strong>
-  <ul>
-    <li data-type="language-java">Java SDK</li>
-    <li data-type="language-py">Python SDK</li>
-    <li data-type="language-go">Go SDK</li>
-  </ul>
-</nav>
+{{< language-switcher java py go >}}
 
 The WordCount examples demonstrate how to set up a processing pipeline that can
 read text, tokenize the text lines into individual words, and perform a
@@ -79,54 +47,42 @@ MinimalWordCount demonstrates a simple pipeline that uses the Direct Runner to
 read from a text file, apply transforms to tokenize and count the words, and
 write the data to an output text file.
 
-{{% classwrapper class="language-java language-go" wrapper="p" %}}
+{{< paragraph class="language-java language-go" >}}
 This example hard-codes the locations for its input and output files and doesn't
 perform any error checking; it is intended to only show you the "bare bones" of
 creating a Beam pipeline. This lack of parameterization makes this particular
 pipeline less portable across different runners than standard Beam pipelines. In
 later examples, we will parameterize the pipeline's input and output sources and
 show other best practices.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.MinimalWordCount
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 python -m apache_beam.examples.wordcount_minimal --input YOUR_INPUT_FILE --output counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 $ go install github.com/apache/beam/sdks/go/examples/minimal_wordcount
 $ minimal_wordcount
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 To view the full code in Java, see
 **[MinimalWordCount](https://github.com/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/MinimalWordCount.java).**
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py" wrapper="p" %}}
+{{< paragraph class="language-py" >}}
 To view the full code in Python, see
 **[wordcount_minimal.py](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/examples/wordcount_minimal.py).**
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 To view the full code in Go, see
 **[minimal_wordcount.go](https://github.com/apache/beam/blob/master/sdks/go/examples/minimal_wordcount/minimal_wordcount.go).**
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 **Key Concepts:**
 
@@ -143,77 +99,61 @@ excerpts from the MinimalWordCount pipeline.
 
 ### Creating the pipeline
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 In this example, the code first creates a `PipelineOptions` object. This object
 lets us set various options for our pipeline, such as the pipeline runner that
 will execute our pipeline and any runner-specific configuration required by the
 chosen runner. In this example we set these options programmatically, but more
 often, command-line arguments are used to set `PipelineOptions`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 You can specify a runner for executing your pipeline, such as the
 `DataflowRunner` or `SparkRunner`. If you omit specifying a runner, as in this
 example, your pipeline executes locally using the `DirectRunner`. In the next
 sections, we will specify the pipeline's runner.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
  // Create a PipelineOptions object. This object lets us set various execution
  // options for our pipeline, such as the runner you wish to use. This example
  // will run with the DirectRunner by default, based on the class path configured
  // in its dependencies.
  PipelineOptions options = PipelineOptionsFactory.create();
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_options
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 The next step is to create a `Pipeline` object with the options we've just
 constructed. The Pipeline object builds up the graph of transformations to be
 executed, associated with that particular pipeline.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 The first step is to create a `Pipeline` object. It builds up the graph of
 transformations to be executed, associated with that particular pipeline.
 The scope allows grouping into composite transforms.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 Pipeline p = Pipeline.create(options);
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_create
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 p := beam.NewPipeline
 s := p.Root()
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Applying pipeline transforms
 
@@ -238,29 +178,19 @@ The MinimalWordCount pipeline contains five transforms:
     represents one line of text from the input file. This example uses input
     data stored in a publicly accessible Google Cloud Storage bucket ("gs://").
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 p.apply(TextIO.read().from("gs://apache-beam-samples/shakespeare/*"))
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_read
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 lines := textio.Read(s, "gs://apache-beam-samples/shakespeare/*")
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 2.  This transform splits the lines in `PCollection<String>`, where each element
     is an individual word in Shakespeare's collected texts.
@@ -272,36 +202,26 @@ lines := textio.Read(s, "gs://apache-beam-samples/shakespeare/*")
     previous `TextIO.Read` transform. The `ParDo` transform outputs a new
     `PCollection`, where each element represents an individual word in the text.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
     .apply("ExtractWords", FlatMapElements
         .into(TypeDescriptors.strings())
         .via((String line) -> Arrays.asList(line.split("[^\\p{L}]+"))))
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 # The Flatmap transform is a simplified version of ParDo.
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_pardo
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 words := beam.ParDo(s, func(line string, emit func(string)) {
     for _, word := range wordRE.FindAllString(line, -1) {
         emit(word)
     }
 }, lines)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 3.  The SDK-provided `Count` transform is a generic transform that takes a
     `PCollection` of any type, and returns a `PCollection` of key/value pairs.
@@ -314,29 +234,19 @@ words := beam.ParDo(s, func(line string, emit func(string)) {
     of key/value pairs where each key represents a unique word in the text and
     the associated value is the occurrence count for each.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 .apply(Count.<String>perElement())
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_count
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 counted := stats.Count(s, words)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 4.  The next transform formats each of the key/value pairs of unique words and
     occurrence counts into a printable string suitable for writing to an output
@@ -346,113 +256,83 @@ counted := stats.Count(s, words)
     simple `ParDo`. For each element in the input `PCollection`, the map
     transform applies a function that produces exactly one output element.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 .apply("FormatResults", MapElements
     .into(TypeDescriptors.strings())
     .via((KV<String, Long> wordCount) -> wordCount.getKey() + ": " + wordCount.getValue()))
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_map
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 formatted := beam.ParDo(s, func(w string, c int) string {
     return fmt.Sprintf("%s: %v", w, c)
 }, counted)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 5.  A text file write transform. This transform takes the final `PCollection` of
     formatted Strings as input and writes each element to an output text file.
     Each element in the input `PCollection` represents one line of text in the
     resulting output file.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 .apply(TextIO.write().to("wordcounts"));
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_write
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 textio.Write(s, "wordcounts.txt", formatted)
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 Note that the `Write` transform produces a trivial result value of type `PDone`,
 which in this case is ignored.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 Note that the `Write` transform returns no PCollections.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ### Running the pipeline
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 Run the pipeline by calling the `run` method, which sends your pipeline to be
 executed by the pipeline runner that you specified in your `PipelineOptions`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 Run the pipeline by passing it to a runner.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 p.run().waitUntilFinish();
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_minimal_run
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 direct.Execute(context.Background(), p)
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 Note that the `run` method is asynchronous. For a blocking execution, call the
 <span class="language-java">`waitUntilFinish`</span>
 <span class="language-py">`wait_until_finish`</span> method on the result object
 returned by the call to `run`.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ## WordCount example
 
@@ -467,143 +347,85 @@ above section, [MinimalWordCount](#minimalwordcount-example).
 
 **To run this example in Java:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
      -Dexec.args="--inputFile=pom.xml --output=counts" -Pdirect-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
      -Dexec.args="--inputFile=pom.xml --output=counts --runner=ApexRunner" -Papex-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
      -Dexec.args="--runner=FlinkRunner --inputFile=pom.xml --output=counts" -Pflink-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 $ mvn package exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
      -Dexec.args="--runner=FlinkRunner --flinkMaster=<flink master> --filesToStage=target/word-count-beam-bundled-0.1.jar \
                   --inputFile=/path/to/quickstart/pom.xml --output=/tmp/counts" -Pflink-runner
 
 You can monitor the running job by visiting the Flink dashboard at http://<flink master>:8081
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
      -Dexec.args="--runner=SparkRunner --inputFile=pom.xml --output=counts" -Pspark-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
      -Dexec.args="--runner=DataflowRunner --gcpTempLocation=gs://YOUR_GCS_BUCKET/tmp \
                   --inputFile=gs://apache-beam-samples/shakespeare/* --output=gs://YOUR_GCS_BUCKET/counts" \
      -Pdataflow-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
      -Dexec.args="--inputFile=pom.xml --output=counts --runner=SamzaRunner" -Psamza-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 $ mvn package -Pnemo-runner && java -cp target/word-count-beam-bundled-0.1.jar org.apache.beam.examples.WordCount \
      --runner=NemoRunner --inputFile=`pwd`/pom.xml --output=counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 $ mvn package -P jet-runner && java -cp target/word-count-beam-bundled-0.1.jar org.apache.beam.examples.WordCount \
      --runner=JetRunner --jetLocalMode=3 --inputFile=`pwd`/pom.xml --output=counts
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Java, see
 **[WordCount](https://github.com/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/WordCount.java).**
 
 **To run this example in Python:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 python -m apache_beam.examples.wordcount --input YOUR_INPUT_FILE --output counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 Currently, running wordcount.py on Flink requires a full download of the Beam source code.
 See https://beam.apache.org/roadmap/portability/#python-on-flink for more information.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 Currently, running wordcount.py on Flink requires a full download of the Beam source code.
 See https://beam.apache.org/documentation/runners/flink/ for more information.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 Currently, running wordcount.py on Spark requires a full download of the Beam source code.
 See https://beam.apache.org/roadmap/portability/#python-on-spark for more information.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 # As part of the initial setup, install Google Cloud Platform specific extra components.
 pip install apache-beam[gcp]
 python -m apache_beam.examples.wordcount --input gs://dataflow-samples/shakespeare/kinglear.txt \
@@ -611,83 +433,47 @@ python -m apache_beam.examples.wordcount --input gs://dataflow-samples/shakespea
                                          --runner DataflowRunner \
                                          --project YOUR_GCP_PROJECT \
                                          --temp_location gs://YOUR_GCS_BUCKET/tmp/
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 This runner is not yet available for the Python SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Python, see
 **[wordcount.py](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/examples/wordcount.py).**
 
 **To run this example in Go:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 $ go install github.com/apache/beam/sdks/go/examples/wordcount
 $ wordcount --input <PATH_TO_INPUT_FILE> --output counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 $ go install github.com/apache/beam/sdks/go/examples/wordcount
 # As part of the initial setup, for non linux users - install package unix before run
 $ go get -u golang.org/x/sys/unix
@@ -698,33 +484,19 @@ $ wordcount --input gs://dataflow-samples/shakespeare/kinglear.txt \
             --temp_location gs://<your-gcs-bucket>/tmp/ \
             --staging_location gs://<your-gcs-bucket>/binaries/ \
             --worker_harness_container_image=apache/beam_go_sdk:latest
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 This runner is not yet available for the Go SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Go, see
 **[wordcount.go](https://github.com/apache/beam/blob/master/sdks/go/examples/wordcount/wordcount.go).**
@@ -740,7 +512,7 @@ pipeline code into smaller sections.
 
 ### Specifying explicit DoFns
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 When using `ParDo` transforms, you need to specify the processing operation that
 gets applied to each element in the input `PCollection`. This processing
 operation is a subclass of the SDK class `DoFn`. You can create the `DoFn`
@@ -748,20 +520,18 @@ subclasses for each `ParDo` inline, as an anonymous inner class instance, as is
 done in the previous example (MinimalWordCount). However, it's often a good
 idea to define the `DoFn` at the global level, which makes it easier to unit
 test and can make the `ParDo` code more readable.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 When using `ParDo` transforms, you need to specify the processing operation that
 gets applied to each element in the input `PCollection`. This processing
 operation is either a named function or a struct with specially-named methods. You
 can use anomynous functions (but not closures). However, it's often a good
 idea to define the `DoFn` at the global level, which makes it easier to unit
 test and can make the `ParDo` code more readable.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // In this example, ExtractWordsFn is a DoFn that is defined as a static class:
 
 static class ExtractWordsFn extends DoFn<String, String> {
@@ -772,65 +542,55 @@ static class ExtractWordsFn extends DoFn<String, String> {
         ...
     }
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 # In this example, the DoFns are defined as classes:
 
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_wordcount_dofn
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 // In this example, extractFn is a DoFn that is defined as a function:
 
 func extractFn(ctx context.Context, line string, emit func(string)) {
    ...
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Creating composite transforms
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 If you have a processing operation that consists of multiple transforms or
 `ParDo` steps, you can create it as a subclass of `PTransform`. Creating a
 `PTransform` subclass allows you to encapsulate complex transforms, can make
 your pipeline's structure more clear and modular, and makes unit testing easier.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 If you have a processing operation that consists of multiple transforms or
 `ParDo` steps, you can use a normal Go function to encapsulate them. You can
 furthermore use a named subscope to group them as a composite transform visible
 for monitoring.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 In this example, two transforms are encapsulated as the `PTransform` subclass
 `CountWords`. `CountWords` contains the `ParDo` that runs `ExtractWordsFn` and
 the SDK-provided `Count` transform.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 In this example, two transforms are encapsulated as a `CountWords` function.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 When `CountWords` is defined, we specify its ultimate input and output; the
 input is the `PCollection<String>` for the extraction operation, and the output
 is the `PCollection<KV<String, Long>>` produced by the count operation.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public static class CountWords extends PTransform<PCollection<String>,
     PCollection<KV<String, Long>>> {
   @Override
@@ -855,21 +615,15 @@ public static void main(String[] args) throws IOException {
    .apply(new CountWords())
    ...
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_wordcount_composite
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 func CountWords(s beam.Scope, lines beam.PCollection) beam.PCollection {
 	s = s.Scope("CountWords")
 
@@ -879,9 +633,7 @@ func CountWords(s beam.Scope, lines beam.PCollection) beam.PCollection {
 	// Count the number of times each word occurs.
 	return stats.Count(s, col)
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Using parameterizable PipelineOptions
 
@@ -890,18 +642,16 @@ the more common way is to define your own configuration options via command-line
 argument parsing. Defining your configuration options via the command-line makes
 the code more easily portable across different runners.
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 Add arguments to be processed by the command-line parser, and specify default
 values for them. You can then access the options values in your pipeline code.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 You can use the standard `flag` package for this purpose.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public static interface WordCountOptions extends PipelineOptions {
   @Description("Path of the file to read from")
   @Default.String("gs://dataflow-samples/shakespeare/kinglear.txt")
@@ -916,21 +666,15 @@ public static void main(String[] args) {
   Pipeline p = Pipeline.create(options);
   ...
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:examples_wordcount_wordcount_options
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 var input = flag.String("input", "gs://apache-beam-samples/shakespeare/kinglear.txt", "File(s) to read.")
 
 func main() {
@@ -940,9 +684,7 @@ func main() {
 
     lines := textio.Read(s, *input)
     ...
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## DebuggingWordCount example
 
@@ -951,140 +693,82 @@ instrumenting your pipeline code.
 
 **To run this example in Java:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordCount \
      -Dexec.args="--output=counts" -Pdirect-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordCount \
      -Dexec.args="--output=counts --runner=ApexRunner" -Papex-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordCount \
      -Dexec.args="--runner=FlinkRunner --output=counts" -Pflink-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 $ mvn package exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordCount \
      -Dexec.args="--runner=FlinkRunner --flinkMaster=<flink master> --filesToStage=target/word-count-beam-bundled-0.1.jar \
                   --output=/tmp/counts" -Pflink-runner
 
 You can monitor the running job by visiting the Flink dashboard at http://<flink master>:8081
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordCount \
      -Dexec.args="--runner=SparkRunner --output=counts" -Pspark-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordCount \
    -Dexec.args="--runner=DataflowRunner --gcpTempLocation=gs://<your-gcs-bucket>/tmp \
                 --inputFile=gs://apache-beam-samples/shakespeare/* --output=gs://<your-gcs-bucket>/counts" \
      -Pdataflow-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordCount \
      -Dexec.args="--runner=SamzaRunner --output=counts" -Psamza-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 $ mvn package -Pnemo-runner && java -cp target/word-count-beam-bundled-0.1.jar org.apache.beam.examples.DebuggingWordCount \
      --runner=NemoRunner --inputFile=`pwd`/pom.xml --output=counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 $ mvn package -P jet-runner && java -cp target/word-count-beam-bundled-0.1.jar org.apache.beam.examples.DebuggingWordCount \
      --runner=JetRunner --jetLocalMode=3 --output=counts
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Java, see
 [DebuggingWordCount](https://github.com/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/DebuggingWordCount.java).
 
 **To run this example in Python:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 python -m apache_beam.examples.wordcount_debugging --input YOUR_INPUT_FILE --output counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 # As part of the initial setup, install Google Cloud Platform specific extra components.
 pip install apache-beam[gcp]
 python -m apache_beam.examples.wordcount_debugging --input gs://dataflow-samples/shakespeare/kinglear.txt \
@@ -1092,83 +776,47 @@ python -m apache_beam.examples.wordcount_debugging --input gs://dataflow-samples
                                          --runner DataflowRunner \
                                          --project YOUR_GCP_PROJECT \
                                          --temp_location gs://YOUR_GCS_BUCKET/tmp/
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 This runner is not yet available for the Python SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Python, see
 **[wordcount_debugging.py](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/examples/wordcount_debugging.py).**
 
 **To run this example in Go:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 $ go install github.com/apache/beam/sdks/go/examples/debugging_wordcount
 $ debugging_wordcount --input <PATH_TO_INPUT_FILE> --output counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 $ go install github.com/apache/beam/sdks/go/examples/debugging_wordcount
 # As part of the initial setup, for non linux users - install package unix before run
 $ go get -u golang.org/x/sys/unix
@@ -1179,33 +827,19 @@ $ debugging_wordcount --input gs://dataflow-samples/shakespeare/kinglear.txt \
                       --temp_location gs://<your-gcs-bucket>/tmp/ \
                       --staging_location gs://<your-gcs-bucket>/binaries/ \
                       --worker_harness_container_image=apache-docker-beam-snapshots-docker.bintray.io/beam/go:20180515
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 This runner is not yet available for the Go SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Go, see
 **[debugging_wordcount.go](https://github.com/apache/beam/blob/master/sdks/go/examples/debugging_wordcount/debugging_wordcount.go).**
@@ -1222,9 +856,7 @@ pipeline code into smaller sections.
 
 Each runner may choose to handle logs in its own way.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 // This example uses .trace and .debug:
 
 public class DebuggingWordCount {
@@ -1244,21 +876,15 @@ public class DebuggingWordCount {
     }
   }
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-<!-- ```py
+{{< highlight py >}}
+<!--
 {% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:example_wordcount_debugging_logging
-%}``` -->
+%}-->
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 type filterFn struct {
     ...
 }
@@ -1273,9 +899,7 @@ func (f *filterFn) ProcessElement(ctx context.Context, word string, count int, e
         log.Debugf(ctx, "Did not match: %v", word)
     }
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 #### Direct Runner
 
@@ -1293,7 +917,7 @@ that Cloud Dataflow has spun up to complete your job. Logging statements in your
 pipeline's `DoFn` instances will appear in Stackdriver Logging as your pipeline
 runs.
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 You can also control the worker log levels. Cloud Dataflow workers that execute
 user code are configured to log to Stackdriver Logging by default at "INFO" log
 level and higher. You can override log levels for specific logging namespaces by
@@ -1302,16 +926,16 @@ For example, by specifying `--workerLogLevelOverrides={"org.apache.beam.examples
 when executing a pipeline using the Cloud Dataflow service, Stackdriver Logging
 will contain only "DEBUG" or higher level logs for the package in addition to
 the default "INFO" or higher level logs.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 The default Cloud Dataflow worker logging configuration can be overridden by
 specifying `--defaultWorkerLogLevel=<one of TRACE, DEBUG, INFO, WARN, ERROR>`.
 For example, by specifying `--defaultWorkerLogLevel=DEBUG` when executing a
 pipeline with the Cloud Dataflow service, Cloud Logging will contain all "DEBUG"
 or higher level logs. Note that changing the default worker log level to TRACE
 or DEBUG significantly increases the amount of logs output.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 #### Apache Spark Runner
 
@@ -1340,34 +964,32 @@ all be found under the directory.
 
 ### Testing your pipeline with asserts
 
-{{% classwrapper class="language-java language-py" wrapper="p" %}}
+{{< paragraph class="language-java language-py" >}}
 <span class="language-java">`PAssert`</span><span class="language-py">`assert_that`</span>
 is a set of convenient PTransforms in the style of Hamcrest's collection
 matchers that can be used when writing pipeline level tests to validate the
 contents of PCollections. Asserts are best used in unit tests with small datasets.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 The `passert` package contains convenient PTransforms that can be used when
 writing pipeline level tests to validate the contents of PCollections. Asserts
 are best used in unit tests with small datasets.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 The following example verifies that the set of filtered words matches our
 expected counts. The assert does not produce any output, and the pipeline only
 succeeds if all of the expectations are met.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-py language-go" wrapper="p" %}}
+{{< paragraph class="language-py language-go" >}}
 The following example verifies that two collections contain the same values. The
 assert does not produce any output, and the pipeline only succeeds if all of the
 expectations are met.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public static void main(String[] args) {
   ...
   List<KV<String, Long>> expectedResults = Arrays.asList(
@@ -1376,35 +998,25 @@ public static void main(String[] args) {
   PAssert.that(filteredWords).containsInAnyOrder(expectedResults);
   ...
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
 
 with TestPipeline() as p:
   assert_that(p | Create([1, 2, 3]), equal_to([1, 2, 3]))
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 ...
 passert.Equals(s, formatted, "Flourish: 3", "stomach: 1")
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-java" wrapper="p" %}}
+{{< paragraph class="language-java" >}}
 See [DebuggingWordCountTest](https://github.com/apache/beam/blob/master/examples/java/src/test/java/org/apache/beam/examples/DebuggingWordCountTest.java)
 for an example unit test.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ## WindowedWordCount example
 
@@ -1423,91 +1035,55 @@ pipeline code into smaller sections.
 
 **To run this example in Java:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCount \
      -Dexec.args="--inputFile=pom.xml --output=counts" -Pdirect-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCount \
      -Dexec.args="--inputFile=pom.xml --output=counts --runner=ApexRunner" -Papex-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCount \
      -Dexec.args="--runner=FlinkRunner --inputFile=pom.xml --output=counts" -Pflink-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 $ mvn package exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCount \
      -Dexec.args="--runner=FlinkRunner --flinkMaster=<flink master> --filesToStage=target/word-count-beam-bundled-0.1.jar \
                   --inputFile=/path/to/quickstart/pom.xml --output=/tmp/counts" -Pflink-runner
 
 You can monitor the running job by visiting the Flink dashboard at http://<flink master>:8081
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCount \
      -Dexec.args="--runner=SparkRunner --inputFile=pom.xml --output=counts" -Pspark-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCount \
    -Dexec.args="--runner=DataflowRunner --gcpTempLocation=gs://YOUR_GCS_BUCKET/tmp \
                 --inputFile=gs://apache-beam-samples/shakespeare/* --output=gs://YOUR_GCS_BUCKET/counts" \
      -Pdataflow-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCount \
      -Dexec.args="--runner=SamzaRunner --inputFile=pom.xml --output=counts" -Psamza-runner
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 $ mvn package -Pnemo-runner && java -cp target/word-count-beam-bundled-0.1.jar org.apache.beam.examples.WindowedWordCount \
      --runner=NemoRunner --inputFile=`pwd`/pom.xml --output=counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 $ mvn package -P jet-runner && java -cp target/word-count-beam-bundled-0.1.jar org.apache.beam.examples.WindowedWordCount \
      --runner=JetRunner --jetLocalMode=3 --inputFile=`pwd`/pom.xml --output=counts
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Java, see
 **[WindowedWordCount](https://github.com/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/WindowedWordCount.java).**
@@ -1518,49 +1094,27 @@ This pipeline writes its results to a BigQuery table `--output_table`
 parameter. using the format `PROJECT:DATASET.TABLE` or
 `DATASET.TABLE`.
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 python -m apache_beam.examples.windowed_wordcount --input YOUR_INPUT_FILE --output_table PROJECT:DATASET.TABLE
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 # As part of the initial setup, install Google Cloud Platform specific extra components.
 pip install apache-beam[gcp]
 python -m apache_beam.examples.windowed_wordcount --input YOUR_INPUT_FILE \
@@ -1568,83 +1122,47 @@ python -m apache_beam.examples.windowed_wordcount --input YOUR_INPUT_FILE \
                                          --runner DataflowRunner \
                                          --project YOUR_GCP_PROJECT \
                                          --temp_location gs://YOUR_GCS_BUCKET/tmp/
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 This runner is not yet available for the Python SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Python, see
 **[windowed_wordcount.py](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/examples/windowed_wordcount.py).**
 
 **To run this example in Go:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 $ go install github.com/apache/beam/sdks/go/examples/windowed_wordcount
 $ windowed_wordcount --input <PATH_TO_INPUT_FILE> --output counts
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 $ go install github.com/apache/beam/sdks/go/examples/windowed_wordcount
 # As part of the initial setup, for non linux users - install package unix before run
 $ go get -u golang.org/x/sys/unix
@@ -1655,33 +1173,19 @@ $ windowed_wordcount --input gs://dataflow-samples/shakespeare/kinglear.txt \
             --temp_location gs://<your-gcs-bucket>/tmp/ \
             --staging_location gs://<your-gcs-bucket>/binaries/ \
             --worker_harness_container_image=apache-docker-beam-snapshots-docker.bintray.io/beam/go:20180515
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Go SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 This runner is not yet available for the Go SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Go, see
 **[windowed_wordcount.go](https://github.com/apache/beam/blob/master/sdks/go/examples/windowed_wordcount/windowed_wordcount.go).**
@@ -1712,9 +1216,7 @@ Recall that the input for this example is a set of Shakespeare's texts, which is
 a finite set of data. Therefore, this example reads bounded data from a text
 file:
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 public static void main(String[] args) throws IOException {
     Options options = ...
     Pipeline pipeline = Pipeline.create(options);
@@ -1722,13 +1224,9 @@ public static void main(String[] args) throws IOException {
     PCollection<String> input = pipeline
       .apply(TextIO.read().from(options.getInputFile()))
 
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 def main(arvg=None):
   parser = argparse.ArgumentParser()
   parser.add_argument('--input-file',
@@ -1738,13 +1236,9 @@ def main(arvg=None):
   pipeline_options = PipelineOptions(pipeline_args)
   p = beam.Pipeline(options=pipeline_options)
   lines  = p | 'read' >> ReadFromText(known_args.input_file)
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 func main() {
    ...
    p := beam.NewPipeline()
@@ -1753,9 +1247,7 @@ func main() {
    lines := textio.Read(s, *input)
    ...
 }
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Adding timestamps to data
 
@@ -1770,29 +1262,17 @@ In this example the input is bounded. For the purpose of the example, the `DoFn`
 method named `AddTimestampsFn` (invoked by `ParDo`) will set a timestamp for
 each element in the `PCollection`.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 .apply(ParDo.of(new AddTimestampFn(minTimestamp, maxTimestamp)));
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 beam.Map(AddTimestampFn(timestamp_seconds))
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 timestampedLines := beam.ParDo(s, &addTimestampFn{Min: mtime.Now()}, lines)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 Below is the code for `AddTimestampFn`, a `DoFn` invoked by `ParDo`, that sets
 the data element of the timestamp given the element itself. For example, if the
@@ -1802,9 +1282,7 @@ works of Shakespeare, so in this case we've made up random timestamps just to
 illustrate the concept. Each line of the input text will get a random associated
 timestamp sometime in a 2-hour period.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 static class AddTimestampFn extends DoFn<String, String> {
   private final Instant minTimestamp;
   private final Instant maxTimestamp;
@@ -1827,13 +1305,9 @@ static class AddTimestampFn extends DoFn<String, String> {
     c.outputWithTimestamp(c.element(), new Instant(randomTimestamp));
   }
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 class AddTimestampFn(beam.DoFn):
   
   def __init__(self, min_timestamp, max_timestamp):
@@ -1844,13 +1318,9 @@ class AddTimestampFn(beam.DoFn):
     return window.TimestampedValue(
        element,
        random.randint(self.min_timestamp, self.max_timestamp))
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 type addTimestampFn struct {
 	Min beam.EventTime `json:"min"`
 }
@@ -1859,14 +1329,12 @@ func (f *addTimestampFn) ProcessElement(x beam.X) (beam.EventTime, beam.X) {
 	timestamp := f.Min.Add(time.Duration(rand.Int63n(2 * time.Hour.Nanoseconds())))
 	return timestamp, x
 }
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" wrapper="p" %}}
+{{< paragraph class="language-go" >}}
 Note that the use of the `beam.X` "type variable" allows the transform to be
 used for any type.
-{{% /classwrapper %}}
+{{< /paragraph >}}
 
 ### Windowing
 
@@ -1879,61 +1347,37 @@ The WindowedWordCount example applies fixed-time windowing, wherein each
 window represents a fixed time interval. The fixed window size for this example
 defaults to 1 minute (you can change this with a command-line option).
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PCollection<String> windowedWords = input
   .apply(Window.<String>into(
     FixedWindows.of(Duration.standardMinutes(options.getWindowSize()))));
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 windowed_words = input | beam.WindowInto(window.FixedWindows(60 * window_size_minutes))
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 windowedLines := beam.WindowInto(s, window.NewFixedWindows(time.Minute), timestampedLines)
 
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Reusing PTransforms over windowed PCollections
 
 You can reuse existing PTransforms that were created for manipulating simple
 PCollections over windowed PCollections as well.
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
 PCollection<KV<String, Long>> wordCounts = windowedWords.apply(new WordCount.CountWords());
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
 word_counts = windowed_words | CountWords()
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
 counted := wordcount.CountWords(s, windowedLines)
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## StreamingWordCount example
 
@@ -1955,52 +1399,30 @@ frequency count of the words seen in each 15 second window.
 
 **To run this example in Python:**
 
-{{% classwrapper class="runner-direct" %}}
-
-```
+{{< highlight class="runner-direct" >}}
 python -m apache_beam.examples.streaming_wordcount \
   --input_topic "projects/YOUR_PUBSUB_PROJECT_NAME/topics/YOUR_INPUT_TOPIC" \
   --output_topic "projects/YOUR_PUBSUB_PROJECT_NAME/topics/YOUR_OUTPUT_TOPIC" \
   --streaming
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-apex" %}}
-
-```
+{{< highlight class="runner-apex" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-local" %}}
-
-```
+{{< highlight class="runner-flink-local" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-flink-cluster" %}}
-
-```
+{{< highlight class="runner-flink-cluster" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-spark" %}}
-
-```
+{{< highlight class="runner-spark" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-dataflow" %}}
-
-```
+{{< highlight class="runner-dataflow" >}}
 # As part of the initial setup, install Google Cloud Platform specific extra components.
 pip install apache-beam[gcp]
 python -m apache_beam.examples.streaming_wordcount \
@@ -2010,33 +1432,19 @@ python -m apache_beam.examples.streaming_wordcount \
   --input_topic "projects/YOUR_PUBSUB_PROJECT_NAME/topics/YOUR_INPUT_TOPIC" \
   --output_topic "projects/YOUR_PUBSUB_PROJECT_NAME/topics/YOUR_OUTPUT_TOPIC" \
   --streaming
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-samza-local" %}}
-
-```
+{{< highlight class="runner-samza-local" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-nemo" %}}
-
-```
+{{< highlight class="runner-nemo" >}}
 This runner is not yet available for the Python SDK.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="runner-jet" %}}
-
-```
+{{< highlight class="runner-jet" >}}
 This runner is not yet available for the Python SDK.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 To view the full code in Python, see
 **[streaming_wordcount.py](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/examples/streaming_wordcount.py).**
@@ -2053,34 +1461,22 @@ This example uses an unbounded dataset as input. The code reads Pub/Sub
 messages from a Pub/Sub subscription or topic using
 [`beam.io.ReadStringsFromPubSub`](https://beam.apache.org/releases/pydoc/{{< param release_latest >}}/apache_beam.io.gcp.pubsub.html#apache_beam.io.gcp.pubsub.ReadStringsFromPubSub).
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   // This example is not currently available for the Beam SDK for Java.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
   # Read from Pub/Sub into a PCollection.
   if known_args.input_subscription:
     lines = p | beam.io.ReadStringsFromPubSub(
         subscription=known_args.input_subscription)
   else:
     lines = p | beam.io.ReadStringsFromPubSub(topic=known_args.input_topic)
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
   // This example is not currently available for the Beam SDK for Go.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ### Writing unbounded results
 
@@ -2093,30 +1489,18 @@ This example uses an unbounded `PCollection` and streams the results to
 Google Pub/Sub. The code formats the results and writes them to a Pub/Sub topic
 using [`beam.io.WriteStringsToPubSub`](https://beam.apache.org/releases/pydoc/{{< param release_latest >}}/apache_beam.io.gcp.pubsub.html#apache_beam.io.gcp.pubsub.WriteStringsToPubSub).
 
-{{% classwrapper class="language-java" %}}
-
-```java
+{{< highlight java >}}
   // This example is not currently available for the Beam SDK for Java.
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-py" %}}
-
-```py
+{{< highlight py >}}
   # Write to Pub/Sub
   output | beam.io.WriteStringsToPubSub(known_args.output_topic)
-```
+{{< /highlight >}}
 
-{{% /classwrapper %}}
-
-{{% classwrapper class="language-go" %}}
-
-```go
+{{< highlight go >}}
   // This example is not currently available for the Beam SDK for Go.
-```
-
-{{% /classwrapper %}}
+{{< /highlight >}}
 
 ## Next Steps
 
