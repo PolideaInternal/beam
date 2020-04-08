@@ -29,42 +29,39 @@ import unittest
 
 from nose.plugins.attrib import attr
 
-from apache_beam.io.external.generate_sequence import GenerateSequence
+from apache_beam.io.external.snowflake import ReadFromSnowflake
 from apache_beam.testing.test_pipeline import TestPipeline
+from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
-from apache_beam.options.pipeline_options import PipelineOptions
 
-# options = PipelineOptions([
-#   "--runner=FlinkRunner",
-#   "--flink_version=1.9",
-#   "--flink_master=localhost:8081",
-#   "--environment_type=LOOPBACK"
-# ])
-options = []
+SERVER_NAME = "fy22127.eu-central-1.snowflakecomputing.com"
+USERNAME = "uber"
+PASSWORD = "qazpol123"
+SCHEMA = "TPCH_SF1"
+DATABASE = "SNOWFLAKE_SAMPLE_DATA"
+STAGING_BUCKET_NAME = "darek-snowflake-tpch"
+STORAGE_INTEGRATION = "DAREKTPCH"
+TABLE = "LINEITEM"
+EXPANSION_SERVICE = 'localhost:8097'
+
+options = PipelineOptions([
+  "--runner=FlinkRunner",
+  "--flink_version=1.9",
+  "--flink_master=localhost:8081",
+  "--environment_type=LOOPBACK"
+])
 
 @attr('UsesCrossLanguageTransforms')
-@unittest.skipUnless(
-    os.environ.get('EXPANSION_PORT'),
-    "EXPANSION_PORT environment var is not provided.")
-class XlangGenerateSequenceTest(unittest.TestCase):
-  def test_generate_sequence(self):
-    port = os.environ.get('EXPANSION_PORT')
-    address = 'localhost:%s' % port
+class XlangSnowflakeTest(unittest.TestCase):
+  def test_snowflake_read(self):
+    with TestPipeline(options=options) as p:
+      res = (
+          p
+          | ReadFromSnowflake(SERVER_NAME, USERNAME, PASSWORD, SCHEMA, DATABASE, STAGING_BUCKET_NAME, STORAGE_INTEGRATION, TABLE, expansion_service=EXPANSION_SERVICE)
+      )
 
-    try:
-      with TestPipeline(options=options) as p:
-        res = (
-            p
-            | GenerateSequence(start=1, stop=10, expansion_service=address))
-
-        assert_that(res, equal_to([i for i in range(1, 10)]))
-    except RuntimeError as e:
-      if re.search(GenerateSequence.URN, str(e)):
-        print("looks like URN not implemented in expansion service, skipping.")
-      else:
-        raise e
-
+      print(res)
 
 if __name__ == '__main__':
   logging.getLogger().setLevel(logging.INFO)
