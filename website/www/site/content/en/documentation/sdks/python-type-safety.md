@@ -1,5 +1,5 @@
 ---
-type: sdks
+type: languages
 title: "Ensuring Python Type Safety"
 ---
 <!--

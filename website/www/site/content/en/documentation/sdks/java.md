@@ -1,5 +1,5 @@
 ---
-type: sdks
+type: languages
 title: "Beam Java SDK"
 aliases: /learn/sdks/java/
 ---

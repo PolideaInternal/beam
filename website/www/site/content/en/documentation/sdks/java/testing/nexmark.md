@@ -1,5 +1,5 @@
 ---
-type: sdks
+type: languages
 title: "Nexmark benchmark suite"
 aliases: /documentation/sdks/java/nexmark/
 ---

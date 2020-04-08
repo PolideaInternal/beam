@@ -1,5 +1,5 @@
 ---
-type: sdks
+type: languages
 title: "Beam 3rd Party Java Extensions"
 ---
 <!--
