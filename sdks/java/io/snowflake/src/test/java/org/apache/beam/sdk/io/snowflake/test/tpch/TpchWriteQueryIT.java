@@ -111,7 +111,7 @@ public class TpchWriteQueryIT {
             .withQueryTransformation(QUERY_TRANSFORMATION)
             .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
             .withTableSchema(tableSchema)
-            .withLocation(new Location(options))
+            .via(new Location(options))
             .withUserDataMapper(TpchTestUtils.getUserDataMapper()));
 
     PipelineResult pipelineResult = pipeline.run(options);

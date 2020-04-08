@@ -46,7 +46,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class QueryDispositionExternalLocationTest {
+public class QueryDispositionLocationTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
   private static final String EXTERNAL_LOCATION = "./bucket";
 
@@ -98,7 +98,7 @@ public class QueryDispositionExternalLocationTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .withLocation(location)
+                .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(WriteDisposition.TRUNCATE)
@@ -126,7 +126,7 @@ public class QueryDispositionExternalLocationTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .withLocation(location)
+                .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(WriteDisposition.EMPTY)
@@ -146,7 +146,7 @@ public class QueryDispositionExternalLocationTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .withLocation(location)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withWriteDisposition(WriteDisposition.EMPTY)

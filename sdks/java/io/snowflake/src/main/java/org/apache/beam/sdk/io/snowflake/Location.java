@@ -49,10 +49,7 @@ public class Location implements Serializable {
   }
 
   public boolean isStorageIntegration() {
-    if (storageIntegration != null) {
-      return true;
-    }
-    return false;
+    return storageIntegration != null;
   }
 
   public String getFilesLocationForCopy() {

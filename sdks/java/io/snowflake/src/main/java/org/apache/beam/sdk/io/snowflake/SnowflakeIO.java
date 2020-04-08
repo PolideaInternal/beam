@@ -113,12 +113,13 @@ import org.slf4j.LoggerFactory;
  * <p>For example
  *
  * <pre>{@code
+ * Location location = new Location();
  * PCollection<GenericRecord> items = pipeline.apply(
  *  SnowflakeIO.<GenericRecord>read()
  *    .withDataSourceConfiguration(dataSourceConfiguration)
  *    .fromQuery(QUERY)
  *    .withStagingBucketName(stagingBucketName)
- *    .withIntegrationName(integrationName)
+ *    .via(location)
  *    .withCsvMapper(...)
  *    .withCoder(...));
  * }</pre>
@@ -132,11 +133,12 @@ import org.slf4j.LoggerFactory;
  * <p>For example
  *
  * <pre>{@code
+ * Location location = new Location(options);
  * items.apply(
  *     SnowflakeIO.<KV<Integer, String>>write()
  *         .withDataSourceConfiguration(dataSourceConfiguration)
  *         .to(table)
- *         .via(LocationFactory.of(options))
+ *         .via(location)
  *         .withUserDataMapper(...);
  * }</pre>
  */
@@ -228,7 +230,7 @@ public class SnowflakeIO {
     abstract String getTable();
 
     @Nullable
-    abstract String getIntegrationName();
+    abstract Location getLocation();
 
     @Nullable
     abstract String getStagingBucketName();
@@ -256,7 +258,7 @@ public class SnowflakeIO {
 
       abstract Builder<T> setTable(String table);
 
-      abstract Builder<T> setIntegrationName(String integrationName);
+      abstract Builder<T> setLocation(Location location);
 
       abstract Builder<T> setStagingBucketName(String stagingBucketName);
 
@@ -300,8 +302,8 @@ public class SnowflakeIO {
       return toBuilder().setStagingBucketName(stagingBucketName).build();
     }
 
-    public Read<T> withIntegrationName(String integrationName) {
-      return toBuilder().setIntegrationName(integrationName).build();
+    public Read<T> via(Location location) {
+      return toBuilder().setLocation(location).build();
     }
 
     public Read<T> withCsvMapper(CsvMapper<T> csvMapper) {
@@ -314,20 +316,7 @@ public class SnowflakeIO {
 
     @Override
     public PCollection<T> expand(PBegin input) {
-      // Either table or query is required. If query is present, it's being used, table is used
-      // otherwise
-      checkArgument(
-          getQuery() != null || getTable() != null, "fromTable() or fromQuery() is required");
-      checkArgument(
-          !(getQuery() != null && getTable() != null),
-          "fromTable() and fromQuery() is not allowed together");
-      checkArgument(getCsvMapper() != null, "withCsvMapper() is required");
-      checkArgument(getCoder() != null, "withCoder() is required");
-      checkArgument(getIntegrationName() != null, "withIntegrationName() is required");
-      checkArgument(getStagingBucketName() != null, "withStagingBucketName() is required");
-      checkArgument(
-          (getDataSourceProviderFn() != null),
-          "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
+      checkArguments();
 
       String gcpTmpDirName = makeTmpDirName();
       PCollection<T> output;
@@ -341,7 +330,7 @@ public class SnowflakeIO {
                           getDataSourceProviderFn(),
                           getQuery(),
                           getTable(),
-                          getIntegrationName(),
+                          getLocation().getStorageIntegration(),
                           getStagingBucketName(),
                           gcpTmpDirName,
                           getSnowflakeService())))
@@ -363,6 +352,28 @@ public class SnowflakeIO {
       return output;
     }
 
+    private void checkArguments() {
+
+      Location location = getLocation();
+      // Either table or query is required. If query is present, it's being used, table is used
+      // otherwise
+      checkArgument(location != null, "via() is required");
+      checkArgument(
+          location.getStorageIntegration() != null, "location with storageIntegration is required");
+
+      checkArgument(
+          getQuery() != null || getTable() != null, "fromTable() or fromQuery() is required");
+      checkArgument(
+          !(getQuery() != null && getTable() != null),
+          "fromTable() and fromQuery() is not allowed together");
+      checkArgument(getCsvMapper() != null, "withCsvMapper() is required");
+      checkArgument(getCoder() != null, "withCoder() is required");
+      checkArgument(getStagingBucketName() != null, "withStagingBucketName() is required");
+      checkArgument(
+          (getDataSourceProviderFn() != null),
+          "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
+    }
+
     private String makeTmpDirName() {
       return String.format(
           "sf_copy_csv_%s_%s",
@@ -375,7 +386,7 @@ public class SnowflakeIO {
       private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
       private final String query;
       private final String table;
-      private final String integrationName;
+      private final String storageIntegration;
       private final String stagingBucketName;
       private final String tmpDirName;
       private final SnowflakeService snowflakeService;
@@ -384,14 +395,14 @@ public class SnowflakeIO {
           SerializableFunction<Void, DataSource> dataSourceProviderFn,
           String query,
           String table,
-          String integrationName,
+          String storageIntegration,
           String stagingBucketName,
           String tmpDirName,
           SnowflakeService snowflakeService) {
         this.dataSourceProviderFn = dataSourceProviderFn;
         this.query = query;
         this.table = table;
-        this.integrationName = integrationName;
+        this.storageIntegration = storageIntegration;
         this.stagingBucketName = stagingBucketName;
         this.tmpDirName = tmpDirName;
         this.snowflakeService = snowflakeService;
@@ -401,7 +412,12 @@ public class SnowflakeIO {
       public void processElement(ProcessContext context) throws Exception {
         String output =
             snowflakeService.copyIntoStage(
-                dataSourceProviderFn, query, table, integrationName, stagingBucketName, tmpDirName);
+                dataSourceProviderFn,
+                query,
+                table,
+                storageIntegration,
+                stagingBucketName,
+                tmpDirName);
 
         context.output(output);
       }
@@ -457,7 +473,7 @@ public class SnowflakeIO {
       if (getTable() != null) {
         builder.add(DisplayData.item("table", getTable()));
       }
-      builder.add(DisplayData.item("integrationName", getIntegrationName()));
+      builder.add(DisplayData.item("integrationName", getLocation().getStorageIntegration()));
       builder.add(DisplayData.item("stagingBucketName", getStagingBucketName()));
       builder.add(DisplayData.item("csvMapper", getCsvMapper().getClass().getName()));
       builder.add(DisplayData.item("coder", getCoder().getClass().getName()));
@@ -837,7 +853,7 @@ public class SnowflakeIO {
       return toBuilder().setQuery(query).build();
     }
 
-    public Write<T> withLocation(Location location) {
+    public Write<T> via(Location location) {
       return toBuilder().setLocation(location).build();
     }
 
@@ -867,7 +883,23 @@ public class SnowflakeIO {
 
     @Override
     public PDone expand(PCollection<T> input) {
+      checkArguments();
+
+      PCollection files = writeToFiles(input, getLocation().getExternalLocation());
+
+      files =
+          (PCollection)
+              files.apply("Create list of files to copy", Combine.globally(new Concatenate()));
+      PCollection out = (PCollection) files.apply("Copy files to table", copyToTable());
+      out.setCoder(StringUtf8Coder.of());
+
+      return PDone.in(out.getPipeline());
+    }
+
+    private void checkArguments() {
       Location location = getLocation();
+
+      checkArgument(location != null, "via() is required");
 
       checkArgument(
           location.getStorageIntegration() != null || location.getStage() != null,
@@ -884,16 +916,6 @@ public class SnowflakeIO {
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
-
-      PCollection files = writeToFiles(input, location.getExternalLocation());
-
-      files =
-          (PCollection)
-              files.apply("Create list of files to copy", Combine.globally(new Concatenate()));
-      PCollection out = (PCollection) files.apply("Copy files to table", copyToTable());
-      out.setCoder(StringUtf8Coder.of());
-
-      return PDone.in(out.getPipeline());
     }
 
     private PCollection writeToFiles(PCollection<T> input, String outputDirectory) {

@@ -79,7 +79,6 @@ public class SnowflakeIOIT {
 
   private static int numberOfRows;
   private static Location location;
-  private static String storageIntegration;
   private static String stagingBucketName;
   private static String writeTmpPath;
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
@@ -96,13 +95,14 @@ public class SnowflakeIOIT {
         readIOTestPipelineOptions(SnowflakeIOITPipelineOptions.class);
 
     numberOfRows = options.getNumberOfRecords();
-    storageIntegration = options.getStorageIntegration();
     stagingBucketName = options.getStagingBucketName();
     writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
 
     location =
         new Location(
-            null, storageIntegration, String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
+            null,
+            options.getStorageIntegration(),
+            String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
             .withDatabase(options.getDatabase())
@@ -143,7 +143,7 @@ public class SnowflakeIOIT {
                 .withWriteDisposition(WriteDisposition.TRUNCATE)
                 .withUserDataMapper(getUserDataMapper())
                 .to(tableName)
-                .withLocation(location)
+                .via(location)
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withTableSchema(
                     SFTableSchema.of(
@@ -158,7 +158,7 @@ public class SnowflakeIOIT {
             SnowflakeIO.<TestRow>read()
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromTable(tableName)
-                .withIntegrationName(storageIntegration)
+                .via(location)
                 .withStagingBucketName(stagingBucketName)
                 .withCsvMapper(getTestRowCsvMapper())
                 .withCoder(SerializableCoder.of(TestRow.class)));

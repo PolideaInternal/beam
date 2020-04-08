@@ -23,7 +23,7 @@ description = "Apache Beam :: SDKs :: Java :: IO :: Snowflake"
 ext.summary = "IO to read and write on Snowflake."
 dependencies {
   compile library.java.vendored_guava_26_0_jre
-  compile project(path: ":sdks:java:core")
+  compile project(path: ":sdks:java:core", configuration: "shadow")
   compile library.java.slf4j_api
   compile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.11.0'
   compile group: 'com.opencsv', name: 'opencsv', version: '5.0'

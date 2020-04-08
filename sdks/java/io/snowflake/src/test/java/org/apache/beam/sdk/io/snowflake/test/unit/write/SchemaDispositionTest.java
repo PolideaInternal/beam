@@ -55,7 +55,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class ExternalSchemaDispositionTest {
+public class SchemaDispositionTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
   private static final String EXTERNAL_LOCATION = "./bucket";
 
@@ -123,7 +123,7 @@ public class ExternalSchemaDispositionTest {
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
-                .withLocation(location)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLStringCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -161,7 +161,7 @@ public class ExternalSchemaDispositionTest {
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
-                .withLocation(location)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -200,7 +200,7 @@ public class ExternalSchemaDispositionTest {
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
-                .withLocation(location)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)

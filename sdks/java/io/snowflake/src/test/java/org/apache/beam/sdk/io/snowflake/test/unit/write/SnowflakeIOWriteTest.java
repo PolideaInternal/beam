@@ -48,7 +48,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class ExternalTest {
+public class SnowflakeIOWriteTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
   private static final String EXTERNAL_LOCATION = "./bucket";
 
@@ -101,7 +101,7 @@ public class ExternalTest {
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .to(FAKE_TABLE)
-                .withLocation(location));
+                .via(location));
     pipeline.run(options).waitUntilFinish();
 
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
@@ -122,7 +122,7 @@ public class ExternalTest {
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .to(FAKE_TABLE)
-                .withLocation(location));
+                .via(location));
     pipeline.run(options).waitUntilFinish();
 
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
@@ -141,7 +141,7 @@ public class ExternalTest {
             "External text write IO",
             SnowflakeIO.<Long>write(snowflakeService)
                 .to(FAKE_TABLE)
-                .withLocation(location)
+                .via(location)
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper()));
 
@@ -166,7 +166,7 @@ public class ExternalTest {
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapperKV())
                 .to(FAKE_TABLE)
-                .withLocation(location));
+                .via(location));
 
     pipeline.run(options).waitUntilFinish();
   }
@@ -184,7 +184,7 @@ public class ExternalTest {
     SnowflakeIO.Write<Long> write =
         SnowflakeIO.<Long>write(snowflakeService)
             .to(FAKE_TABLE)
-            .withLocation(location)
+            .via(location)
             .withUserDataMapper(TestUtils.getLongCsvMapper())
             .withQueryTransformation(query)
             .withWriteDisposition(WriteDisposition.APPEND)
@@ -206,7 +206,7 @@ public class ExternalTest {
             "Write SnowflakeIO",
             SnowflakeIO.<KV<String, Long>>write(snowflakeService)
                 .to(FAKE_TABLE)
-                .withLocation(location)
+                .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapperKV())
                 .withDataSourceConfiguration(dc)
                 .withQueryTransformation(query));

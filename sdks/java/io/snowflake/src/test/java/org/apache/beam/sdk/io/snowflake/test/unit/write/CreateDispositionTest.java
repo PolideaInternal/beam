@@ -49,7 +49,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class ExternalCreateDispositionTest {
+public class CreateDispositionTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
   private static final String EXTERNAL_LOCATION = "./bucket";
 
@@ -102,7 +102,7 @@ public class ExternalCreateDispositionTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .withLocation(location)
+                .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -129,7 +129,7 @@ public class ExternalCreateDispositionTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
-                .withLocation(location)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -151,7 +151,7 @@ public class ExternalCreateDispositionTest {
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
-                .withLocation(location)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -175,7 +175,7 @@ public class ExternalCreateDispositionTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .withLocation(location)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
@@ -200,7 +200,7 @@ public class ExternalCreateDispositionTest {
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
-                .withLocation(location)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
