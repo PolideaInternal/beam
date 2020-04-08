@@ -1,0 +1,26 @@
+{{ $githubApiUrl := "https://api.github.com/repos" }}
+{{ $path := .Get 0 }}
+{{ $tag := .Get 1 }}
+
+{{ $path := replaceRE "/blob/" "/contents/" $path }}
+{{ $path := replaceRE "((/.*?){3})/(.*?)(/.*)" "$1$4?ref=$3" $path }}
+{{ $url := printf "%s%s" $githubApiUrl $path }}
+
+{{ $resp := getJSON $url }}
+{{ $data := $resp.content | base64Decode }}
+
+{{ $matchRegex := printf "%s%s%s%s%s" "\\[START " $tag "]\n[\\s\\S]*?\n.*\\[END " $tag "]" }}
+{{ $match := index (findRE $matchRegex $data) 0 }}
+
+{{ $lines := split $match "\n" }}
+{{ $lineCount := len $lines }}
+{{ $cleanedLines := $lines | first (sub $lineCount 1) | last (sub $lineCount 2) }}
+
+{{ $firstLine := index $cleanedLines 0 }}
+{{ $numberOfWhitespaces := index (findRE "^\\s*" $firstLine) 0 | len }}
+{{ $unindentRegex := printf "%s%d%s" "^\\s{" $numberOfWhitespaces "}" }}
+
+{{ $unindentedLines := apply $cleanedLines "replaceRE" $unindentRegex "" "." }}
+
+{{ $result := delimit $unindentedLines "\n" }}
+{{ print $result }}
