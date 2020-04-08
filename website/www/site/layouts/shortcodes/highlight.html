@@ -10,7 +10,7 @@
  limitations under the License. See accompanying LICENSE file.
 */}}
 
-{{ $content := .Inner }}
+{{ $content := .Inner | htmlUnescape | safeHTML }}
 {{ $ctx := . }}
 {{ with (.Get "class") }}
     <div class={{ . }}>
