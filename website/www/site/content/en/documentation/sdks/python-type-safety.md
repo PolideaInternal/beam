@@ -31,15 +31,15 @@ When you use type hints, the runner raises exceptions during pipeline constructi
 
 Consider the following example, in which `numbers` is a `PCollection` of `str` values:
 
-```
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:type_hints_missing_define_numbers %}
-```
+{{< highlight >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" type_hints_missing_define_numbers >}}
+{{< /highlight >}}
 
 The code then applies a `Filter` transform to the `numbers` collection with a callable that retrieves the even numbers.
 
-```
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:type_hints_missing_apply %}
-```
+{{< highlight >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" type_hints_missing_apply >}}
+{{< /highlight >}}
 
 When you call `p.run()`, this code generates an error because `Filter` expects a `PCollection` of integers, but is given a `PCollection` of strings instead.
 
@@ -53,9 +53,9 @@ You can always declare type hints inline, but if you need them for code that is 
 
 To specify type hints inline, use the methods `with_input_types` and `with_output_types`. The following example code declares an input type hint inline:
 
-```
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:type_hints_takes %}
-```
+{{< highlight >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" type_hints_takes >}}
+{{< /highlight >}}
 
 When you apply the Filter transform to the numbers collection in the example above, you'll be able to catch the error during pipeline construction.
 
@@ -65,9 +65,9 @@ To specify type hints as properties of a `DoFn` or `PTransform`, use the decorat
 
 The following code declares an `int` type hint on `FilterEvensDoFn`, using the decorator `@with_input_types()`.
 
-```
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:type_hints_do_fn %}
-```
+{{< highlight >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" type_hints_do_fn >}}
+{{< /highlight >}}
 
 Decorators receive an arbitrary number of positional and/or keyword arguments, typically interpreted in the context of the function they're wrapping. Generally the first argument is a type hint for the main input, and additional arguments are type hints for side inputs.
 
@@ -75,9 +75,9 @@ Decorators receive an arbitrary number of positional and/or keyword arguments, t
 
 You can use type hint annotations to define generic types. The following code specifies an input type hint that asserts the generic type `T`, and an output type hint that asserts the type `Tuple[int, T]`.
 
-```
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:type_hints_transform %}
-```
+{{< highlight >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" type_hints_transform >}}
+{{< /highlight >}}
 
 ## Kinds of Type Hints
 
@@ -124,15 +124,15 @@ In addition to using type hints for type checking at pipeline construction, you 
 
 For example, the following pipeline emits elements of the wrong type. Depending on the runner implementation, its execution may or may not fail at runtime.
 
-```
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:type_hints_runtime_off %}
-```
+{{< highlight >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" type_hints_runtime_off >}}
+{{< /highlight >}}
 
 However, if you enable runtime type checking, the code is guaranteed to fail at runtime. To enable runtime type checking, set the pipeline option `runtime_type_check` to `True`.
 
-```
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:type_hints_runtime_on %}
-```
+{{< highlight >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" type_hints_runtime_on >}}
+{{< /highlight >}}
 
 Note that because runtime type checks are done for each `PCollection` element, enabling this feature may incur a significant performance penalty. It is therefore recommended that runtime type checks are disabled for production pipelines.
 
@@ -154,6 +154,6 @@ For example, suppose you have a `PCollection` of key-value pairs whose keys are 
 
 The following code shows the example `Player` class and how to define a `Coder` for it. When you use type hints, Beam infers which `Coder`s to use, using `beam.coders.registry`. The following code registers `PlayerCoder` as a coder for the `Player` class. In the example, the input type declared for `CombinePerKey` is `Tuple[Player, int]`. In this case, Beam infers that the `Coder` objects to use are `TupleCoder`, `PlayerCoder`, and `IntCoder`.
 
-```
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:type_hints_deterministic_key %}
-```
+{{< highlight >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" type_hints_deterministic_key >}}
+{{< /highlight >}}

@@ -37,9 +37,7 @@ Then, we apply `Filter` in multiple ways to filter out produce by their duration
 We define a function `is_perennial` which returns `True` if the element's duration equals `'perennial'`, and `False` otherwise.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py tag:filter_function %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py" filter_function >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -47,9 +45,7 @@ Output `PCollection` after `Filter`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py tag:perennials %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py" perennials >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet
@@ -61,9 +57,7 @@ Output `PCollection` after `Filter`:
 We can also use lambda functions to simplify **Example 1**.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py tag:filter_lambda %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py" filter_lambda >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -71,9 +65,7 @@ Output `PCollection` after `Filter`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py tag:perennials %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py" perennials >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet
@@ -88,9 +80,7 @@ They are passed as additional positional arguments or keyword arguments to the f
 In this example, `has_duration` takes `plant` and `duration` as arguments.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py tag:filter_multiple_arguments %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py" filter_multiple_arguments >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -98,9 +88,7 @@ Output `PCollection` after `Filter`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py tag:perennials %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py" perennials >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet
@@ -116,9 +104,7 @@ In this example, we pass a `PCollection` the value `'perennial'` as a singleton.
 We then use that value to filter out perennials.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py tag:filter_side_inputs_singleton %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py" filter_side_inputs_singleton >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -126,9 +112,7 @@ Output `PCollection` after `Filter`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py tag:perennials %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py" perennials >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet
@@ -142,9 +126,7 @@ This accesses elements lazily as they are needed,
 so it is possible to iterate over large `PCollection`s that won't fit into memory.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py tag:filter_side_inputs_iter %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py" filter_side_inputs_iter >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -152,9 +134,7 @@ Output `PCollection` after `Filter`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py tag:valid_plants %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py" valid_plants >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet
@@ -172,9 +152,7 @@ Note that all the elements of the `PCollection` must fit into memory for this.
 If the `PCollection` won't fit into memory, use `beam.pvalue.AsIter(pcollection)` instead.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py tag:filter_side_inputs_dict %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter.py" filter_side_inputs_dict >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -182,9 +160,7 @@ Output `PCollection` after `Filter`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py tag:perennials %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/filter_test.py" perennials >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet

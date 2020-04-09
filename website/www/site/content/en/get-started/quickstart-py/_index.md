@@ -31,17 +31,17 @@ The Python SDK supports Python 2.7, 3.5, 3.6, and 3.7. New Python SDK releases w
 
 The Beam SDK requires Python 2 users to use Python 2.7 and Python 3 users to use Python 3.5 or higher. Check your version by running:
 
-```
+{{< highlight >}}
 python --version
-```
+{{< /highlight >}}
 
 ### Install pip
 
 Install [pip](https://pip.pypa.io/en/stable/installing/), Python's package manager. Check that you have version 7.0.0 or newer by running:
 
-```
+{{< highlight >}}
 pip --version
-```
+{{< /highlight >}}
 
 If you do not have `pip` version 7.0.0 or newer, run the following command to
 install it. This command might require administrative privileges.
