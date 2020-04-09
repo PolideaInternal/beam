@@ -16,8 +16,8 @@
     So, if this piece of code consisted of 10 lines, we'd get a highlighted block of code which would
     start with 10 empty lines.
     Trimming this result in parent shortcode solves the problem only partially - we can trim new lines
-    at the start and the end of a string. However that wouldn't work if we nested TWO github_sample shortcodes
-    as the new line characters would appear in the middle.
+    at the start and the end of a string. However that wouldn't work if we put TWO or more github_sample
+    shortcodes in a highlight - the new line characters would appear in the middle.
     Thus a very ugly, but working solution - writing the whole shortcode in 1 line.
     I wish I found a better solution - if you do, feel free to contribute ¯\_(ツ)_/¯
 
