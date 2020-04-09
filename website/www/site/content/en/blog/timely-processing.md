@@ -120,8 +120,7 @@ and timers.
 
 However, _your_ code is just a declarative expression of the aggregation
 operator.  The runner can choose a variety of ways to execute your operator. 
-I went over this in detail in [my prior post focused on state alone]({{
-site.baseurl }}/blog/2017/02/13/stateful-processing.html). Since you do not
+I went over this in detail in [my prior post focused on state alone](/blog/2017/02/13/stateful-processing.html). Since you do not
 observe elements in any defined order, nor manipulate mutable state or timers
 directly, I call this neither stateful nor timely processing.
 
