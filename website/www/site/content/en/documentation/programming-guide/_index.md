@@ -122,10 +122,7 @@ Pipeline p = Pipeline.create(options);
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:pipelines_constructing_creating
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" pipelines_constructing_creating >}}
 {{< /highlight >}}
 
 {{< highlight go >}}
@@ -160,10 +157,7 @@ PipelineOptions options =
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:pipelines_constructing_creating
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" pipelines_constructing_creating >}}
 {{< /highlight >}}
 
 {{< highlight go >}}
@@ -205,10 +199,7 @@ public interface MyOptions extends PipelineOptions {
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:pipeline_options_define_custom
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" pipeline_options_define_custom >}}
 {{< /highlight >}}
 
 {{< highlight go >}}
@@ -238,10 +229,7 @@ public interface MyOptions extends PipelineOptions {
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:pipeline_options_define_custom_with_help_and_default
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" pipeline_options_define_custom_with_help_and_default >}}
 {{< /highlight >}}
 
 {{< highlight go >}}
@@ -328,10 +316,7 @@ public static void main(String[] args) {
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:pipelines_constructing_reading
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" pipelines_constructing_reading >}}
 {{< /highlight >}}
 
 {{< highlight go >}}
@@ -384,10 +369,7 @@ public static void main(String[] args) {
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:model_pcollection
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" model_pcollection >}}
 {{< /highlight >}}
 
 ### 3.2. PCollection characteristics {#pcollection-characteristics}
@@ -639,15 +621,12 @@ PCollection<Integer> wordLengths = words.apply(
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 # The input PCollection of Strings.
 words = ...
 
 # The DoFn to perform on each element in the input PCollection.
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_pardo
-%}
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_apply
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_pardo >}}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_apply >}}
 {{< /highlight >}}
 
 {{< highlight go >}}
@@ -723,10 +702,7 @@ static class ComputeWordLengthFn extends DoFn<String, Integer> {
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_pardo
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_pardo >}}
 {{< /highlight >}}
 
 {{< paragraph class="language-java" >}}
@@ -784,14 +760,12 @@ PCollection<Integer> wordLengths = words.apply(
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 # The input PCollection of strings.
 words = ...
 
 # Apply a lambda function to the PCollection words.
 # Save the result as the PCollection word_lengths.
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_using_flatmap
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_using_flatmap >}}
 {{< /highlight >}}
 
 {{< highlight go >}}
@@ -825,14 +799,12 @@ PCollection<Integer> wordLengths = words.apply(
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 # The input PCollection of string.
 words = ...
 
 # Apply a Map with a lambda function to the PCollection words.
 # Save the result as the PCollection word_lengths.
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_using_map
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_using_map >}}
 {{< /highlight >}}
 
 {{< paragraph class="language-java" >}}
@@ -988,30 +960,22 @@ data contains names and phone numbers.
 </span>
 
 {{< highlight java >}}
-<!--
-{% github_sample /apache/beam/blob/master/examples/java/src/test/java/org/apache/beam/examples/snippets/SnippetsTest.java tag:CoGroupByKeyTupleInputs
-%}-->
+{{< github_sample "/apache/beam/blob/master/examples/java/src/test/java/org/apache/beam/examples/snippets/SnippetsTest.java" CoGroupByKeyTupleInputs >}}
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_group_by_key_cogroupbykey_tuple_inputs
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_group_by_key_cogroupbykey_tuple_inputs >}}
 {{< /highlight >}}
 
 After `CoGroupByKey`, the resulting data contains all data associated with each
 unique key from any of the input collections.
 
 {{< highlight java >}}
-<!--
-{% github_sample /apache/beam/blob/master/examples/java/src/test/java/org/apache/beam/examples/snippets/SnippetsTest.java tag:CoGroupByKeyTupleOutputs
-%}-->
+{{< github_sample "/apache/beam/blob/master/examples/java/src/test/java/org/apache/beam/examples/snippets/SnippetsTest.java" CoGroupByKeyTupleOutputs >}}
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_group_by_key_cogroupbykey_tuple_outputs
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_group_by_key_cogroupbykey_tuple_outputs >}}
 {{< /highlight >}}
 
 The following code example joins the two `PCollection`s with `CoGroupByKey`,
@@ -1019,29 +983,21 @@ followed by a `ParDo` to consume the result. Then, the code uses tags to look up
 and format data from each collection.
 
 {{< highlight java >}}
-<!--
-{% github_sample /apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java tag:CoGroupByKeyTuple
-%}-->
+{{< github_sample "/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java" CoGroupByKeyTuple >}}
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:model_group_by_key_cogroupbykey_tuple
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" model_group_by_key_cogroupbykey_tuple >}}
 {{< /highlight >}}
 
 The formatted data looks like this:
 
 {{< highlight java >}}
-<!--
-{% github_sample /apache/beam/blob/master/examples/java/src/test/java/org/apache/beam/examples/snippets/SnippetsTest.java tag:CoGroupByKeyTupleFormattedOutputs
-%}-->
+{{< github_sample "/apache/beam/blob/master/examples/java/src/test/java/org/apache/beam/examples/snippets/SnippetsTest.java" CoGroupByKeyTupleFormattedOutputs >}}
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_group_by_key_cogroupbykey_tuple_formatted_outputs
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_group_by_key_cogroupbykey_tuple_formatted_outputs >}}
 {{< /highlight >}}
 
 #### 4.2.4. Combine {#combine}
@@ -1086,9 +1042,7 @@ public static class SumInts implements SerializableFunction<Iterable<Integer>, I
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:combine_bounded_sum
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" combine_bounded_sum >}}
 {{< /highlight >}}
 
 ##### 4.2.4.2. Advanced combinations using CombineFn {#advanced-combines}
@@ -1160,10 +1114,8 @@ public class AverageFn extends CombineFn<Integer, AverageFn.Accum, Double> {
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 pc = ...
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:combine_custom_average_define
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" combine_custom_average_define >}}
 {{< /highlight >}}
 
 ##### 4.2.4.3. Combining a PCollection into a single value {#combining-pcollection}
@@ -1183,13 +1135,11 @@ PCollection<Integer> sum = pc.apply(
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 # sum combines the elements in the input PCollection.
 # The resulting PCollection, called result, contains one value: the sum of all
 # the elements in the input PCollection.
 pc = ...
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:combine_custom_average_execute
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" combine_custom_average_execute >}}
 {{< /highlight >}}
 
 ##### 4.2.4.4. Combine and global windowing {#combine-global-windowing}
@@ -1273,8 +1223,7 @@ PCollection<KV<String, Double>> avgAccuracyPerPlayer =
 # PCollection is grouped by key and the numeric values associated with each key
 # are averaged into a float.
 player_accuracies = ...
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:combine_per_key
-%}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" combine_per_key >}}
 {{< /highlight >}}
 
 #### 4.2.5. Flatten {#flatten}
@@ -1301,13 +1250,9 @@ PCollection<String> merged = collections.apply(Flatten.<String>pCollections());
 
 
 {{< highlight py >}}
-<!--
 # Flatten takes a tuple of PCollection objects.
 # Returns a single PCollection that contains all of the elements in the PCollection objects in that tuple.
-{%
-github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:model_multiple_pcollections_flatten
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" model_multiple_pcollections_flatten >}}
 {{< /highlight >}}
 
 ##### 4.2.5.1. Data encoding in merged collections {#data-encoding-merged-collections}
@@ -1367,17 +1312,13 @@ PCollection<Student> fortiethPercentile = studentsByPercentile.get(4);
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 # Provide an int value with the desired number of result partitions, and a partitioning function (partition_fn in this example).
 # Returns a tuple of PCollection objects containing each of the resulting partitions as individual PCollection objects.
 students = ...
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:model_multiple_pcollections_partition
-%}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" model_multiple_pcollections_partition >}}
 
 # You can extract each partition from the tuple of PCollection objects as follows:
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:model_multiple_pcollections_partition_40th
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" model_multiple_pcollections_partition_40th >}}
 {{< /highlight >}}
 
 ### 4.3. Requirements for writing user code for Beam transforms {#requirements-for-writing-user-code-for-beam-transforms}
@@ -1495,23 +1436,19 @@ determined by the input data, or depend on a different branch of your pipeline.
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 # Side inputs are available as extra arguments in the DoFn's process method or Map / FlatMap's callable.
 # Optional, positional, and keyword arguments are all supported. Deferred arguments are unwrapped into their
 # actual values. For example, using pvalue.AsIteor(pcoll) at pipeline construction time results in an iterable
 # of the actual elements of pcoll being passed into each process invocation. In this example, side inputs are
 # passed to a FlatMap transform as extra arguments and consumed by filter_using_length.
 words = ...
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_side_input
-%}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_side_input >}}
 
 # We can also pass side inputs to a ParDo transform, which will get passed to its process method.
 # The first two arguments for the process method would be self and element.
 
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_side_input_dofn
-%}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_side_input_dofn >}}
 ...
--->
 {{< /highlight >}}
 
 #### 4.4.2. Side inputs and windowing {#side-inputs-windowing}
@@ -1602,20 +1539,17 @@ together.
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 # To emit elements to multiple output PCollections, invoke with_outputs() on the ParDo, and specify the
 # expected tags for the outputs. with_outputs() returns a DoOutputsTuple object. Tags specified in
 # with_outputs are attributes on the returned DoOutputsTuple object. The tags give access to the
 # corresponding output PCollections.
 
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_with_tagged_outputs
-%}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_with_tagged_outputs >}}
 
 # The result is also iterable, ordered in the same order that the tags were passed to with_outputs(),
 # the main tag (if specified) first.
 
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_with_tagged_outputs_iter
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_with_tagged_outputs_iter >}}
 {{< /highlight >}}
 
 #### 4.5.2. Emitting to multiple outputs in your DoFn {#multiple-outputs-dofn}
@@ -1644,19 +1578,16 @@ together.
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
 # Inside your ParDo's DoFn, you can emit an element to a specific output by wrapping the value and the output tag (str).
 # using the pvalue.OutputValue wrapper class.
 # Based on the previous example, this shows the DoFn emitting to the main output and two additional outputs.
 
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_emitting_values_on_tagged_outputs
-%}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_emitting_values_on_tagged_outputs >}}
 
 # Producing multiple outputs is also available in Map and FlatMap.
 # Here is an example that uses FlatMap and shows that the tags do not need to be specified ahead of time.
 
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_pardo_with_undeclared_outputs
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_pardo_with_undeclared_outputs >}}
 {{< /highlight >}}
 
 #### 4.5.3. Accessing additional parameters in your DoFn {#other-dofn-parameters}
@@ -1902,9 +1833,7 @@ transform's intermediate data changes type multiple times.
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:pipeline_monitoring_composite
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" pipeline_monitoring_composite >}}
 {{< /highlight >}}
 
 #### 4.6.2. Creating a composite transform {#composite-transform-creation}
@@ -1932,9 +1861,7 @@ The following code sample shows how to declare a `PTransform` that accepts a
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_composite_transform
-%}```-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_composite_transform >}}
 {{< /highlight >}}
 
 Within your `PTransform` subclass, you'll need to override the `expand` method.
@@ -1958,9 +1885,7 @@ The following code sample shows how to override `expand` for the
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_composite_transform
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_composite_transform >}}
 {{< /highlight >}}
 
 As long as you override the `expand` method in your `PTransform` subclass to
@@ -2038,10 +1963,7 @@ p.apply("ReadFromText",
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:model_pipelineio_read
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" model_pipelineio_read >}}
 {{< /highlight >}}
 
 To read data from disparate sources into a single `PCollection`, read each one
@@ -2066,10 +1988,7 @@ records.apply("WriteToText",
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:model_pipelineio_write
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" model_pipelineio_write >}}
 {{< /highlight >}}
 
 ### 5.4. Beam-provided I/O transforms {#provided-io-transforms}
@@ -2603,10 +2522,7 @@ into fixed windows, each 60 seconds in length:
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:setting_fixed_windows
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" setting_fixed_windows >}}
 {{< /highlight >}}
 
 #### 7.3.2. Sliding time windows {#using-sliding-time-windows}
@@ -2622,10 +2538,7 @@ begins every five seconds:
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:setting_sliding_windows
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" setting_sliding_windows >}}
 {{< /highlight >}}
 
 #### 7.3.3. Session windows {#using-session-windows}
@@ -2641,10 +2554,7 @@ least 10 minutes (600 seconds):
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:setting_session_windows
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" setting_session_windows >}}
 {{< /highlight >}}
 
 Note that the sessions are per-key — each key in the collection will have its
@@ -2663,10 +2573,7 @@ a single global window for a `PCollection`:
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:setting_global_window
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" setting_global_window >}}
 {{< /highlight >}}
 
 ### 7.4. Watermarks and late data {#watermarks-and-late-data}
@@ -2777,10 +2684,7 @@ with a `DoFn` to attach the timestamps to each element in your `PCollection`.
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:setting_timestamp
-%}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" setting_timestamp >}}
 {{< /highlight >}}
 
 ## 8. Triggers {#triggers}
@@ -2869,9 +2773,7 @@ firings:
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_early_late_triggers
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_early_late_triggers >}}
 {{< /highlight >}}
 
 #### 8.1.1. Default trigger {#default-trigger}
@@ -2948,9 +2850,7 @@ sets the window's **accumulation mode**.
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_setting_trigger
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_setting_trigger >}}
 {{< /highlight >}}
 
 #### 8.4.1. Window accumulation modes {#window-accumulation-modes}
@@ -3117,9 +3017,7 @@ example trigger code fires on the following conditions:
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_composite_triggers
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_composite_triggers >}}
 {{< /highlight >}}
 
 #### 8.5.3. Other composite triggers {#other-composite-triggers}
@@ -3135,9 +3033,7 @@ elements, or after a minute.
 {{< /highlight >}}
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py tag:model_other_composite_triggers
-%}-->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets_test.py" model_other_composite_triggers >}}
 {{< /highlight >}}
 
 ## 9. Metrics {#metrics}
