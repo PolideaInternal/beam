@@ -40,6 +40,5 @@ The global window side input triggers on processing time, so the main pipeline n
 For instance, the following code sample uses a `Map` to create a `DoFn`. The `Map` becomes a `View.asSingleton` side input that’s rebuilt on each counter tick. The side input updates every 5 seconds in order to demonstrate the workflow. In a real-world scenario, the side input would typically update every few hours or once per day.
 
 {{< highlight java >}}
-{% github_sample /apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java tag:SideInputPatternSlowUpdateGlobalWindowSnip1
-%}
+{{< github_sample "/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java" SideInputPatternSlowUpdateGlobalWindowSnip1 >}}
 {{< /highlight >}}
