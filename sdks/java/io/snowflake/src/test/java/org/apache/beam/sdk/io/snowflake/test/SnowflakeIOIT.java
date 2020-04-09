@@ -65,7 +65,7 @@ import org.junit.Test;
  * "--password=<PASSWORD>",
  * "--database=<DATABASE NAME>",
  * "--schema=<SCHEMA NAME>",
- * "--stagingBucketName=<BUCKET-NAME>",
+ * "--stagingBucketName=<BUCKET NAME>",
  * "--storageIntegration=<STORAGE INTEGRATION NAME>",
  * "--numberOfRecords=<1000, 100000, 600000, 5000000>",
  * "--runner=DataflowRunner",
@@ -80,7 +80,6 @@ public class SnowflakeIOIT {
   private static int numberOfRows;
   private static Location location;
   private static String stagingBucketName;
-  private static String writeTmpPath;
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
 
   public interface SnowflakeIOITPipelineOptions
@@ -96,17 +95,13 @@ public class SnowflakeIOIT {
 
     numberOfRows = options.getNumberOfRecords();
     stagingBucketName = options.getStagingBucketName();
-    writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
 
-    location =
-        new Location(
-            null,
-            options.getStorageIntegration(),
-            String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
+    location = new Location(options);
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
             .withDatabase(options.getDatabase())
             .withServerName(options.getServerName())
+                .withWarehouse("COMPUTE_WH")
             .withSchema(options.getSchema());
   }
 
@@ -121,15 +116,17 @@ public class SnowflakeIOIT {
 
   @AfterClass
   public static void teardown() throws Exception {
-    Storage storage = StorageOptions.getDefaultInstance().getService();
-    Page<Blob> blobs = storage.list(stagingBucketName, Storage.BlobListOption.prefix(writeTmpPath));
+            Storage storage = StorageOptions.getDefaultInstance().getService();
+            Page<Blob> blobs =
+                    storage.list(location.getStagingBucketName(),Storage.BlobListOption.prefix("data"));
 
-    for (Blob blob : blobs.iterateAll()) {
-      storage.delete(blob.getBlobId());
-    }
+            for (Blob blob : blobs.iterateAll()) {
+                storage.delete(blob.getBlobId());
+            }
 
-    TestUtils.runConnectionWithStatement(
-        dataSourceConfiguration.buildDatasource(), String.format("DROP TABLE %s", tableName));
+            TestUtils.runConnectionWithStatement(
+                    dataSourceConfiguration.buildDatasource(), String.format("DROP TABLE %s",
+     tableName));
   }
 
   private PipelineResult runWrite() {
@@ -159,7 +156,6 @@ public class SnowflakeIOIT {
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromTable(tableName)
                 .via(location)
-                .withStagingBucketName(stagingBucketName)
                 .withCsvMapper(getTestRowCsvMapper())
                 .withCoder(SerializableCoder.of(TestRow.class)));
 

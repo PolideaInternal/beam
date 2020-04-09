@@ -54,7 +54,7 @@ import org.junit.runners.JUnit4;
  * "--table=<TARGET TABLE NAME>",
  * "--schema=<SCHEMA>",
  * "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/*",
- * "--externalLocation=gs://<BUCKET-NAME>/csv-query-location/",
+ * "--stagingBucketName=gs://<BUCKET-NAME>/csv-query-location/",
  * "--stage=<STAGE NAME>",
  * "--runner=DataflowRunner",
  * "--project=<GCP_PROJECT>",
@@ -82,7 +82,7 @@ public class TpchWriteQueryIT {
     table = options.getTable();
 
     Assume.assumeNotNull(
-        table, parquetFilesLocation, options.getExternalLocation(), options.getStage());
+        table, parquetFilesLocation, options.getStagingBucketName(), options.getStage());
 
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))

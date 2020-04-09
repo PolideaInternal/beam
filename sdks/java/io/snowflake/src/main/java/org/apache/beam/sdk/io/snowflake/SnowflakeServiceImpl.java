@@ -30,6 +30,7 @@ import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.apache.commons.lang3.RandomStringUtils;
 
 /**
  * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in production.
@@ -37,32 +38,28 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 public class SnowflakeServiceImpl implements SnowflakeService {
 
   @Override
+  public String createCloudStoragePath(String stagingBucketName) {
+    String writeTmpPath = String.format("data_%s", RandomStringUtils.randomAlphanumeric(16));
+    return String.format("gs://%s/%s/", stagingBucketName, writeTmpPath);
+  }
+
+  @Override
   public String copyIntoStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String query,
-      String table,
+      String source,
       String integrationName,
-      String stagingBucketName,
-      String tmpDirName)
+      String stagingBucketDir,
+      SnowflakeCloudProvider cloudProvider)
       throws SQLException {
 
-    String from;
-    if (query != null) {
-      // Query must be surrounded with brackets
-      from = String.format("(%s)", query);
-    } else {
-      from = table;
-    }
-
-    String externalLocation = String.format("gcs://%s/%s/", stagingBucketName, tmpDirName);
     String copyQuery =
         String.format(
             "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
-            externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
+            stagingBucketDir, source, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
 
     runStatement(copyQuery, getConnection(dataSourceProviderFn), null);
 
-    return String.format("gs://%s/%s/*", stagingBucketName, tmpDirName);
+    return cloudProvider.transformCloudPathToSnowflakePath(stagingBucketDir).concat("*");
   }
 
   @Override
@@ -78,7 +75,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       throws SQLException {
 
     String files = String.join(", ", filesList);
-    files = files.replaceAll(String.valueOf(location.getExternalLocation()), "");
+    files = files.replaceAll(String.valueOf(location.getFilesPath()), "");
     DataSource dataSource = dataSourceProviderFn.apply(null);
 
     prepareTableAccordingCreateDisposition(dataSource, table, tableSchema, createDisposition);

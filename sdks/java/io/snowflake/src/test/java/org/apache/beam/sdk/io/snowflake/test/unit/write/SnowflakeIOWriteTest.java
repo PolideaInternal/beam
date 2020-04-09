@@ -25,10 +25,12 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.beam.sdk.io.snowflake.Location;
+import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
@@ -50,7 +52,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class SnowflakeIOWriteTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
-  private static final String EXTERNAL_LOCATION = "./bucket";
+  private static final String BUCKET_NAME = "bucket";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
 
@@ -61,11 +63,13 @@ public class SnowflakeIOWriteTest {
   private static Location location;
 
   private static SnowflakeService snowflakeService;
+  private static SnowflakeCloudProvider cloudProvider;
   private static List<Long> testData;
 
   @BeforeClass
   public static void setupAll() {
     snowflakeService = new FakeSnowflakeServiceImpl();
+    cloudProvider = new FakeSnowflakeCloudProvider();
     testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
   }
 
@@ -75,7 +79,7 @@ public class SnowflakeIOWriteTest {
 
     PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
-    options.setExternalLocation(EXTERNAL_LOCATION);
+    options.setStagingBucketName(BUCKET_NAME);
     options.setServerName("NULL.snowflakecomputing.com");
 
     dc =
@@ -85,7 +89,7 @@ public class SnowflakeIOWriteTest {
 
   @After
   public void tearDown() {
-    TestUtils.removeTempDir(EXTERNAL_LOCATION);
+    TestUtils.removeTempDir(BUCKET_NAME);
   }
 
   @Test
@@ -97,7 +101,7 @@ public class SnowflakeIOWriteTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService)
+            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .to(FAKE_TABLE)
@@ -118,7 +122,7 @@ public class SnowflakeIOWriteTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService)
+            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .to(FAKE_TABLE)
@@ -139,7 +143,7 @@ public class SnowflakeIOWriteTest {
         .apply(Create.of(testData))
         .apply(
             "External text write IO",
-            SnowflakeIO.<Long>write(snowflakeService)
+            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withDataSourceConfiguration(dc)
@@ -162,7 +166,7 @@ public class SnowflakeIOWriteTest {
         .apply(ParDo.of(new TestUtils.ParseToKv()))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<KV<String, Long>>write(snowflakeService)
+            SnowflakeIO.<KV<String, Long>>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapperKV())
                 .to(FAKE_TABLE)
@@ -182,7 +186,7 @@ public class SnowflakeIOWriteTest {
     String query = "select t.$1 from %s t";
 
     SnowflakeIO.Write<Long> write =
-        SnowflakeIO.<Long>write(snowflakeService)
+        SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
             .to(FAKE_TABLE)
             .via(location)
             .withUserDataMapper(TestUtils.getLongCsvMapper())
@@ -204,7 +208,7 @@ public class SnowflakeIOWriteTest {
         .apply(ParDo.of(new TestUtils.ParseToKv()))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<KV<String, Long>>write(snowflakeService)
+            SnowflakeIO.<KV<String, Long>>write(snowflakeService, cloudProvider)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapperKV())

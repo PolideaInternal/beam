@@ -22,18 +22,31 @@ import java.io.Serializable;
 public class Location implements Serializable {
   private String stage;
   private String storageIntegration;
-  private String externalLocation;
+  private String stagingBucketName;
+  private String filesPath;
 
   public Location(SnowflakePipelineOptions options) {
     this.stage = options.getStage();
     this.storageIntegration = options.getStorageIntegration();
-    this.externalLocation = options.getExternalLocation();
+    this.stagingBucketName = options.getStagingBucketName();
   }
 
-  public Location(String stage, String storageIntegration, String externalLocation) {
+  public Location(String storageIntegration, String stagingBucketName) {
+    this(storageIntegration, stagingBucketName, null);
+  }
+
+  public Location(String storageIntegration, String stagingBucketName, String stage) {
     this.stage = stage;
     this.storageIntegration = storageIntegration;
-    this.externalLocation = externalLocation;
+    this.stagingBucketName = stagingBucketName;
+  }
+
+  public void setFilesPath(String filesPath) {
+    this.filesPath = filesPath;
+  }
+
+  public String getFilesPath() {
+    return filesPath;
   }
 
   public String getStage() {
@@ -44,8 +57,8 @@ public class Location implements Serializable {
     return storageIntegration;
   }
 
-  public String getExternalLocation() {
-    return externalLocation;
+  public String getStagingBucketName() {
+    return stagingBucketName;
   }
 
   public boolean isStorageIntegration() {
@@ -54,7 +67,7 @@ public class Location implements Serializable {
 
   public String getFilesLocationForCopy() {
     if (isStorageIntegration()) {
-      return String.format("'%s'", externalLocation);
+      return String.format("'%s'", filesPath);
     } else {
       return String.format("@%s", stage);
     }

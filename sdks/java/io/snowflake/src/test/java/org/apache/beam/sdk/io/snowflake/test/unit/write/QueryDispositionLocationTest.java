@@ -25,10 +25,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.apache.beam.sdk.io.snowflake.Location;
+import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
@@ -48,7 +50,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class QueryDispositionLocationTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
-  private static final String EXTERNAL_LOCATION = "./bucket";
+  private static final String BUCKET_NAME = "bucket";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
@@ -58,6 +60,7 @@ public class QueryDispositionLocationTest {
   private static Location location;
 
   private static SnowflakeService snowflakeService;
+  private static SnowflakeCloudProvider cloudProvider;
   private static List<Long> testData;
 
   @BeforeClass
@@ -66,13 +69,13 @@ public class QueryDispositionLocationTest {
     options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
 
     snowflakeService = new FakeSnowflakeServiceImpl();
+    cloudProvider = new FakeSnowflakeCloudProvider();
     testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
   }
 
   @Before
   public void setup() {
-
-    options.setExternalLocation(EXTERNAL_LOCATION);
+    options.setStagingBucketName(BUCKET_NAME);
     options.setServerName("NULL.snowflakecomputing.com");
     options.setStage("STAGE");
     location = new Location(options);
@@ -84,7 +87,7 @@ public class QueryDispositionLocationTest {
 
   @After
   public void tearDown() {
-    TestUtils.removeTempDir(EXTERNAL_LOCATION);
+    TestUtils.removeTempDir(BUCKET_NAME);
   }
 
   @Test
@@ -95,7 +98,7 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Truncate before write",
-            SnowflakeIO.<Long>write(snowflakeService)
+            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
@@ -123,7 +126,7 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService)
+            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
@@ -143,7 +146,7 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService)
+            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
