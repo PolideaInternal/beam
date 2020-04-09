@@ -36,8 +36,7 @@ Use the [`FileIO`](https://beam.apache.org/releases/javadoc/current/org/apache/b
 {{< /paragraph >}}
 
 {{< highlight java >}}
-{% github_sample /apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java tag:FileProcessPatternProcessNewFilesSnip1
-%}
+{{< github_sample "/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java" FileProcessPatternProcessNewFilesSnip1 >}}
 {{< /highlight >}}
 
 {{< paragraph class="language-java" >}}
@@ -45,8 +44,7 @@ The [`TextIO`](https://beam.apache.org/releases/javadoc/current/org/apache/beam/
 {{< /paragraph >}}
 
 {{< highlight java >}}
-{% github_sample /apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java tag:FileProcessPatternProcessNewFilesSnip2
-%}
+{{< github_sample "/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java" FileProcessPatternProcessNewFilesSnip2 >}}
 {{< /highlight >}}
 
 {{< paragraph class="language-java" >}}
@@ -100,11 +98,9 @@ To read filenames in a pipeline job:
 {{< /paragraph >}}
 
 {{< highlight java >}}
-{% github_sample /apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java tag:FileProcessPatternAccessMetadataSnip1
-%}
+{{< github_sample "/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java" FileProcessPatternAccessMetadataSnip1 >}}
 {{< /highlight >}}
 
 {{< highlight py >}}
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py tag:FileProcessPatternAccessMetadataSnip1
-%}
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/snippets.py" FileProcessPatternAccessMetadataSnip1 >}}
 {{< /highlight >}}

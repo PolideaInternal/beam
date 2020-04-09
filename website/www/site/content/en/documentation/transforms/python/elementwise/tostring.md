@@ -36,9 +36,7 @@ The following example converts a `(key, value)` pair into a string delimited by 
 You can specify a different delimiter using the `delimiter` argument.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring.py tag:tostring_kvs %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring.py" tostring_kvs >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -46,9 +44,7 @@ Output `PCollection` after `ToString`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring_test.py tag:plants %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring_test.py" plants >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet
@@ -61,9 +57,7 @@ The following example converts a dictionary into a string.
 The string output will be equivalent to `str(element)`.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring.py tag:tostring_element %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring.py" tostring_element >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -71,9 +65,7 @@ Output `PCollection` after `ToString`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring_test.py tag:plant_lists %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring_test.py" plant_lists >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet
@@ -88,9 +80,7 @@ You can specify a different delimiter using the `delimiter` argument.
 The string output will be equivalent to `iterable.join(delimiter)`.
 
 {{< highlight py >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring.py tag:tostring_iterables %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring.py" tostring_iterables >}}
 {{< /highlight >}}
 
 {{< paragraph class="notebook-skip" >}}
@@ -98,9 +88,7 @@ Output `PCollection` after `ToString`:
 {{< /paragraph >}}
 
 {{< highlight class="notebook-skip" >}}
-<!--
-{% github_sample /apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring_test.py tag:plants_csv %}
--->
+{{< github_sample "/apache/beam/blob/master/sdks/python/apache_beam/examples/snippets/transforms/elementwise/tostring_test.py" plants_csv >}}
 {{< /highlight >}}
 
 {{< buttons-code-snippet
