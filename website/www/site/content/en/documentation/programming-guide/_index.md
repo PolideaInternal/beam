@@ -1915,7 +1915,7 @@ Beam provides read and write transforms for a [number of common data storage
 types](/documentation/io/built-in/). If you want your pipeline
 to read from or write to a data storage format that isn't supported by the
 built-in transforms, you can [implement your own read and write
-transforms]({{site.baseurl }}/documentation/io/developing-io-overview/).
+transforms](/documentation/io/developing-io-overview/).
 
 ### 5.1. Reading input data {#pipeline-io-reading-data}
 
@@ -1993,7 +1993,7 @@ records.apply("WriteToText",
 
 ### 5.4. Beam-provided I/O transforms {#provided-io-transforms}
 
-See the [Beam-provided I/O Transforms]({{site.baseurl }}/documentation/io/built-in/)
+See the [Beam-provided I/O Transforms](/documentation/io/built-in/)
 page for a list of the currently available I/O transforms.
 
 ## 6. Data encoding and type safety {#data-encoding-and-type-safety}
