@@ -90,7 +90,7 @@
       Works with
     </div>
     <div class="logos__logos">
-      {{ range $logo := $.Site.Data.logos }}
+      {{ range $logo := $.Site.Data.works_with }}
       <div class="logos__logos__logo">
         <a href="{{ $logo.url }}"><img src="{{ $logo.image_url }}" alt="{{ $logo.title }}"></a>
       </div>
