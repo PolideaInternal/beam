@@ -1,0 +1,5 @@
+{{ if eq (.Get "class") "table-bordered" }}
+  <div class="table-bordered-wrapper">{{ .Inner | markdownify }}</div>
+{{ else }}
+  <div class="table-wrapper">{{ .Inner | markdownify }}</div>
+{{ end }}
