@@ -21,6 +21,7 @@ import com.google.auto.service.AutoService;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.Map;
 import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.coders.ByteArrayCoder;
@@ -92,20 +93,41 @@ public final class ExternalRead implements ExternalTransformRegistrar {
     public void setDatabase(String database) {
       this.database = database;
     }
-  }
 
-  public static class Sth implements Serializable {
-    public static SnowflakeIO.CsvMapper defaultMapper() {
-      return (SnowflakeIO.CsvMapper<byte[]>)
-          parts -> {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(parts);
-            objectOutputStream.flush();
-            objectOutputStream.close();
+    public void setServername(byte[] servername) {
+      this.servername = new String(servername, Charset.defaultCharset());
+    }
 
-            return byteArrayOutputStream.toByteArray();
-          };
+    public void setUsername(byte[] username) {
+      this.username = new String(username, Charset.defaultCharset());
+    }
+
+    public void setPassword(byte[] password) {
+      this.password = new String(password, Charset.defaultCharset());
+    }
+
+    public void setSchema(byte[] schema) {
+      this.schema = new String(schema, Charset.defaultCharset());
+    }
+
+    public void setTable(byte[] table) {
+      this.table = new String(table, Charset.defaultCharset());
+    }
+
+    public void setQuery(byte[] query) {
+      this.query = new String(query, Charset.defaultCharset());
+    }
+
+    public void setStagingbucketname(byte[] stagingbucketname) {
+      this.stagingbucketname = new String(stagingbucketname, Charset.defaultCharset());
+    }
+
+    public void setStorageintegration(byte[] storageintegration) {
+      this.storageintegration = new String(storageintegration, Charset.defaultCharset());
+    }
+
+    public void setDatabase(byte[] database) {
+      this.database = new String(database, Charset.defaultCharset());
     }
   }
 
@@ -140,6 +162,21 @@ public final class ExternalRead implements ExternalTransformRegistrar {
       readBuilder.setCoder(ByteArrayCoder.of());
 
       return readBuilder.build();
+    }
+  }
+
+  public static class Sth implements Serializable {
+    public static SnowflakeIO.CsvMapper defaultMapper() {
+      return (SnowflakeIO.CsvMapper<byte[]>)
+          parts -> {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(parts);
+            objectOutputStream.flush();
+            objectOutputStream.close();
+
+            return byteArrayOutputStream.toByteArray();
+          };
     }
   }
 }
