@@ -13,17 +13,16 @@
 {{ range $color := $.Site.Data.logos.colors }}
     {{ (printf "%s%s" "#### " (index $color 1)) | markdownify }}
     <div class="row">
-        <div class="col-md-2">
-    </div>
-    {{ range $type := $.Site.Data.logos.types }}
-        <div class="col-md-2">
-            <div class="row">
-                <a href="{{ index $.Site.Data.logos "logo-location" }}/{{ index $color 0 }}/{{ $type }}/beam-logo-{{ index $color 0 }}-{{ $type }}.svg" role="button">
-                    <img style="height: 60px" src="{{ index $.Site.Data.logos "logo-location" }}/{{ index $color 0 }}/{{ $type }}/beam-logo-{{ index $color 0 }}-{{ $type }}.svg" alt="beam-logo-{{ index $color 0 }}-{{ $type }}.svg">
-                </a>
+        <div class="col-md-2"></div>
+        {{ range $type := $.Site.Data.logos.types }}
+            <div class="col-md-2">
+                <div class="row">
+                    <a href="{{ index $.Site.Data.logos "logo-location" }}/{{ index $color 0 }}/{{ $type }}/beam-logo-{{ index $color 0 }}-{{ $type }}.svg" role="button">
+                        <img style="height: 60px" src="{{ index $.Site.Data.logos "logo-location" }}/{{ index $color 0 }}/{{ $type }}/beam-logo-{{ index $color 0 }}-{{ $type }}.svg" alt="beam-logo-{{ index $color 0 }}-{{ $type }}.svg">
+                    </a>
+                </div>
+                <br>
             </div>
-            <br>
-        </div>
-    {{ end }}
+        {{ end }}
     </div>
 {{ end }}
