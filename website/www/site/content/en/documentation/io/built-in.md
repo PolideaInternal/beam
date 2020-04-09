@@ -39,7 +39,7 @@ Consult the [Programming Guide I/O section](/documentation/programming-guide#pip
     <p><a href="https://github.com/apache/beam/blob/master/sdks/java/core/src/main/java/org/apache/beam/sdk/io/TFRecordIO.java">TFRecordIO</a></p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/java/io/xml/src/main/java/org/apache/beam/sdk/io/xml/XmlIO.java">XmlIO</a></p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/java/io/tika/src/main/java/org/apache/beam/sdk/io/tika/TikaIO.java">TikaIO</a></p>
-    <p><a href="{{site.baseurl}}/documentation/io/built-in/parquet">ParquetIO</a></p>
+    <p><a href="/documentation/io/built-in/parquet">ParquetIO</a></p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/java/io/thrift/src/main/java/org/apache/beam/sdk/io/thrift/ThriftIO.java">ThriftIO</a></p>
   </td>
   <td>
@@ -54,13 +54,13 @@ Consult the [Programming Guide I/O section](/documentation/programming-guide#pip
   </td>
   <td>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/java/io/cassandra">Apache Cassandra</a></p>
-    <p><a href="{{site.baseurl}}/documentation/io/built-in/hadoop/">Apache Hadoop Input/Output Format</a></p>
+    <p><a href="/documentation/io/built-in/hadoop/">Apache Hadoop Input/Output Format</a></p>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/java/io/hbase">Apache HBase</a></p>
-    <p><a href="{{site.baseurl}}/documentation/io/built-in/hcatalog">Apache Hive (HCatalog)</a></p>
+    <p><a href="/documentation/io/built-in/hcatalog">Apache Hive (HCatalog)</a></p>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/java/io/kudu">Apache Kudu</a></p>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/java/io/solr">Apache Solr</a></p>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/java/io/elasticsearch">Elasticsearch (v2.x, v5.x, v6.x)</a></p>
-    <p><a href="{{site.baseurl}}/documentation/io/built-in/google-bigquery/">Google BigQuery</a></p>
+    <p><a href="/documentation/io/built-in/google-bigquery/">Google BigQuery</a></p>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/java/io/google-cloud-platform/src/main/java/org/apache/beam/sdk/io/gcp/bigtable">Google Cloud Bigtable</a></p>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/java/io/google-cloud-platform/src/main/java/org/apache/beam/sdk/io/gcp/datastore">Google Cloud Datastore</a></p>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/java/io/google-cloud-platform/src/main/java/org/apache/beam/sdk/io/gcp/spanner">Google Cloud Spanner</a></p>
@@ -74,7 +74,7 @@ Consult the [Programming Guide I/O section](/documentation/programming-guide#pip
   <td>
     <p>Beam Python supports Apache HDFS, Google Cloud Storage, and local filesystems.</p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/avroio.py">avroio</a></p>
-    <p><a href="{{site.baseurl}}/documentation/io/built-in/parquet">parquetio.py</a></p>
+    <p><a href="/documentation/io/built-in/parquet">parquetio.py</a></p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/textio.py">textio</a></p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/tfrecordio.py">tfrecordio</a></p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/vcfio.py">vcfio</a></p>
@@ -82,7 +82,7 @@ Consult the [Programming Guide I/O section](/documentation/programming-guide#pip
   <td>
   </td>
   <td>
-    <p><a href="{{site.baseurl}}/documentation/io/built-in/google-bigquery/">Google BigQuery</a></p>
+    <p><a href="/documentation/io/built-in/google-bigquery/">Google BigQuery</a></p>
     <p><a href="https://github.com/apache/beam/tree/master/sdks/python/apache_beam/io/gcp/datastore">Google Cloud Datastore</a></p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/gcp/bigtableio.py">Google Cloud Bigtable</a> (Write)</p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/mongodbio.py">MongoDB</a></p>
