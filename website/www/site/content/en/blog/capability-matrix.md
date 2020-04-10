@@ -550,7 +550,7 @@ capability-matrix-snapshot:
               l2: ''
               l3: ''
               
-        - name: 'Accumulating &amp; Retracting'
+        - name: 'Accumulating & Retracting'
           values:
             - class: model
               jira: BEAM-91
