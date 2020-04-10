@@ -190,7 +190,7 @@ gLinux users should configure their machines for sudoless Docker.
    that start various post-commit tests suites. Use these sparingly because post-commit tests consume shared development resources.
 
 1. Pull requests can only be merged by a
-   [Beam committer](https://home.apache.org/phonebook.html?pmc=beam).
+   [Beam committer](/contribute/team).
    To find a committer for your area, either:
     - look in the OWNERS file of the directory where you changed files, or
     - look for similar code merges, or
@@ -248,10 +248,10 @@ unassigned from the author but will stay open.
   [dev@ mailing list](/community/contact-us) (include your Wiki account user ID).
 
 - Pull requests can only be merged by a
-  [Beam committer](https://home.apache.org/phonebook.html?pmc=beam).
+  [Beam committer](/contribute/team).
 
 - [Voting on a release](https://www.apache.org/foundation/voting.html): Everyone can vote. Only
-  [Beam PMC](https://home.apache.org/phonebook.html?pmc=beam) members should mark their votes as binding.
+  [Beam PMC](/contribute/team) members should mark their votes as binding.
 
 ## Communication
 
