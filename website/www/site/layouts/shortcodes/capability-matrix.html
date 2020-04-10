@@ -22,13 +22,14 @@
                     &#x2715;
                 {{ end }}
             </b>
-
-            {{ if eq .type "summary" }}
-                {{ with .val.jira }}
-                    <br>
-                    <a href='https://issues.apache.org/jira/browse/{{ . }}'>{{ . }}</a>
+            <b>
+                {{ if eq .type "summary" }}
+                    {{ with .val.jira }}
+                        <br>
+                        (<a href='https://issues.apache.org/jira/browse/{{ . }}'>{{ . }}</a>)
+                    {{ end }}
                 {{ end }}
-            {{ end }}
+            </b>
         </center>
     {{ else if eq .type "full" }}
         <center>
@@ -40,7 +41,7 @@
 
                 {{ with .val.jira }}
                     <br>
-                    <a href='https://issues.apache.org/jira/browse/{{ . }}'>{{ . }}</a>
+                    (<a href='https://issues.apache.org/jira/browse/{{ . }}'>{{ . }}</a>)
                 {{ end }}
             </b>
         </center>
