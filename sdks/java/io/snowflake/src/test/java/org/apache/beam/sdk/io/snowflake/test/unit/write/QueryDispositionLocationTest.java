@@ -74,8 +74,7 @@ public class QueryDispositionLocationTest {
 
     options.setExternalLocation(EXTERNAL_LOCATION);
     options.setServerName("NULL.snowflakecomputing.com");
-    options.setStage("STAGE");
-    location = new Location(options);
+    location = Location.of(options);
 
     dc =
         SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())

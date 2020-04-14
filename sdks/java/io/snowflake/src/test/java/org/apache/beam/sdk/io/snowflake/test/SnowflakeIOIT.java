@@ -99,8 +99,7 @@ public class SnowflakeIOIT {
     writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
 
     location =
-        new Location(
-            null,
+        Location.of(
             options.getStorageIntegration(),
             String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
     dataSourceConfiguration =

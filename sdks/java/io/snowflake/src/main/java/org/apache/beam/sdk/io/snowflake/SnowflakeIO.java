@@ -113,7 +113,7 @@ import org.slf4j.LoggerFactory;
  * <p>For example
  *
  * <pre>{@code
- * Location location = new Location();
+ * Location location = Location.of(storageIntegration, externalLocation);
  * PCollection<GenericRecord> items = pipeline.apply(
  *  SnowflakeIO.<GenericRecord>read()
  *    .withDataSourceConfiguration(dataSourceConfiguration)
@@ -133,7 +133,7 @@ import org.slf4j.LoggerFactory;
  * <p>For example
  *
  * <pre>{@code
- * Location location = new Location(options);
+ * Location location = Location.of(storageIntegration, externalLocation);
  * items.apply(
  *     SnowflakeIO.<KV<Integer, String>>write()
  *         .withDataSourceConfiguration(dataSourceConfiguration)
@@ -901,17 +901,9 @@ public class SnowflakeIO {
 
       checkArgument(location != null, "via() is required");
 
-      checkArgument(
-          location.getStorageIntegration() != null || location.getStage() != null,
-          "withStorageIntegration() or withStage is required");
-
       checkArgument(getUserDataMapper() != null, "withUserDataMapper() is required");
 
       checkArgument(getTable() != null, "withTable() is required");
-
-      if (getQuery() != null) {
-        checkArgument(location.getStage() != null, "withQuery() requires stage as location");
-      }
 
       checkArgument(
           (getDataSourceProviderFn() != null),
@@ -1034,8 +1026,7 @@ public class SnowflakeIO {
       this.tableSchema = tableSchema;
       this.location = location;
       if (query != null) {
-        String formattedQuery = String.format(query, location.getFilesLocationForCopy());
-        this.source = String.format("(%s)", formattedQuery);
+        this.source = String.format("(%s)", query);
       } else {
         String directory = location.getFilesLocationForCopy();
         this.source = directory.replace("gs://", "gcs://");

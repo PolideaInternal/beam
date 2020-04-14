@@ -20,24 +20,20 @@ package org.apache.beam.sdk.io.snowflake;
 import java.io.Serializable;
 
 public class Location implements Serializable {
-  private String stage;
   private String storageIntegration;
   private String externalLocation;
 
-  public Location(SnowflakePipelineOptions options) {
-    this.stage = options.getStage();
-    this.storageIntegration = options.getStorageIntegration();
-    this.externalLocation = options.getExternalLocation();
+  public static Location of(SnowflakePipelineOptions options) {
+    return new Location(options.getStorageIntegration(), options.getExternalLocation());
   }
 
-  public Location(String stage, String storageIntegration, String externalLocation) {
-    this.stage = stage;
+  public static Location of(String storageIntegration, String externalLocation) {
+    return new Location(storageIntegration, externalLocation);
+  }
+
+  private Location(String storageIntegration, String externalLocation) {
     this.storageIntegration = storageIntegration;
     this.externalLocation = externalLocation;
-  }
-
-  public String getStage() {
-    return stage;
   }
 
   public String getStorageIntegration() {
@@ -53,10 +49,6 @@ public class Location implements Serializable {
   }
 
   public String getFilesLocationForCopy() {
-    if (isStorageIntegration()) {
-      return String.format("'%s'", externalLocation);
-    } else {
-      return String.format("@%s", stage);
-    }
+    return String.format("'%s'", externalLocation);
   }
 }

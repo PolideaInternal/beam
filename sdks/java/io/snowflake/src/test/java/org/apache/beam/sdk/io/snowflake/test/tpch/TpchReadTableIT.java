@@ -76,7 +76,7 @@ public class TpchReadTableIT {
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
     stagingBucketName = options.getStagingBucketName();
     output = options.getParquetFilesLocation();
-    location = new Location(options);
+    location = Location.of(options);
 
     String testSize = options.getTestSize();
     Assume.assumeNotNull(testSize);

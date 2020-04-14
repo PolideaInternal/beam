@@ -74,9 +74,8 @@ public class SchemaDispositionTest {
     options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
     options.setExternalLocation(EXTERNAL_LOCATION);
     options.setServerName("NULL.snowflakecomputing.com");
-    options.setStage("STAGE");
 
-    location = new Location(options);
+    location = Location.of(options);
 
     snowflakeService = new FakeSnowflakeServiceImpl();
 

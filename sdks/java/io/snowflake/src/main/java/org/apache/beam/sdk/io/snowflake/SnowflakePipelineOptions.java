@@ -126,13 +126,8 @@ public interface SnowflakePipelineOptions extends PipelineOptions {
 
   void setInternalLocation(String internalLocation);
 
-  @Description("Storage integration - required in case the external stage is not specified.")
+  @Description("Storage integration")
   String getStorageIntegration();
 
   void setStorageIntegration(String integration);
-
-  @Description("Stage name. Optional.")
-  String getStage();
-
-  void setStage(String stage);
 }

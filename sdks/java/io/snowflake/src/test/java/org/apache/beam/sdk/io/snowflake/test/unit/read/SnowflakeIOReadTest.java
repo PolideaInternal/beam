@@ -82,7 +82,7 @@ public class SnowflakeIOReadTest {
     options.setStagingBucketName("BUCKET");
 
     stagingBucketName = options.getStagingBucketName();
-    location = new Location(options);
+    location = Location.of(options);
 
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
@@ -134,7 +134,7 @@ public class SnowflakeIOReadTest {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
             .withStagingBucketName(stagingBucketName)
-            .via(new Location(null, null, null))
+            .via(Location.of(null, null))
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
