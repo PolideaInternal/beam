@@ -72,9 +72,8 @@ public class CreateDispositionTest {
     options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
     options.setStagingBucketName(BUCKET_NAME);
     options.setServerName("NULL.snowflakecomputing.com");
-    options.setStage("STAGE");
 
-    location = new Location(options);
+    location = Location.of(options);
 
     snowflakeService = new FakeSnowflakeServiceImpl();
     cloudProvider = new FakeSnowflakeCloudProvider();

@@ -30,17 +30,16 @@ import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.transforms.SerializableFunction;
-import org.apache.commons.lang3.RandomStringUtils;
 
 /**
  * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in production.
  */
 public class SnowflakeServiceImpl implements SnowflakeService {
+  private static final String WRITE_TMP_PATH = "data";
 
   @Override
   public String createCloudStoragePath(String stagingBucketName) {
-    String writeTmpPath = String.format("data_%s", RandomStringUtils.randomAlphanumeric(16));
-    return String.format("gs://%s/%s/", stagingBucketName, writeTmpPath);
+    return String.format("gs://%s/%s/", stagingBucketName, WRITE_TMP_PATH);
   }
 
   @Override
