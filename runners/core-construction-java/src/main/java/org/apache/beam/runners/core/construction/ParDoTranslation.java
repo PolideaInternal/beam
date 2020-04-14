@@ -372,7 +372,6 @@ public class ParDoTranslation {
   }
 
   public static DoFn<?, ?> getDoFn(ParDoPayload payload) throws InvalidProtocolBufferException {
-
     return doFnWithExecutionInformationFromProto(payload.getDoFn()).getDoFn();
   }
 
