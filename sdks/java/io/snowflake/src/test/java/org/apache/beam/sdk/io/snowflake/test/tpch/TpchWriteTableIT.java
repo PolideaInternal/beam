@@ -100,7 +100,7 @@ public class TpchWriteTableIT {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .to(table)
             .withWriteDisposition(WriteDisposition.TRUNCATE)
-            .via(new Location(options))
+            .via(Location.of(options))
             .withUserDataMapper(TpchTestUtils.getUserDataMapper()));
 
     PipelineResult pipelineResult = pipeline.run(options);

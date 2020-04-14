@@ -73,7 +73,7 @@ public class TpchReadQueryIT {
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
     output = options.getParquetFilesLocation();
-    location = new Location(options);
+    location = Location.of(options);
 
     String testSize = options.getTestSize();
     Assume.assumeNotNull(testSize);

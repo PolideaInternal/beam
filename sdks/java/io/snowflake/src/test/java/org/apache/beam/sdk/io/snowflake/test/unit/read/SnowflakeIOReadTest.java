@@ -80,7 +80,7 @@ public class SnowflakeIOReadTest {
     options.setStorageIntegration("STORAGE_INTEGRATION");
     options.setStagingBucketName("bucket");
 
-    location = new Location(options);
+    location = Location.of(options);
 
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
@@ -99,7 +99,7 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
-            .via(new Location(location.getStorageIntegration(), null))
+            .via(Location.of(options.getStorageIntegration(), null))
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -130,7 +130,7 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
-            .via(new Location(null, options.getStagingBucketName()))
+            .via(Location.of(null, null))
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 

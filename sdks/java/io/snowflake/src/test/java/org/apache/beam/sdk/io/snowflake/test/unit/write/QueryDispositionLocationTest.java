@@ -77,8 +77,7 @@ public class QueryDispositionLocationTest {
   public void setup() {
     options.setStagingBucketName(BUCKET_NAME);
     options.setServerName("NULL.snowflakecomputing.com");
-    options.setStage("STAGE");
-    location = new Location(options);
+    location = Location.of(options);
 
     dc =
         SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())

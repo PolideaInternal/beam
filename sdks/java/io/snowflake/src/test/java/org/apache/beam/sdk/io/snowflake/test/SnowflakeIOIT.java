@@ -23,7 +23,6 @@ import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import org.apache.beam.repackaged.core.org.apache.commons.lang3.RandomStringUtils;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.io.GenerateSequence;
@@ -79,7 +78,6 @@ public class SnowflakeIOIT {
 
   private static int numberOfRows;
   private static Location location;
-  private static String stagingBucketName;
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
 
   public interface SnowflakeIOITPipelineOptions
@@ -94,14 +92,12 @@ public class SnowflakeIOIT {
         readIOTestPipelineOptions(SnowflakeIOITPipelineOptions.class);
 
     numberOfRows = options.getNumberOfRecords();
-    stagingBucketName = options.getStagingBucketName();
 
-    location = new Location(options);
+    location = Location.of(options);
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
             .withDatabase(options.getDatabase())
             .withServerName(options.getServerName())
-                .withWarehouse("COMPUTE_WH")
             .withSchema(options.getSchema());
   }
 
@@ -116,17 +112,16 @@ public class SnowflakeIOIT {
 
   @AfterClass
   public static void teardown() throws Exception {
-            Storage storage = StorageOptions.getDefaultInstance().getService();
-            Page<Blob> blobs =
-                    storage.list(location.getStagingBucketName(),Storage.BlobListOption.prefix("data"));
+    Storage storage = StorageOptions.getDefaultInstance().getService();
+    Page<Blob> blobs =
+        storage.list(location.getStagingBucketName(), Storage.BlobListOption.prefix("data"));
 
-            for (Blob blob : blobs.iterateAll()) {
-                storage.delete(blob.getBlobId());
-            }
+    for (Blob blob : blobs.iterateAll()) {
+      storage.delete(blob.getBlobId());
+    }
 
-            TestUtils.runConnectionWithStatement(
-                    dataSourceConfiguration.buildDatasource(), String.format("DROP TABLE %s",
-     tableName));
+    TestUtils.runConnectionWithStatement(
+        dataSourceConfiguration.buildDatasource(), String.format("DROP TABLE %s", tableName));
   }
 
   private PipelineResult runWrite() {

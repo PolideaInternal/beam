@@ -20,23 +20,19 @@ package org.apache.beam.sdk.io.snowflake;
 import java.io.Serializable;
 
 public class Location implements Serializable {
-  private String stage;
   private String storageIntegration;
   private String stagingBucketName;
   private String filesPath;
 
-  public Location(SnowflakePipelineOptions options) {
-    this.stage = options.getStage();
-    this.storageIntegration = options.getStorageIntegration();
-    this.stagingBucketName = options.getStagingBucketName();
+  public static Location of(SnowflakePipelineOptions options) {
+    return new Location(options.getStorageIntegration(), options.getStagingBucketName());
   }
 
-  public Location(String storageIntegration, String stagingBucketName) {
-    this(storageIntegration, stagingBucketName, null);
+  public static Location of(String storageIntegration, String stagingBucketName) {
+    return new Location(storageIntegration, stagingBucketName);
   }
 
-  public Location(String storageIntegration, String stagingBucketName, String stage) {
-    this.stage = stage;
+  private Location(String storageIntegration, String stagingBucketName) {
     this.storageIntegration = storageIntegration;
     this.stagingBucketName = stagingBucketName;
   }
@@ -47,10 +43,6 @@ public class Location implements Serializable {
 
   public String getFilesPath() {
     return filesPath;
-  }
-
-  public String getStage() {
-    return stage;
   }
 
   public String getStorageIntegration() {
@@ -66,10 +58,6 @@ public class Location implements Serializable {
   }
 
   public String getFilesLocationForCopy() {
-    if (isStorageIntegration()) {
-      return String.format("'%s'", filesPath);
-    } else {
-      return String.format("@%s", stage);
-    }
+    return String.format("'%s'", filesPath);
   }
 }

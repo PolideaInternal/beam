@@ -81,8 +81,7 @@ public class TpchWriteQueryIT {
     parquetFilesLocation = options.getParquetFilesLocation();
     table = options.getTable();
 
-    Assume.assumeNotNull(
-        table, parquetFilesLocation, options.getStagingBucketName(), options.getStage());
+    Assume.assumeNotNull(table, parquetFilesLocation, options.getStagingBucketName());
 
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
@@ -111,7 +110,7 @@ public class TpchWriteQueryIT {
             .withQueryTransformation(QUERY_TRANSFORMATION)
             .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
             .withTableSchema(tableSchema)
-            .via(new Location(options))
+            .via(Location.of(options))
             .withUserDataMapper(TpchTestUtils.getUserDataMapper()));
 
     PipelineResult pipelineResult = pipeline.run(options);

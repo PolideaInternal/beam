@@ -28,7 +28,6 @@ import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
-import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
@@ -93,30 +92,9 @@ public class SnowflakeIOWriteTest {
   }
 
   @Test
-  public void writeToExternalWithStageTest() throws SnowflakeSQLException {
-    options.setStage("STAGE");
-    location = new Location(options);
-
-    pipeline
-        .apply(Create.of(testData))
-        .apply(
-            "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
-                .withDataSourceConfiguration(dc)
-                .withUserDataMapper(TestUtils.getLongCsvMapper())
-                .to(FAKE_TABLE)
-                .via(location));
-    pipeline.run(options).waitUntilFinish();
-
-    List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
-
-    assertTrue(TestUtils.isListsEqual(testData, actualData));
-  }
-
-  @Test
   public void writeToExternalWithIntegrationTest() throws SnowflakeSQLException {
     options.setStorageIntegration("STORAGE_INTEGRATION");
-    location = new Location(options);
+    location = Location.of(options);
 
     pipeline
         .apply(Create.of(testData))
@@ -135,9 +113,8 @@ public class SnowflakeIOWriteTest {
   }
 
   @Test
-  public void writeToExternalWithStageWithMapperTest() throws SnowflakeSQLException {
-    options.setStage("STAGE");
-    location = new Location(options);
+  public void writeToExternalWithMapperTest() throws SnowflakeSQLException {
+    location = Location.of(options);
 
     pipeline
         .apply(Create.of(testData))
@@ -157,9 +134,8 @@ public class SnowflakeIOWriteTest {
   }
 
   @Test
-  public void writeToExternalWithStageKVInput() throws SnowflakeSQLException {
-    options.setStage("STAGE");
-    location = new Location(options);
+  public void writeToExternalWithKVInput() {
+    location = Location.of(options);
 
     pipeline
         .apply(Create.of(testData))
@@ -176,31 +152,8 @@ public class SnowflakeIOWriteTest {
   }
 
   @Test
-  public void writeToExternalWithIntegrationWithoutStageFails() {
-    options.setStorageIntegration("STORAGE_INTEGRATION");
-    location = new Location(options);
-
-    exceptionRule.expect(IllegalArgumentException.class);
-    exceptionRule.expectMessage("withQuery() requires stage as location");
-
-    String query = "select t.$1 from %s t";
-
-    SnowflakeIO.Write<Long> write =
-        SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
-            .to(FAKE_TABLE)
-            .via(location)
-            .withUserDataMapper(TestUtils.getLongCsvMapper())
-            .withQueryTransformation(query)
-            .withWriteDisposition(WriteDisposition.APPEND)
-            .withDataSourceConfiguration(dc);
-
-    write.expand(null);
-  }
-
-  @Test
   public void writeToExternalWithTransformationTest() throws SQLException {
-    options.setStage("STAGE");
-    location = new Location(options);
+    location = Location.of(options);
 
     String query = "select t.$1 from %s t";
     pipeline
