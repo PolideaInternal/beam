@@ -32,7 +32,9 @@ ext.summary = "Expansion service serving several Java IOs"
 
 dependencies {
   compile project(":sdks:java:expansion-service")
+  compile project(":sdks:java:io:snowflake")
   compile project(":sdks:java:io:kafka")
   runtime library.java.kafka_clients
+  runtime library.java.snowflake_jdbc
   runtime library.java.slf4j_jdk14
 }

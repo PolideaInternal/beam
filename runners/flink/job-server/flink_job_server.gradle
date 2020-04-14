@@ -90,6 +90,7 @@ dependencies {
   runtime project(":sdks:java:io:kafka")
   runtime project(":sdks:java:io:snowflake")
   runtime library.java.kafka_clients
+  runtime library.java.snowflake_jdbc
   runtime project(":sdks:java:io:google-cloud-platform")
 }
 

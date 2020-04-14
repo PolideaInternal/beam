@@ -35,19 +35,19 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
 
-SERVER_NAME = "fy22127.eu-central-1.snowflakecomputing.com"
-USERNAME = "uber"
-PASSWORD = "qazpol123"
+SERVER_NAME = "raa83096.us-east-1.snowflakecomputing.com"
+USERNAME = "PAWEL"
+PASSWORD = "Uber123"
 SCHEMA = "TPCH_SF1"
 DATABASE = "SNOWFLAKE_SAMPLE_DATA"
-STAGING_BUCKET_NAME = "darek-snowflake-tpch"
-STORAGE_INTEGRATION = "DAREKTPCH"
+STAGING_BUCKET_NAME = "pawel-test-winter"
+STORAGE_INTEGRATION = "pawel_integration"
 TABLE = "LINEITEM"
 EXPANSION_SERVICE = 'localhost:8097'
 
 options = PipelineOptions([
   "--runner=FlinkRunner",
-  "--flink_version=1.9",
+  "--flink_version=1.10",
   "--flink_master=localhost:8081",
   "--environment_type=LOOPBACK"
 ])

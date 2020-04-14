@@ -122,6 +122,8 @@ func main() {
 		filepath.Join(jarsDir, "beam-sdks-java-harness.jar"),
 		filepath.Join(jarsDir, "beam-sdks-java-io-kafka.jar"),
 		filepath.Join(jarsDir, "kafka-clients.jar"),
+	    filepath.Join(jarsDir, "beam-sdks-java-io-snowflake.jar"),
+        filepath.Join(jarsDir, "snowflake-jdbc.jar"),
 	}
 
 	var hasWorkerExperiment = strings.Contains(options, "use_staged_dataflow_worker_jar")

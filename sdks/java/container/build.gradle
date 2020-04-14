@@ -43,8 +43,11 @@ dependencies {
   dockerDependency project(path: ":sdks:java:harness", configuration: "shadow")
   // For executing KafkaIO, e.g. as an external transform
   dockerDependency project(":sdks:java:io:kafka")
+  dockerDependency project(":sdks:java:io:snowflake")
   // This dependency is set to 'provided' scope in :sdks:java:io:kafka
   dockerDependency library.java.kafka_clients
+  dockerDependency library.java.snowflake_jdbc
+
 }
 
 def dockerfileName = project.findProperty('dockerfile') ?: 'Dockerfile'
@@ -56,6 +59,9 @@ task copyDockerfileDependencies(type: Copy) {
   rename 'beam-sdks-java-harness-.*.jar', 'beam-sdks-java-harness.jar'
   rename 'beam-sdks-java-io-kafka.*.jar', 'beam-sdks-java-io-kafka.jar'
   rename 'kafka-clients.*.jar', 'kafka-clients.jar'
+  rename 'beam-sdks-java-io-snowflake.*.jar', 'beam-sdks-java-io-snowflake.jar'
+  rename 'snowflake-jdbc.*.jar', 'snowflake-jdbc.jar'
+
   into "build/target"
 }
 
