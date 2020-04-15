@@ -65,6 +65,19 @@ languageName ="English"
 # Weight used for sorting.
 weight = 1
 
+# RSS template configuration
+[outputs]
+home = ["HTML","FEED"]
+
+[mediaTypes]
+[mediaTypes."application/rss"]
+suffixes = ["xml"]
+
+[outputFormats]
+[outputFormats.FEED]
+mediatype = "application/rss"
+baseName = "feed"
+
 # Everything below this are Site Params
 
 # First one is picked as the Twitter card image if not set on page.

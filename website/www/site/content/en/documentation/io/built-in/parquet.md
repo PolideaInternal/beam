@@ -44,10 +44,10 @@ To use ParquetIO, add the Maven artifact dependency to your `pom.xml` file.
 Additional resources:
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 * [ParquetIO source code](https://github.com/apache/beam/blob/master/sdks/java/io/parquet/src/main/java/org/apache/beam/sdk/io/parquet/ParquetIO.java)
 * [ParquetIO Javadoc](https://beam.apache.org/releases/javadoc/{{< param release_latest >}}/org/apache/beam/sdk/io/parquet/ParquetIO.html)
-{{< /list >}}
+{{< /paragraph >}}
 
 <!-- Python specific -->
 
@@ -59,10 +59,10 @@ ParquetIO comes preinstalled with the Apache Beam python sdk..{{< param release_
 Additional resources:
 {{< /paragraph >}}
 
-{{< list class="language-py" >}}
+{{< paragraph class="language-py" wrap="span" >}}
 * [ParquetIO source code](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/parquetio.py)
 * [ParquetIO Pydoc](https://beam.apache.org/releases/pydoc/{{< param release_latest >}}/apache_beam.io.parquetio.html)
-{{< /list >}}
+{{< /paragraph >}}
 
 {{< paragraph class="language-java" >}}
 #### Using ParquetIO with Spark before 2.4

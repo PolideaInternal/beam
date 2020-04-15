@@ -44,11 +44,11 @@ To use BigQueryIO, add the Maven artifact dependency to your `pom.xml` file.
 Additional resources:
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 * [BigQueryIO source code](https://github.com/apache/beam/tree/master/sdks/java/io/google-cloud-platform/src/main/java/org/apache/beam/sdk/io/gcp/bigquery)
 * [BigQueryIO Javadoc](https://beam.apache.org/releases/javadoc/{{< param release_latest >}}/org/apache/beam/sdk/io/gcp/bigquery/BigQueryIO.html)
 * [Google BigQuery documentation](https://cloud.google.com/bigquery/docs)
-{{< /list >}}
+{{< /paragraph >}}
 
 
 <!-- Python specific -->
@@ -62,11 +62,11 @@ running `pip install apache-beam[gcp]`.
 Additional resources:
 {{< /paragraph >}}
 
-{{< list class="language-py" >}}
+{{< paragraph class="language-py" wrap="span" >}}
 * [BigQueryIO source code](https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/gcp/bigquery.py)
 * [BigQueryIO Pydoc](https://beam.apache.org/releases/pydoc/{{< param release_latest >}}/apache_beam.io.gcp.bigquery.html)
 * [Google BigQuery documentation](https://cloud.google.com/bigquery/docs)
-{{< /list >}}
+{{< /paragraph >}}
 
 
 ## BigQuery basics
@@ -226,7 +226,7 @@ The Beam SDK for Java has two BigQueryIO read methods. Both of these methods
 allow you to read from a table, or read fields using a query string.
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 1. `read(SerializableFunction)` reads Avro-formatted records and uses a
    specified parsing function to parse them into a `PCollection` of custom typed
    objects. Each element in the `PCollection` represents a single row in the
@@ -240,7 +240,7 @@ allow you to read from a table, or read fields using a query string.
    2-3 times slower in performance compared to `read(SerializableFunction)`. The
    [example code](#reading-from-a-table) for reading from a table shows how to
    use `readTableRows`.
-{{< /list >}}
+{{< /paragraph >}}
 
 {{< paragraph class="language-java" >}}
 ***Note:*** `BigQueryIO.read()` is deprecated as of Beam SDK 2.2.0. Instead, use
@@ -410,7 +410,7 @@ Use `.withCreateDisposition` to specify the create disposition. Valid enum
 values are:
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
  * `Write.CreateDisposition.CREATE_IF_NEEDED`: Specifies that the
    write operation should create a new table if one does not exist. If you use
    this value, you must provide a table schema with the `withSchema` method.
@@ -419,7 +419,7 @@ values are:
  * `Write.CreateDisposition.CREATE_NEVER`: Specifies that a table
    should never be created. If the destination table does not exist, the write
    operation fails.
-{{< /list >}}
+{{< /paragraph >}}
 
 <!-- Python specific -->
 
@@ -428,14 +428,14 @@ Use the `create_disposition` parameter to specify the create disposition. Valid
 enum values are:
 {{< /paragraph >}}
 
-{{< list class="language-py" >}}
+{{< paragraph class="language-py" wrap="span" >}}
  * `BigQueryDisposition.CREATE_IF_NEEDED`: Specifies that the write operation
    should create a new table if one does not exist. If you use this value, you
    must provide a table schema. `CREATE_IF_NEEDED` is the default behavior.
 
  * `BigQueryDisposition.CREATE_NEVER`: Specifies that a table should never be
    created. If the destination table does not exist, the write operation fails.
-{{< /list >}}
+{{< /paragraph >}}
 
 If you specify `CREATE_IF_NEEDED` as the create disposition and you don't supply
 a table schema, the transform might fail at runtime if the destination table does
@@ -454,7 +454,7 @@ Use `.withWriteDisposition` to specify the write disposition. Valid enum values
 are:
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
  * `Write.WriteDisposition.WRITE_EMPTY`: Specifies that the write
    operation should fail at runtime if the destination table is not empty.
    `WRITE_EMPTY` is the default behavior.
@@ -465,7 +465,7 @@ are:
 
  * `Write.WriteDisposition.WRITE_APPEND`: Specifies that the write
    operation should append the rows to the end of the existing table.
-{{< /list >}}
+{{< /paragraph >}}
 
 <!-- Python specific -->
 
@@ -474,7 +474,7 @@ Use the `write_disposition` parameter to specify the write disposition. Valid
 enum values are:
 {{< /paragraph >}}
 
-{{< list class="language-py" >}}
+{{< paragraph class="language-py" wrap="span" >}}
  * `BigQueryDisposition.WRITE_EMPTY`: Specifies that the write operation should
    fail at runtime if the destination table is not empty. `WRITE_EMPTY` is the
    default behavior.
@@ -485,7 +485,7 @@ enum values are:
 
  * `BigQueryDisposition.WRITE_APPEND`: Specifies that the write operation should
    append the rows to the end of the existing table.
-{{< /list >}}
+{{< /paragraph >}}
 
 When you use `WRITE_EMPTY`, the check for whether or not the destination table
 is empty can occur before the actual write operation. This check doesn't
@@ -518,7 +518,7 @@ To create and use a table schema as a `TableSchema` object, follow these steps.
 
 <!-- Java specific - TableSchema -->
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 1. Create a list of `TableFieldSchema` objects. Each `TableFieldSchema` object
    represents a field in the table.
 
@@ -527,18 +527,18 @@ To create and use a table schema as a `TableSchema` object, follow these steps.
 
 3. Use the `withSchema` method to provide your table schema when you apply a
    write transform.
-{{< /list >}}
+{{< /paragraph >}}
 
 <!-- Python specific - TableSchema -->
 
-{{< list class="language-py" >}}
+{{< paragraph class="language-py" wrap="span" >}}
 1. Create a `TableSchema` object.
 
 2. Create and append a `TableFieldSchema` object for each field in your table.
 
 3. Next, use the `schema` parameter to provide your table schema when you apply
    a write transform. Set the parameter’s value to the `TableSchema` object.
-{{< /list >}}
+{{< /paragraph >}}
 
 <!-- Common -->
 
@@ -563,12 +563,12 @@ To create and use a table schema as a string that contains JSON-serialized
 `TableSchema` object, follow these steps.
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 1. Create a string that contains a JSON-serialized `TableSchema` object.
 
 2. Use the `withJsonSchema` method to provide your table schema when you apply a
    write transform.
-{{< /list >}}
+{{< /paragraph >}}
 
 <!-- Python specific - string -->
 
@@ -576,14 +576,14 @@ To create and use a table schema as a string that contains JSON-serialized
 To create and use a table schema as a string, follow these steps.
 {{< /paragraph >}}
 
-{{< list class="language-py" >}}
+{{< paragraph class="language-py" wrap="span" >}}
 1. Create a single comma separated string of the form
    "field1:type1,field2:type2,field3:type3" that defines a list of fields. The
    type should specify the field’s BigQuery type.
 
 2. Use the `schema` parameter to provide your table schema when you apply a
    write transform. Set the parameter’s value to the string.
-{{< /list >}}
+{{< /paragraph >}}
 
 <!-- Common -->
 
@@ -624,14 +624,14 @@ bounded `PCollection`.
 BigQueryIO uses load jobs in the following situations:
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 * When you apply a BigQueryIO write transform to a bounded `PCollection`.
 * When you apply a BigQueryIO write transform to an unbounded `PCollection` and
   use `BigQueryIO.write().withTriggeringFrequency()` to set the triggering
   frequency.
 * When you specify load jobs as the insertion method using
   `BigQueryIO.write().withMethod(FILE_LOADS)`.
-{{< /list >}}
+{{< /paragraph >}}
 
 {{< paragraph class="language-py" >}}
 BigQueryIO uses streaming inserts when you apply a BigQueryIO write transform to
@@ -642,12 +642,12 @@ an unbounded `PCollection`.
 BigQueryIO uses streaming inserts in the following situations:
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 * When you apply a BigQueryIO write transform to an unbounded `PCollection` and
   do not set the triggering frequency.
 * When you specify streaming inserts as the insertion method using
   `BigQueryIO.write().withMethod(STREAMING_INSERTS)`.
-{{< /list >}}
+{{< /paragraph >}}
 
 <!-- Java specific -->
 
@@ -755,7 +755,7 @@ To use dynamic destinations, you must create a `DynamicDestinations` object and
 implement the following methods:
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 * `getDestination`: Returns an object that `getTable` and `getSchema` can use as
   the destination key to compute the destination table and/or schema.
 
@@ -765,7 +765,7 @@ implement the following methods:
 
 * `getSchema`: Returns the table schema (as a `TableSchema` object) for the
   destination key.
-{{< /list >}}
+{{< /paragraph >}}
 
 {{< paragraph class="language-java" >}}
 Then, use `write().to` with your `DynamicDestinations` object. This example
@@ -797,13 +797,13 @@ Partitioned tables make it easier for you to manage and query your data.
 To use BigQuery time partitioning, use one of these two methods:
 {{< /paragraph >}}
 
-{{< list class="language-java" >}}
+{{< paragraph class="language-java" wrap="span" >}}
 * `withTimePartitioning`: This method takes a `TimePartitioning` class, and is
   only usable if you are writing to a single table.
 
 * `withJsonTimePartitioning`: This method is the same as
   `withTimePartitioning`, but takes a JSON-serialized String object.
-{{< /list >}}
+{{< /paragraph >}}
 
 {{< paragraph class="language-java" >}}
 This example generates one partition per day.
