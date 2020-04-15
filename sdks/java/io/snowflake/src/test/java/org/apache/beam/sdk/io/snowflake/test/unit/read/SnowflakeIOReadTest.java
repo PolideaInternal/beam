@@ -24,6 +24,7 @@ import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.io.AvroGeneratedUser;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
@@ -58,7 +59,7 @@ public class SnowflakeIOReadTest {
   private static SnowflakeCloudProvider cloudProvider;
 
   private static String stagingBucketName;
-  private static String integrationName;
+  private static Location location;
 
   private static List<GenericRecord> avroTestData;
 
@@ -81,7 +82,7 @@ public class SnowflakeIOReadTest {
     options.setStagingBucketName("BUCKET");
 
     stagingBucketName = options.getStagingBucketName();
-    integrationName = options.getStorageIntegration();
+    location = Location.of(options);
 
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
@@ -100,7 +101,7 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
-            .withIntegrationName(integrationName)
+            .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -108,15 +109,32 @@ public class SnowflakeIOReadTest {
   }
 
   @Test
-  public void testConfigIsMissingIntegrationName() {
+  public void testConfigIsMissingVia() {
     exceptionRule.expect(IllegalArgumentException.class);
-    exceptionRule.expectMessage("withIntegrationName() is required");
+    exceptionRule.expectMessage("via() is required");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
             .withStagingBucketName(stagingBucketName)
+            .withCsvMapper(getCsvMapper())
+            .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
+
+    read.expand(null);
+  }
+
+  @Test
+  public void testConfigIsMissingStorageIntegration() {
+    exceptionRule.expect(IllegalArgumentException.class);
+    exceptionRule.expectMessage("location with storageIntegration is required");
+
+    SnowflakeIO.Read<GenericRecord> read =
+        SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
+            .withDataSourceConfiguration(dataSourceConfiguration)
+            .fromTable(FAKE_TABLE)
+            .withStagingBucketName(stagingBucketName)
+            .via(Location.of(null, null))
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -133,7 +151,7 @@ public class SnowflakeIOReadTest {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
             .withStagingBucketName(stagingBucketName)
-            .withIntegrationName(integrationName)
+            .via(location)
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
     read.expand(null);
@@ -149,7 +167,7 @@ public class SnowflakeIOReadTest {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
             .withStagingBucketName(stagingBucketName)
-            .withIntegrationName(integrationName)
+            .via(location)
             .withCsvMapper(getCsvMapper());
 
     read.expand(null);
@@ -164,7 +182,7 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .withStagingBucketName(stagingBucketName)
-            .withIntegrationName(integrationName)
+            .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -181,7 +199,7 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .fromTable(FAKE_TABLE)
             .withStagingBucketName(stagingBucketName)
-            .withIntegrationName(integrationName)
+            .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -199,7 +217,7 @@ public class SnowflakeIOReadTest {
             .fromQuery("")
             .fromTable(FAKE_TABLE)
             .withStagingBucketName(stagingBucketName)
-            .withIntegrationName(integrationName)
+            .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -216,7 +234,7 @@ public class SnowflakeIOReadTest {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable("NON_EXIST")
             .withStagingBucketName(stagingBucketName)
-            .withIntegrationName(integrationName)
+            .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema())));
 
@@ -231,7 +249,7 @@ public class SnowflakeIOReadTest {
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromTable(FAKE_TABLE)
                 .withStagingBucketName(stagingBucketName)
-                .withIntegrationName(integrationName)
+                .via(location)
                 .withCsvMapper(getCsvMapper())
                 .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema())));
 

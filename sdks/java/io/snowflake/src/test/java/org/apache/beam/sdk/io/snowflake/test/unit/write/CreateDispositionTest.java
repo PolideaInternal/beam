@@ -18,17 +18,19 @@
 package org.apache.beam.sdk.io.snowflake.test.unit.write;
 
 import static org.apache.beam.sdk.io.snowflake.test.TestUtils.getCsvMapper;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.SQLException;
-import org.apache.beam.sdk.io.GenerateSequence;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
@@ -36,6 +38,7 @@ import org.apache.beam.sdk.io.snowflake.test.TestUtils;
 import org.apache.beam.sdk.io.snowflake.test.unit.BatchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
+import org.apache.beam.sdk.transforms.Create;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,30 +49,31 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class InternalCreateDispositionTest {
+public class CreateDispositionTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
-  private static final String INTERNAL_LOCATION = "./bucket";
+  private static final String EXTERNAL_LOCATION = "./bucket";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   private static BatchTestPipelineOptions options;
   private static SnowflakeIO.DataSourceConfiguration dc;
-  private static Location locationSpec;
+  private static Location location;
 
   private static SnowflakeService snowflakeService;
+  private static List<Long> testData;
 
   @BeforeClass
   public static void setupAll() {
     PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
-    options.setInternalLocation(INTERNAL_LOCATION);
+    options.setExternalLocation(EXTERNAL_LOCATION);
     options.setServerName("NULL.snowflakecomputing.com");
-    options.setStage("STAGE");
 
-    locationSpec = LocationFactory.of(options);
+    location = Location.of(options);
 
     snowflakeService = new FakeSnowflakeServiceImpl();
+    testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
 
     dc =
         SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
@@ -81,67 +85,50 @@ public class InternalCreateDispositionTest {
 
   @After
   public void tearDown() {
-    TestUtils.removeTempDir(INTERNAL_LOCATION);
+    TestUtils.removeTempDir(EXTERNAL_LOCATION);
     FakeSnowflakeDatabase.clean();
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithAlreadyCreatedTableSuccess() throws SQLException {
+  public void writeToExternalWithWriteCreateDispositionWithAlreadyCreatedTableSuccess()
+      throws SQLException {
     FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
     pipeline
-        .apply(GenerateSequence.from(0).to(100))
+        .apply(Create.of(testData))
         .apply(
-            "Write SnowflakeIO",
+            "Copy IO",
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .via(locationSpec)
+                .via(location)
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
-                .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withParallelization(false));
 
     pipeline.run(options).waitUntilFinish();
+
+    List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
+
+    assertTrue(TestUtils.isListsEqual(testData, actualData));
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreatedTableWithoutSchemaFails() {
+  public void writeToExternalWithWriteCreateDispositionWithCreatedTableWithoutSchemaFails() {
 
     exceptionRule.expect(RuntimeException.class);
     exceptionRule.expectMessage(
         "The CREATE_IF_NEEDED disposition requires schema if table doesn't exists");
 
     pipeline
-        .apply(GenerateSequence.from(0).to(100))
-        .apply(
-            "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService)
-                .withDataSourceConfiguration(dc)
-                .to("NO_EXIST_TABLE")
-                .via(locationSpec)
-                .withFileNameTemplate("output*")
-                .withUserDataMapper(getCsvMapper())
-                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
-
-    pipeline.run(options).waitUntilFinish();
-  }
-
-  @Test
-  public void writeWithWriteCreateDispositionWithCreatedTableWithSchemaSuccess() {
-
-    SFTableSchema tableSchema = new SFTableSchema(SFColumn.of("id", new SFVarchar()));
-
-    pipeline
-        .apply(GenerateSequence.from(0).to(100))
+        .apply(Create.of(testData))
         .apply(
             "Copy IO",
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
-                .via(locationSpec)
-                .withTableSchema(tableSchema)
+                .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -151,41 +138,70 @@ public class InternalCreateDispositionTest {
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreateNeverSuccess() {
+  public void writeToExternalWithWriteCreateDispositionWithCreatedTableWithSchemaSuccess()
+      throws SQLException {
+    SFTableSchema tableSchema = new SFTableSchema(SFColumn.of("id", new SFVarchar()));
 
+    pipeline
+        .apply(Create.of(testData))
+        .apply(
+            "Copy IO",
+            SnowflakeIO.<Long>write(snowflakeService)
+                .withDataSourceConfiguration(dc)
+                .to("NO_EXIST_TABLE")
+                .withTableSchema(tableSchema)
+                .via(location)
+                .withFileNameTemplate("output*")
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
+                .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
+                .withParallelization(false));
+
+    pipeline.run(options).waitUntilFinish();
+    List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong("NO_EXIST_TABLE");
+
+    assertTrue(TestUtils.isListsEqual(testData, actualData));
+  }
+
+  @Test
+  public void writeToExternalWithWriteCreateDispositionWithCreateNeverSuccess()
+      throws SQLException {
     FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
     pipeline
-        .apply(GenerateSequence.from(0).to(100))
+        .apply(Create.of(testData))
         .apply(
-            "Write SnowflakeIO",
+            "Copy IO",
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .via(locationSpec)
-                .withUserDataMapper(getCsvMapper())
+                .via(location)
                 .withFileNameTemplate("output*")
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
                 .withParallelization(false));
 
     pipeline.run(options).waitUntilFinish();
+    List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
+
+    assertTrue(TestUtils.isListsEqual(testData, actualData));
   }
 
   @Test
-  public void writeWithWriteCreateDispositionWithCreateNeededFails() {
+  public void writeToExternalWithWriteCreateDispositionWithCreateNeededFails() {
+
     exceptionRule.expect(RuntimeException.class);
     exceptionRule.expectMessage("SQL compilation error: Table does not exist");
 
     pipeline
-        .apply(GenerateSequence.from(0).to(100))
+        .apply(Create.of(testData))
         .apply(
-            "Write SnowflakeIO",
+            "Copy IO",
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
-                .via(locationSpec)
-                .withUserDataMapper(getCsvMapper())
+                .via(location)
                 .withFileNameTemplate("output*")
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
                 .withParallelization(false));
 

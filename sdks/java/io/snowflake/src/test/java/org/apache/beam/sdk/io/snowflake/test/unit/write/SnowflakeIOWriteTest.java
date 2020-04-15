@@ -24,10 +24,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
-import org.apache.beam.sdk.io.snowflake.locations.LocationFactory;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
@@ -36,33 +35,35 @@ import org.apache.beam.sdk.io.snowflake.test.unit.BatchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
+import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.values.KV;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class InternalTest {
+public class SnowflakeIOWriteTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
-  private static final String INTERNAL_LOCATION = "./bucket";
+  private static final String EXTERNAL_LOCATION = "./bucket";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
 
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
   private static BatchTestPipelineOptions options;
   private static SnowflakeIO.DataSourceConfiguration dc;
-  private static Location locationSpec;
+  private static Location location;
 
   private static SnowflakeService snowflakeService;
   private static List<Long> testData;
 
   @BeforeClass
   public static void setupAll() {
-    PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
-    options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
-
     snowflakeService = new FakeSnowflakeServiceImpl();
     testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
   }
@@ -71,7 +72,9 @@ public class InternalTest {
   public void setup() {
     FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
-    options.setInternalLocation(INTERNAL_LOCATION);
+    PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
+    options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
+    options.setExternalLocation(EXTERNAL_LOCATION);
     options.setServerName("NULL.snowflakecomputing.com");
 
     dc =
@@ -81,13 +84,13 @@ public class InternalTest {
 
   @After
   public void tearDown() {
-    TestUtils.removeTempDir(INTERNAL_LOCATION);
+    TestUtils.removeTempDir(EXTERNAL_LOCATION);
   }
 
   @Test
-  public void writeWithStageTest() throws SQLException {
-    options.setStage("STAGE");
-    locationSpec = LocationFactory.of(options);
+  public void writeToExternalWithIntegrationTest() throws SnowflakeSQLException {
+    options.setStorageIntegration("STORAGE_INTEGRATION");
+    location = Location.of(options);
 
     pipeline
         .apply(Create.of(testData))
@@ -95,11 +98,9 @@ public class InternalTest {
             "Write SnowflakeIO",
             SnowflakeIO.<Long>write(snowflakeService)
                 .withDataSourceConfiguration(dc)
-                .to(FAKE_TABLE)
-                .via(locationSpec)
-                .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
-                .withParallelization(false));
+                .to(FAKE_TABLE)
+                .via(location));
     pipeline.run(options).waitUntilFinish();
 
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
@@ -108,18 +109,17 @@ public class InternalTest {
   }
 
   @Test
-  public void writeWithNamedStageAndParalleledTest() throws SQLException {
-    options.setStage("STAGE");
-    locationSpec = LocationFactory.of(options);
+  public void writeToExternalWithMapperTest() throws SnowflakeSQLException {
+    location = Location.of(options);
 
     pipeline
         .apply(Create.of(testData))
         .apply(
-            "Write SnowflakeIO",
+            "External text write IO",
             SnowflakeIO.<Long>write(snowflakeService)
-                .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
-                .via(locationSpec)
+                .via(location)
+                .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper()));
 
     pipeline.run(options).waitUntilFinish();
@@ -130,20 +130,38 @@ public class InternalTest {
   }
 
   @Test
-  public void writeWithTransformationTest() throws SnowflakeSQLException {
-    options.setStage("STAGE");
-    locationSpec = LocationFactory.of(options);
+  public void writeToExternalWithKVInput() throws SnowflakeSQLException {
+    location = Location.of(options);
+
+    pipeline
+        .apply(Create.of(testData))
+        .apply(ParDo.of(new TestUtils.ParseToKv()))
+        .apply(
+            "Write SnowflakeIO",
+            SnowflakeIO.<KV<String, Long>>write(snowflakeService)
+                .withDataSourceConfiguration(dc)
+                .withUserDataMapper(TestUtils.getLongCsvMapperKV())
+                .to(FAKE_TABLE)
+                .via(location));
+
+    pipeline.run(options).waitUntilFinish();
+  }
+
+  @Test
+  public void writeToExternalWithTransformationTest() throws SQLException {
+    location = Location.of(options);
 
     String query = "select t.$1 from %s t";
     pipeline
         .apply(Create.of(testData))
+        .apply(ParDo.of(new TestUtils.ParseToKv()))
         .apply(
-            "External text write IO",
-            SnowflakeIO.<Long>write(snowflakeService)
-                .withDataSourceConfiguration(dc)
+            "Write SnowflakeIO",
+            SnowflakeIO.<KV<String, Long>>write(snowflakeService)
                 .to(FAKE_TABLE)
-                .via(locationSpec)
-                .withUserDataMapper(TestUtils.getLongCsvMapper())
+                .via(location)
+                .withUserDataMapper(TestUtils.getLongCsvMapperKV())
+                .withDataSourceConfiguration(dc)
                 .withQueryTransformation(query));
 
     pipeline.run(options).waitUntilFinish();

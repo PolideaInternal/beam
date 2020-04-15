@@ -20,12 +20,10 @@ package org.apache.beam.sdk.io.snowflake;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.function.Consumer;
 import javax.sql.DataSource;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
 /** Interface which defines common methods for interacting with SnowFlake. */
@@ -41,25 +39,14 @@ public interface SnowflakeService extends Serializable {
       String tmpDirName)
       throws SQLException;
 
-  void putOnStage(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String bucketName,
-      String stage,
-      String directory,
-      String fileNameTemplate,
-      Boolean parallelization,
-      Consumer<SnowflakeStatementResult> runStatementResultConsumer)
-      throws SQLException;
-
   void copyToTable(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
       String table,
       SFTableSchema tableSchema,
       String source,
-      Location location,
       CreateDisposition createDisposition,
       WriteDisposition writeDisposition,
-      String filesPath)
+      Location location)
       throws SQLException;
 }

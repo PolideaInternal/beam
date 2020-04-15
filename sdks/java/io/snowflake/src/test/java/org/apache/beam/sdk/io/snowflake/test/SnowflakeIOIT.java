@@ -30,6 +30,7 @@ import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.common.HashingFn;
 import org.apache.beam.sdk.io.common.IOTestPipelineOptions;
 import org.apache.beam.sdk.io.common.TestRow;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
@@ -39,8 +40,6 @@ import org.apache.beam.sdk.io.snowflake.data.numeric.SFInteger;
 import org.apache.beam.sdk.io.snowflake.data.text.SFString;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.io.snowflake.locations.ExternalIntegrationLocation;
-import org.apache.beam.sdk.io.snowflake.locations.Location;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Combine;
@@ -80,7 +79,6 @@ public class SnowflakeIOIT {
 
   private static int numberOfRows;
   private static Location location;
-  private static String storageIntegration;
   private static String stagingBucketName;
   private static String writeTmpPath;
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
@@ -97,13 +95,13 @@ public class SnowflakeIOIT {
         readIOTestPipelineOptions(SnowflakeIOITPipelineOptions.class);
 
     numberOfRows = options.getNumberOfRecords();
-    storageIntegration = options.getStorageIntegration();
     stagingBucketName = options.getStagingBucketName();
     writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
 
     location =
-        new ExternalIntegrationLocation(
-            storageIntegration, String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
+        Location.of(
+            options.getStorageIntegration(),
+            String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
             .withDatabase(options.getDatabase())
@@ -159,7 +157,7 @@ public class SnowflakeIOIT {
             SnowflakeIO.<TestRow>read()
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromTable(tableName)
-                .withIntegrationName(storageIntegration)
+                .via(location)
                 .withStagingBucketName(stagingBucketName)
                 .withCsvMapper(getTestRowCsvMapper())
                 .withCoder(SerializableCoder.of(TestRow.class)));

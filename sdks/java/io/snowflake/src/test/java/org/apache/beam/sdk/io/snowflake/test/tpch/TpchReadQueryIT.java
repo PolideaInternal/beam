@@ -22,6 +22,7 @@ import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.parquet.ParquetIO;
+import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -65,7 +66,7 @@ public class TpchReadQueryIT {
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
   private static String stagingBucketName;
-  private static String integrationName;
+  private static Location location;
   private static String output;
 
   @BeforeClass
@@ -73,10 +74,10 @@ public class TpchReadQueryIT {
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
     stagingBucketName = options.getStagingBucketName();
-    integrationName = options.getStorageIntegration();
     output = options.getParquetFilesLocation();
-    String testSize = options.getTestSize();
+    location = Location.of(options);
 
+    String testSize = options.getTestSize();
     Assume.assumeNotNull(testSize);
 
     dataSourceConfiguration =
@@ -95,7 +96,7 @@ public class TpchReadQueryIT {
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromQuery(QUERY)
                 .withStagingBucketName(stagingBucketName)
-                .withIntegrationName(integrationName)
+                .via(location)
                 .withCsvMapper(TpchTestUtils.getCsvMapper())
                 .withCoder(AvroCoder.of(TpchTestUtils.getSchema())));
 
