@@ -70,8 +70,8 @@ from apache_beam.utils import proto_utils
 # Environment version information. It is passed to the service during a
 # a job submission and is used by the service to establish what features
 # are expected by the workers.
-_LEGACY_ENVIRONMENT_MAJOR_VERSION = '7'
-_FNAPI_ENVIRONMENT_MAJOR_VERSION = '7'
+_LEGACY_ENVIRONMENT_MAJOR_VERSION = '8'
+_FNAPI_ENVIRONMENT_MAJOR_VERSION = '8'
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -571,7 +571,7 @@ class DataflowApplicationClient(object):
       raise RuntimeError('The --temp_location option must be specified.')
 
     resource_stager = _LegacyDataflowStager(self)
-    _, resources = resource_stager.stage_job_resources(
+    _, resources = resource_stager.create_and_stage_job_resources(
         options,
         temp_dir=tempfile.mkdtemp(),
         staging_location=google_cloud_options.staging_location)
@@ -727,8 +727,7 @@ class DataflowApplicationClient(object):
     _LOGGER.info('Created job with id: [%s]', response.id)
     _LOGGER.info(
         'To access the Dataflow monitoring console, please navigate to '
-        'https://console.cloud.google.com/dataflow/jobsDetail'
-        '/locations/%s/jobs/%s?project=%s',
+        'https://console.cloud.google.com/dataflow/jobs/%s/%s?project=%s',
         self.google_cloud_options.region,
         response.id,
         self.google_cloud_options.project)

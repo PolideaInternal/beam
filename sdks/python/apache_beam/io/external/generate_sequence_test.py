@@ -33,7 +33,15 @@ from apache_beam.io.external.generate_sequence import GenerateSequence
 from apache_beam.testing.test_pipeline import TestPipeline
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
+from apache_beam.options.pipeline_options import PipelineOptions
 
+# options = PipelineOptions([
+#   "--runner=FlinkRunner",
+#   "--flink_version=1.9",
+#   "--flink_master=localhost:8081",
+#   "--environment_type=LOOPBACK"
+# ])
+options = []
 
 @attr('UsesCrossLanguageTransforms')
 @unittest.skipUnless(
@@ -45,7 +53,7 @@ class XlangGenerateSequenceTest(unittest.TestCase):
     address = 'localhost:%s' % port
 
     try:
-      with TestPipeline() as p:
+      with TestPipeline(options=options) as p:
         res = (
             p
             | GenerateSequence(start=1, stop=10, expansion_service=address))
