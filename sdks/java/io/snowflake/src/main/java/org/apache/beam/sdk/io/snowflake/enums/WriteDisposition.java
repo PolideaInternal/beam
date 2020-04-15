@@ -17,8 +17,14 @@
  */
 package org.apache.beam.sdk.io.snowflake.enums;
 
+import java.nio.charset.Charset;
+
 public enum WriteDisposition {
   TRUNCATE,
   APPEND,
-  EMPTY
+  EMPTY;
+
+  public static WriteDisposition valueOf(byte[] writeDisposition) {
+    return WriteDisposition.valueOf(new String(writeDisposition, Charset.defaultCharset()));
+  }
 }

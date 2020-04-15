@@ -20,6 +20,7 @@ package org.apache.beam.sdk.io.snowflake.data;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import net.snowflake.client.jdbc.internal.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
 
@@ -30,11 +31,15 @@ import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
  *     disposition is used.
  */
 public class SFTableSchema implements Serializable {
+
+  @JsonProperty("schema")
   private SFColumn[] columns;
 
   public static SFTableSchema of(SFColumn... columns) {
     return new SFTableSchema(columns);
   }
+
+  public SFTableSchema() {}
 
   public SFTableSchema(SFColumn... columns) {
     this.columns = columns;
@@ -47,5 +52,13 @@ public class SFTableSchema implements Serializable {
     }
 
     return Joiner.on(", ").join(columnsSqls);
+  }
+
+  public SFColumn[] getColumns() {
+    return columns;
+  }
+
+  public void setColumns(SFColumn[] columns) {
+    this.columns = columns;
   }
 }

@@ -18,6 +18,8 @@
 package org.apache.beam.sdk.io.snowflake.data.numeric;
 
 public class SFReal extends SFFloat {
+  public SFReal() {}
+
   public static SFReal of() {
     return new SFReal();
   }

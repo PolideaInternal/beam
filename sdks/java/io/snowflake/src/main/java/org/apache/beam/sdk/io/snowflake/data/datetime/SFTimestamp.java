@@ -18,6 +18,8 @@
 package org.apache.beam.sdk.io.snowflake.data.datetime;
 
 public class SFTimestamp extends SFTimestampNTZ {
+  public SFTimestamp() {}
+
   public static SFTimestamp of() {
     return new SFTimestamp();
   }

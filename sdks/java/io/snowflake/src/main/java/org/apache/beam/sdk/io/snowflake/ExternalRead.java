@@ -141,8 +141,8 @@ public final class ExternalRead implements ExternalTransformRegistrar {
       SnowflakeIO.Read.Builder<byte[]> readBuilder = new AutoValue_SnowflakeIO_Read.Builder<>();
 
       readBuilder.setSnowflakeService(new SnowflakeServiceImpl());
-      readBuilder.setStagingBucketName(config.stagingbucketname);
-      readBuilder.setIntegrationName(config.storageintegration);
+      readBuilder.setSnowflakeCloudProvider(new GCSProvider());
+      readBuilder.setLocation(Location.of(config.storageintegration, config.stagingbucketname));
       readBuilder.setDataSourceProviderFn(
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
               SnowflakeIO.DataSourceConfiguration.create(

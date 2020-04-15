@@ -50,4 +50,12 @@ public class SFBinary implements SFDataType, Serializable {
     }
     return "BINARY";
   }
+
+  public Long getSize() {
+    return size;
+  }
+
+  public void setSize(Long size) {
+    this.size = size;
+  }
 }
