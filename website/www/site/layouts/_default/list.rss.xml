@@ -12,9 +12,9 @@
 
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
   <channel>
-    <title>{{ .Site.Title }} – {{ .Title }}</title>
+    <title>{{ .Site.Title }}</title>
+    <description>{{ .Site.Params.description }} </description>
     <link>{{ .Permalink }}</link>
-    <description>Recent content {{ if ne  .Title  .Site.Title }}{{ with .Title }}in {{.}} {{ end }}{{ end }}on {{ .Site.Title }}</description>
     <generator>Hugo -- gohugo.io</generator>
     {{ with .OutputFormats.Get "RSS" }}
 	  {{ printf "<atom:link href=%q rel=\"self\" type=%q />" .Permalink .MediaType | safeHTML }}
