@@ -23,7 +23,6 @@ import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import org.apache.beam.repackaged.core.org.apache.commons.lang3.RandomStringUtils;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.io.GenerateSequence;
@@ -65,7 +64,7 @@ import org.junit.Test;
  * "--password=<PASSWORD>",
  * "--database=<DATABASE NAME>",
  * "--schema=<SCHEMA NAME>",
- * "--stagingBucketName=<BUCKET-NAME>",
+ * "--stagingBucketName=<BUCKET NAME>",
  * "--storageIntegration=<STORAGE INTEGRATION NAME>",
  * "--numberOfRecords=<1000, 100000, 600000, 5000000>",
  * "--runner=DataflowRunner",
@@ -79,8 +78,6 @@ public class SnowflakeIOIT {
 
   private static int numberOfRows;
   private static Location location;
-  private static String stagingBucketName;
-  private static String writeTmpPath;
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
 
   public interface SnowflakeIOITPipelineOptions
@@ -95,13 +92,8 @@ public class SnowflakeIOIT {
         readIOTestPipelineOptions(SnowflakeIOITPipelineOptions.class);
 
     numberOfRows = options.getNumberOfRecords();
-    stagingBucketName = options.getStagingBucketName();
-    writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
 
-    location =
-        Location.of(
-            options.getStorageIntegration(),
-            String.format("gs://%s/%s", stagingBucketName, writeTmpPath));
+    location = Location.of(options);
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
             .withDatabase(options.getDatabase())
@@ -121,7 +113,8 @@ public class SnowflakeIOIT {
   @AfterClass
   public static void teardown() throws Exception {
     Storage storage = StorageOptions.getDefaultInstance().getService();
-    Page<Blob> blobs = storage.list(stagingBucketName, Storage.BlobListOption.prefix(writeTmpPath));
+    Page<Blob> blobs =
+        storage.list(location.getStagingBucketName(), Storage.BlobListOption.prefix("data"));
 
     for (Blob blob : blobs.iterateAll()) {
       storage.delete(blob.getBlobId());
@@ -158,7 +151,6 @@ public class SnowflakeIOIT {
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromTable(tableName)
                 .via(location)
-                .withStagingBucketName(stagingBucketName)
                 .withCsvMapper(getTestRowCsvMapper())
                 .withCoder(SerializableCoder.of(TestRow.class)));
 

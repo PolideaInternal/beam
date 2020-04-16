@@ -50,7 +50,7 @@ import org.junit.runners.JUnit4;
  * "--table=<TARGET TABLE NAME>",
  * "--schema=<SCHEMA>",
  * "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/*",
- * "--externalLocation=gs://<BUCKET-NAME>/csv-table-location/",
+ * "--stagingBucketName=gs://<BUCKET-NAME>/csv-table-location/",
  * "--storageIntegration=<STORAGE INTEGRATION NAME>",
  * "--runner=DataflowRunner",
  * "--project=<GCP_PROJECT>",
@@ -78,7 +78,7 @@ public class TpchWriteTableIT {
     Assume.assumeNotNull(
         table,
         parquetFilesLocation,
-        options.getExternalLocation(),
+        options.getStagingBucketName(),
         options.getStorageIntegration());
 
     dataSourceConfiguration =

@@ -48,7 +48,7 @@ import org.junit.runners.JUnit4;
  * "--username=<USERNAME>",
  * "--password=<PASSWORD>",
  * "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/",
- * "--stagingBucketName=<BUCKET-NAME>",
+ * "--stagingBucketName=<BUCKET NAME>",
  * "--storageIntegration=<STORAGE INTEGRATION NAME>",
  * "--runner=DataflowRunner",
  * "--project=<GCP_PROJECT>",
@@ -66,7 +66,6 @@ public class TpchReadTableIT {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
   private static TpchTestPipelineOptions options;
-  private static String stagingBucketName;
   private static Location location;
   private static String output;
 
@@ -74,7 +73,6 @@ public class TpchReadTableIT {
   public static void setup() {
     PipelineOptionsFactory.register(TpchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
-    stagingBucketName = options.getStagingBucketName();
     output = options.getParquetFilesLocation();
     location = Location.of(options);
 
@@ -96,7 +94,6 @@ public class TpchReadTableIT {
             SnowflakeIO.<GenericRecord>read()
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromTable(TABLE)
-                .withStagingBucketName(stagingBucketName)
                 .via(location)
                 .withCsvMapper(TpchTestUtils.getCsvMapper())
                 .withCoder(AvroCoder.of(TpchTestUtils.getSchema())));

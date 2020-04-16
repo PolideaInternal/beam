@@ -58,7 +58,6 @@ public class SnowflakeIOReadTest {
   private static SnowflakeService snowflakeService;
   private static SnowflakeCloudProvider cloudProvider;
 
-  private static String stagingBucketName;
   private static Location location;
 
   private static List<GenericRecord> avroTestData;
@@ -79,9 +78,8 @@ public class SnowflakeIOReadTest {
     options = TestPipeline.testingPipelineOptions().as(TpchTestPipelineOptions.class);
     options.setServerName("NULL.snowflakecomputing.com");
     options.setStorageIntegration("STORAGE_INTEGRATION");
-    options.setStagingBucketName("BUCKET");
+    options.setStagingBucketName("bucket");
 
-    stagingBucketName = options.getStagingBucketName();
     location = Location.of(options);
 
     dataSourceConfiguration =
@@ -95,13 +93,13 @@ public class SnowflakeIOReadTest {
   @Test
   public void testConfigIsMissingStagingBucketName() {
     exceptionRule.expect(IllegalArgumentException.class);
-    exceptionRule.expectMessage("withStagingBucketName() is required");
+    exceptionRule.expectMessage("location with stagingBucketName is required");
 
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
-            .via(location)
+            .via(Location.of(options.getStorageIntegration(), null))
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -117,7 +115,6 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
-            .withStagingBucketName(stagingBucketName)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -133,7 +130,6 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
-            .withStagingBucketName(stagingBucketName)
             .via(Location.of(null, null))
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
@@ -150,7 +146,6 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
-            .withStagingBucketName(stagingBucketName)
             .via(location)
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
 
@@ -166,7 +161,6 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable(FAKE_TABLE)
-            .withStagingBucketName(stagingBucketName)
             .via(location)
             .withCsvMapper(getCsvMapper());
 
@@ -181,7 +175,6 @@ public class SnowflakeIOReadTest {
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
-            .withStagingBucketName(stagingBucketName)
             .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
@@ -198,7 +191,6 @@ public class SnowflakeIOReadTest {
     SnowflakeIO.Read<GenericRecord> read =
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .fromTable(FAKE_TABLE)
-            .withStagingBucketName(stagingBucketName)
             .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
@@ -216,7 +208,6 @@ public class SnowflakeIOReadTest {
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromQuery("")
             .fromTable(FAKE_TABLE)
-            .withStagingBucketName(stagingBucketName)
             .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema()));
@@ -233,7 +224,6 @@ public class SnowflakeIOReadTest {
         SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
             .withDataSourceConfiguration(dataSourceConfiguration)
             .fromTable("NON_EXIST")
-            .withStagingBucketName(stagingBucketName)
             .via(location)
             .withCsvMapper(getCsvMapper())
             .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema())));
@@ -248,7 +238,6 @@ public class SnowflakeIOReadTest {
             SnowflakeIO.<GenericRecord>read(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .fromTable(FAKE_TABLE)
-                .withStagingBucketName(stagingBucketName)
                 .via(location)
                 .withCsvMapper(getCsvMapper())
                 .withCoder(AvroCoder.of(AvroGeneratedUser.getClassSchema())));

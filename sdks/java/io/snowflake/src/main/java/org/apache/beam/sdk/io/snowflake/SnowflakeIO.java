@@ -118,7 +118,6 @@ import org.slf4j.LoggerFactory;
  *  SnowflakeIO.<GenericRecord>read()
  *    .withDataSourceConfiguration(dataSourceConfiguration)
  *    .fromQuery(QUERY)
- *    .withStagingBucketName(stagingBucketName)
  *    .via(location)
  *    .withCsvMapper(...)
  *    .withCoder(...));
@@ -198,13 +197,15 @@ public class SnowflakeIO {
    * @param <T> Type of data to be written.
    * @param snowflakeService user-defined {@link SnowflakeService}
    */
-  public static <T> Write<T> write(SnowflakeService snowflakeService) {
+  public static <T> Write<T> write(
+      SnowflakeService snowflakeService, SnowflakeCloudProvider cloudProvider) {
     return new AutoValue_SnowflakeIO_Write.Builder<T>()
         .setFileNameTemplate("output*")
         .setParallelization(true)
         .setCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
         .setWriteDisposition(WriteDisposition.APPEND)
         .setSnowflakeService(snowflakeService)
+        .setSnowflakeCloudProvider(cloudProvider)
         .build();
   }
 
@@ -214,7 +215,7 @@ public class SnowflakeIO {
    * @param <T> Type of data to be written.
    */
   public static <T> Write<T> write() {
-    return write(new SnowflakeServiceImpl());
+    return write(new SnowflakeServiceImpl(), new GCSProvider());
   }
 
   /** Implementation of {@link #read()}. */
@@ -231,9 +232,6 @@ public class SnowflakeIO {
 
     @Nullable
     abstract Location getLocation();
-
-    @Nullable
-    abstract String getStagingBucketName();
 
     @Nullable
     abstract CsvMapper<T> getCsvMapper();
@@ -259,8 +257,6 @@ public class SnowflakeIO {
       abstract Builder<T> setTable(String table);
 
       abstract Builder<T> setLocation(Location location);
-
-      abstract Builder<T> setStagingBucketName(String stagingBucketName);
 
       abstract Builder<T> setCsvMapper(CsvMapper<T> csvMapper);
 
@@ -298,10 +294,6 @@ public class SnowflakeIO {
       return toBuilder().setTable(table).build();
     }
 
-    public Read<T> withStagingBucketName(String stagingBucketName) {
-      return toBuilder().setStagingBucketName(stagingBucketName).build();
-    }
-
     public Read<T> via(Location location) {
       return toBuilder().setLocation(location).build();
     }
@@ -316,6 +308,7 @@ public class SnowflakeIO {
 
     @Override
     public PCollection<T> expand(PBegin input) {
+      Location loc = getLocation();
       checkArguments();
 
       String gcpTmpDirName = makeTmpDirName();
@@ -330,10 +323,11 @@ public class SnowflakeIO {
                           getDataSourceProviderFn(),
                           getQuery(),
                           getTable(),
-                          getLocation().getStorageIntegration(),
-                          getStagingBucketName(),
+                          loc.getStorageIntegration(),
+                          loc.getStagingBucketName(),
                           gcpTmpDirName,
-                          getSnowflakeService())))
+                          getSnowflakeService(),
+                          getSnowflakeCloudProvider())))
               .apply(FileIO.matchAll())
               .apply(FileIO.readMatches())
               .apply(readFiles())
@@ -347,19 +341,21 @@ public class SnowflakeIO {
           .apply(
               ParDo.of(
                   new CleanTmpFilesFromGcsFn(
-                      getStagingBucketName(), gcpTmpDirName, getSnowflakeCloudProvider())));
+                      loc.getStagingBucketName(), gcpTmpDirName, getSnowflakeCloudProvider())));
 
       return output;
     }
 
     private void checkArguments() {
 
-      Location location = getLocation();
+      Location loc = getLocation();
       // Either table or query is required. If query is present, it's being used, table is used
       // otherwise
-      checkArgument(location != null, "via() is required");
+      checkArgument(loc != null, "via() is required");
       checkArgument(
-          location.getStorageIntegration() != null, "location with storageIntegration is required");
+          loc.getStorageIntegration() != null, "location with storageIntegration is required");
+      checkArgument(
+          loc.getStagingBucketName() != null, "location with stagingBucketName is required");
 
       checkArgument(
           getQuery() != null || getTable() != null, "fromTable() or fromQuery() is required");
@@ -368,7 +364,6 @@ public class SnowflakeIO {
           "fromTable() and fromQuery() is not allowed together");
       checkArgument(getCsvMapper() != null, "withCsvMapper() is required");
       checkArgument(getCoder() != null, "withCoder() is required");
-      checkArgument(getStagingBucketName() != null, "withStagingBucketName() is required");
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
@@ -384,12 +379,12 @@ public class SnowflakeIO {
 
     private static class CopyIntoStageFn extends DoFn<Object, String> {
       private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
-      private final String query;
-      private final String table;
+      private final String source;
       private final String storageIntegration;
       private final String stagingBucketName;
       private final String tmpDirName;
       private final SnowflakeService snowflakeService;
+      private final SnowflakeCloudProvider cloudProvider;
 
       private CopyIntoStageFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn,
@@ -398,26 +393,34 @@ public class SnowflakeIO {
           String storageIntegration,
           String stagingBucketName,
           String tmpDirName,
-          SnowflakeService snowflakeService) {
+          SnowflakeService snowflakeService,
+          SnowflakeCloudProvider cloudProvider) {
         this.dataSourceProviderFn = dataSourceProviderFn;
-        this.query = query;
-        this.table = table;
         this.storageIntegration = storageIntegration;
         this.stagingBucketName = stagingBucketName;
         this.tmpDirName = tmpDirName;
         this.snowflakeService = snowflakeService;
+        this.cloudProvider = cloudProvider;
+
+        if (query != null) {
+          // Query must be surrounded with brackets
+          this.source = String.format("(%s)", query);
+        } else {
+          this.source = table;
+        }
       }
 
       @ProcessElement
       public void processElement(ProcessContext context) throws Exception {
+        String stagingBucketDir = this.cloudProvider.formatCloudPath(stagingBucketName, tmpDirName);
+
         String output =
             snowflakeService.copyIntoStage(
                 dataSourceProviderFn,
-                query,
-                table,
+                source,
                 storageIntegration,
-                stagingBucketName,
-                tmpDirName);
+                stagingBucketDir,
+                this.cloudProvider);
 
         context.output(output);
       }
@@ -447,25 +450,29 @@ public class SnowflakeIO {
     }
 
     public static class CleanTmpFilesFromGcsFn extends DoFn<Object, Object> {
-      private final String bucketName;
+      private final String stagingBucketName;
       private final String bucketPath;
       private final SnowflakeCloudProvider snowFlakeCloudProvider;
 
       public CleanTmpFilesFromGcsFn(
-          String bucketName, String bucketPath, SnowflakeCloudProvider snowFlakeCloudProvider) {
-        this.bucketName = bucketName;
+          String stagingBucketName,
+          String bucketPath,
+          SnowflakeCloudProvider snowFlakeCloudProvider) {
+        this.stagingBucketName = stagingBucketName;
         this.bucketPath = bucketPath;
         this.snowFlakeCloudProvider = snowFlakeCloudProvider;
       }
 
       @ProcessElement
       public void processElement(ProcessContext c) {
-        snowFlakeCloudProvider.removeFiles(bucketName, bucketPath);
+        snowFlakeCloudProvider.removeFiles(stagingBucketName, bucketPath);
       }
     }
 
     @Override
     public void populateDisplayData(DisplayData.Builder builder) {
+      Location loc = getLocation();
+
       super.populateDisplayData(builder);
       if (getQuery() != null) {
         builder.add(DisplayData.item("query", getQuery()));
@@ -473,8 +480,8 @@ public class SnowflakeIO {
       if (getTable() != null) {
         builder.add(DisplayData.item("table", getTable()));
       }
-      builder.add(DisplayData.item("integrationName", getLocation().getStorageIntegration()));
-      builder.add(DisplayData.item("stagingBucketName", getStagingBucketName()));
+      builder.add(DisplayData.item("storageIntegration", loc.getStorageIntegration()));
+      builder.add(DisplayData.item("stagingBucketName", loc.getStagingBucketName()));
       builder.add(DisplayData.item("csvMapper", getCsvMapper().getClass().getName()));
       builder.add(DisplayData.item("coder", getCoder().getClass().getName()));
       if (getDataSourceProviderFn() instanceof HasDisplayData) {
@@ -806,6 +813,9 @@ public class SnowflakeIO {
     @Nullable
     abstract SnowflakeService getSnowflakeService();
 
+    @Nullable
+    abstract SnowflakeCloudProvider getSnowflakeCloudProvider();
+
     abstract Builder<T> toBuilder();
 
     @AutoValue.Builder
@@ -832,6 +842,8 @@ public class SnowflakeIO {
       abstract Builder<T> setTableSchema(SFTableSchema tableSchema);
 
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
+
+      abstract Builder<T> setSnowflakeCloudProvider(SnowflakeCloudProvider cloudProvider);
 
       abstract Write<T> build();
     }
@@ -885,7 +897,11 @@ public class SnowflakeIO {
     public PDone expand(PCollection<T> input) {
       checkArguments();
 
-      PCollection files = writeToFiles(input, getLocation().getExternalLocation());
+      String path =
+          this.getSnowflakeService().createCloudStoragePath(getLocation().getStagingBucketName());
+      getLocation().setFilesPath(path);
+
+      PCollection files = writeToFiles(input, path);
 
       files =
           (PCollection)
@@ -952,7 +968,8 @@ public class SnowflakeIO {
               getCreateDisposition(),
               getWriteDisposition(),
               getTableSchema(),
-              getSnowflakeService()));
+              getSnowflakeService(),
+              getSnowflakeCloudProvider()));
     }
   }
 
@@ -1020,21 +1037,22 @@ public class SnowflakeIO {
         CreateDisposition createDisposition,
         WriteDisposition writeDisposition,
         SFTableSchema tableSchema,
-        SnowflakeService snowflakeService) {
+        SnowflakeService snowflakeService,
+        SnowflakeCloudProvider cloudProvider) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.table = table;
       this.tableSchema = tableSchema;
       this.location = location;
+      this.createDisposition = createDisposition;
+      this.writeDisposition = writeDisposition;
+      this.snowflakeService = snowflakeService;
+
       if (query != null) {
         this.source = String.format("(%s)", query);
       } else {
         String directory = location.getFilesLocationForCopy();
-        this.source = directory.replace("gs://", "gcs://");
+        this.source = cloudProvider.transformSnowflakePathToCloudPath(directory);
       }
-
-      this.createDisposition = createDisposition;
-      this.writeDisposition = writeDisposition;
-      this.snowflakeService = snowflakeService;
     }
 
     @ProcessElement

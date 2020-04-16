@@ -30,13 +30,14 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 public interface SnowflakeService extends Serializable {
   String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
+  String createCloudStoragePath(String stagingBucketName);
+
   String copyIntoStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String query,
-      String table,
+      String source,
       String integrationName,
-      String stagingBucketName,
-      String tmpDirName)
+      String stagingBucketDir,
+      SnowflakeCloudProvider cloudProvider)
       throws SQLException;
 
   void copyToTable(

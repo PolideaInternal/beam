@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.beam.sdk.io.snowflake.Location;
+import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
@@ -38,6 +39,7 @@ import org.apache.beam.sdk.io.snowflake.data.structured.SFVariant;
 import org.apache.beam.sdk.io.snowflake.data.text.SFText;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
@@ -57,7 +59,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class SchemaDispositionTest {
   private static final String FAKE_TABLE = "FAKE_TABLE";
-  private static final String EXTERNAL_LOCATION = "./bucket";
+  private static final String BUCKET_NAME = "bucket";
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
@@ -67,17 +69,19 @@ public class SchemaDispositionTest {
   private static Location location;
 
   private static SnowflakeService snowflakeService;
+  private static SnowflakeCloudProvider cloudProvider;
 
   @BeforeClass
   public static void setupAll() {
     PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
-    options.setExternalLocation(EXTERNAL_LOCATION);
+    options.setStagingBucketName(BUCKET_NAME);
     options.setServerName("NULL.snowflakecomputing.com");
 
     location = Location.of(options);
 
     snowflakeService = new FakeSnowflakeServiceImpl();
+    cloudProvider = new FakeSnowflakeCloudProvider();
 
     dc =
         SnowflakeIO.DataSourceConfiguration.create(new FakeSnowflakeBasicDataSource())
@@ -89,7 +93,7 @@ public class SchemaDispositionTest {
 
   @After
   public void tearDown() {
-    TestUtils.removeTempDir(EXTERNAL_LOCATION);
+    TestUtils.removeTempDir(BUCKET_NAME);
     FakeSnowflakeDatabase.clean();
   }
 
@@ -118,7 +122,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testDates))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService)
+            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -156,7 +160,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testNulls))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService)
+            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -195,7 +199,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testStructuredData))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService)
+            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)

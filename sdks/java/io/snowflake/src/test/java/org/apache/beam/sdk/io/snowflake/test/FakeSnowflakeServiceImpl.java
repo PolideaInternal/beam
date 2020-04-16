@@ -32,11 +32,13 @@ import java.util.zip.GZIPInputStream;
 import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.beam.sdk.io.snowflake.Location;
+import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.apache.commons.lang3.RandomStringUtils;
 
 /**
  * Fake implementation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in tests.
@@ -44,18 +46,23 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 public class FakeSnowflakeServiceImpl implements SnowflakeService {
 
   @Override
+  public String createCloudStoragePath(String stagingBucketName) {
+    String writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
+    return String.format("./%s/%s", stagingBucketName, writeTmpPath);
+  }
+
+  @Override
   public String copyIntoStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String query,
-      String table,
+      String source,
       String integrationName,
-      String stagingBucketName,
-      String tmpDirName)
+      String stagingBucketDir,
+      SnowflakeCloudProvider cloudProvider)
       throws SQLException {
 
-    writeToFile(stagingBucketName, tmpDirName, FakeSnowflakeDatabase.getElements(table));
+    writeToFile(stagingBucketDir, FakeSnowflakeDatabase.getElements(source));
 
-    return String.format("./%s/%s/*", stagingBucketName, tmpDirName);
+    return String.format("./%s/*", stagingBucketDir);
   }
 
   @Override
@@ -123,8 +130,8 @@ public class FakeSnowflakeServiceImpl implements SnowflakeService {
     }
   }
 
-  private void writeToFile(String stagingBucketName, String tmpDirName, List<String> rows) {
-    Path filePath = Paths.get(String.format("./%s/%s/table.csv.gz", stagingBucketName, tmpDirName));
+  private void writeToFile(String stagingBucketNameTmp, List<String> rows) {
+    Path filePath = Paths.get(String.format("./%s/table.csv.gz", stagingBucketNameTmp));
     try {
       Files.createDirectories(filePath.getParent());
       Files.createFile(filePath);

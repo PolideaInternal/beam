@@ -21,27 +21,36 @@ import java.io.Serializable;
 
 public class Location implements Serializable {
   private String storageIntegration;
-  private String externalLocation;
+  private String stagingBucketName;
+  private String filesPath;
 
   public static Location of(SnowflakePipelineOptions options) {
-    return new Location(options.getStorageIntegration(), options.getExternalLocation());
+    return new Location(options.getStorageIntegration(), options.getStagingBucketName());
   }
 
-  public static Location of(String storageIntegration, String externalLocation) {
-    return new Location(storageIntegration, externalLocation);
+  public static Location of(String storageIntegration, String stagingBucketName) {
+    return new Location(storageIntegration, stagingBucketName);
   }
 
-  private Location(String storageIntegration, String externalLocation) {
+  private Location(String storageIntegration, String stagingBucketName) {
     this.storageIntegration = storageIntegration;
-    this.externalLocation = externalLocation;
+    this.stagingBucketName = stagingBucketName;
+  }
+
+  public void setFilesPath(String filesPath) {
+    this.filesPath = filesPath;
+  }
+
+  public String getFilesPath() {
+    return filesPath;
   }
 
   public String getStorageIntegration() {
     return storageIntegration;
   }
 
-  public String getExternalLocation() {
-    return externalLocation;
+  public String getStagingBucketName() {
+    return stagingBucketName;
   }
 
   public boolean isStorageIntegration() {
@@ -49,6 +58,6 @@ public class Location implements Serializable {
   }
 
   public String getFilesLocationForCopy() {
-    return String.format("'%s'", externalLocation);
+    return String.format("'%s'", filesPath);
   }
 }

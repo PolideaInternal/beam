@@ -35,34 +35,30 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
  * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in production.
  */
 public class SnowflakeServiceImpl implements SnowflakeService {
+  private static final String WRITE_TMP_PATH = "data";
+
+  @Override
+  public String createCloudStoragePath(String stagingBucketName) {
+    return String.format("gs://%s/%s/", stagingBucketName, WRITE_TMP_PATH);
+  }
 
   @Override
   public String copyIntoStage(
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String query,
-      String table,
+      String source,
       String integrationName,
-      String stagingBucketName,
-      String tmpDirName)
+      String stagingBucketDir,
+      SnowflakeCloudProvider cloudProvider)
       throws SQLException {
 
-    String from;
-    if (query != null) {
-      // Query must be surrounded with brackets
-      from = String.format("(%s)", query);
-    } else {
-      from = table;
-    }
-
-    String externalLocation = String.format("gcs://%s/%s/", stagingBucketName, tmpDirName);
     String copyQuery =
         String.format(
             "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
-            externalLocation, from, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
+            stagingBucketDir, source, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
 
     runStatement(copyQuery, getConnection(dataSourceProviderFn), null);
 
-    return String.format("gs://%s/%s/*", stagingBucketName, tmpDirName);
+    return cloudProvider.transformCloudPathToSnowflakePath(stagingBucketDir).concat("*");
   }
 
   @Override
@@ -78,7 +74,7 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       throws SQLException {
 
     String files = String.join(", ", filesList);
-    files = files.replaceAll(String.valueOf(location.getExternalLocation()), "");
+    files = files.replaceAll(String.valueOf(location.getFilesPath()), "");
     DataSource dataSource = dataSourceProviderFn.apply(null);
 
     prepareTableAccordingCreateDisposition(dataSource, table, tableSchema, createDisposition);
@@ -237,19 +233,6 @@ public class SnowflakeServiceImpl implements SnowflakeService {
       statement.close();
       connection.close();
     }
-  }
-
-  private SnowflakeStatementResult<String> getFilenamesFromPutOperation(ResultSet resultSet) {
-    SnowflakeStatementResult<String> result = new SnowflakeStatementResult();
-    int indexOfNameOfFile = 2;
-    try {
-      while (resultSet.next()) {
-        result.add(resultSet.getString(indexOfNameOfFile));
-      }
-    } catch (SQLException e) {
-      throw new RuntimeException("Unable run pipeline with PUT operation.", e);
-    }
-    return result;
   }
 
   private Connection getConnection(SerializableFunction<Void, DataSource> dataSourceProviderFn)

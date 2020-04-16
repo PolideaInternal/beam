@@ -22,9 +22,32 @@ import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 
 /** Fake implementation of {@link SnowflakeCloudProvider} used in test code. */
 public class FakeSnowflakeCloudProvider implements SnowflakeCloudProvider, Serializable {
+  private static final String SF_PREFIX = "gs://";
 
   @Override
-  public void removeFiles(String bucketName, String pathOnBucket) {
-    TestUtils.removeTempDir(bucketName);
+  public void removeFiles(String stagingBucketName, String pathOnBucket) {
+    TestUtils.removeTempDir(stagingBucketName);
+  }
+
+  @Override
+  public String formatCloudPath(String... pathSteps) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("./");
+
+    for (String step : pathSteps) {
+      builder.append(String.format("%s/", step));
+    }
+
+    return builder.toString();
+  }
+
+  @Override
+  public String transformSnowflakePathToCloudPath(String path) {
+    return path.replace(SF_PREFIX, "./");
+  }
+
+  @Override
+  public String transformCloudPathToSnowflakePath(String path) {
+    return path;
   }
 }
