@@ -1,5 +1,10 @@
 ---
 title: "{{ replace .Name "-" " " | title }}"
+date: "{{ .Date }}"
+categories: 
+  - blog
+authors: 
+  - "Your Name"
 ---
 <!--
 Licensed under the Apache License, Version 2.0 (the "License");

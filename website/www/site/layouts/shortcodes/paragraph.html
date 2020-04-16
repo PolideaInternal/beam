@@ -10,4 +10,8 @@
  limitations under the License. See accompanying LICENSE file.
 */}}
 
-<p class="{{ .Get `class` }}">{{ .Inner | markdownify }}</p>
+{{ if eq (.Get "wrap") "span" }}
+  <span class="{{ .Get `class` }}">{{ .Inner | markdownify }}</span>
+{{ else }}
+  <p class="{{ .Get `class` }}">{{ .Inner | markdownify }}</p>
+{{ end }}

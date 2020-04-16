@@ -1,7 +1,8 @@
 ---
 title:  "Testing Unbounded Pipelines in Apache Beam"
 date:   2016-10-20 10:00:00 -0800
-categories: blog
+categories:
+  - blog
 aliases:
   - /blog/2016/10/20/test-stream.html
 authors:

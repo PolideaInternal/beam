@@ -1,7 +1,8 @@
 ---
 title:  "Powerful and modular IO connectors with Splittable DoFn in Apache Beam"
 date:   2017-08-16 00:00:01 -0800
-categories: blog
+categories:
+  - blog
 aliases:
   - /blog/2017/08/16/splittable-do-fn.html
 authors:
