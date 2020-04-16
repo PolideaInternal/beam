@@ -1,7 +1,9 @@
 ---
 title:  "Strata+Hadoop World and Beam"
 date:   2016-10-11 09:00:00 -0800
-categories: beam update
+categories:
+  - beam
+  - update
 aliases:
   - /beam/update/2016/10/11/strata-hadoop-world-and-beam.html
 authors:

@@ -1,7 +1,8 @@
 ---
 title:  "Apache Beam 2.9.0"
 date:   2018-12-13 00:00:01 -0800
-categories: blog
+categories:
+  - blog
 aliases:
   - /blog/2018/12/13/beam-2.9.0.html
 authors:

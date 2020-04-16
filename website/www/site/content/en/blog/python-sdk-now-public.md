@@ -1,7 +1,10 @@
 ---
 title:  "Dataflow Python SDK is now public!"
 date:   2016-02-25 13:00:00 -0800
-categories: beam python sdk
+categories:
+  - beam
+  - python
+  - sdk
 aliases:
   - /beam/python/sdk/2016/02/25/python-sdk-now-public.html
 authors:

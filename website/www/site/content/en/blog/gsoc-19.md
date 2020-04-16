@@ -1,11 +1,13 @@
 ---
 title:  "Google Summer of Code '19"
 date:   2019-09-04 00:00:01 -0800
-categories: blog gsoc
+categories: 
+  - blog 
+  - gsoc
 aliases:
   - /blog/2019/09/04/gsoc-19.html
 authors:
-- ttanay
+  - ttanay
 
 ---
 <!--
