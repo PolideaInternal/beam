@@ -1,7 +1,8 @@
 ---
 title:  "Adding new Data Sources to Beam SQL CLI"
 date:   2019-06-04 00:00:01 -0800
-categories: blog
+categories:
+  - blog
 aliases:
   - /blog/2019/06/04/adding-data-sources-to-sql.html
 authors:

@@ -1,7 +1,8 @@
 ---
 title:  "Apache Beam 2.14.0"
 date:   2019-07-31 00:00:01 -0800
-categories: blog
+categories:
+  - blog
 aliases:
   - /blog/2019/07/31/beam-2.14.0.html
 authors:
