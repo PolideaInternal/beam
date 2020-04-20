@@ -35,14 +35,6 @@ from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
 from apache_beam.options.pipeline_options import PipelineOptions
 
-# options = PipelineOptions([
-#   "--runner=FlinkRunner",
-#   "--flink_version=1.9",
-#   "--flink_master=localhost:8081",
-#   "--environment_type=LOOPBACK"
-# ])
-options = []
-
 @attr('UsesCrossLanguageTransforms')
 @unittest.skipUnless(
     os.environ.get('EXPANSION_PORT'),
@@ -53,7 +45,7 @@ class XlangGenerateSequenceTest(unittest.TestCase):
     address = 'localhost:%s' % port
 
     try:
-      with TestPipeline(options=options) as p:
+      with TestPipeline() as p:
         res = (
             p
             | GenerateSequence(start=1, stop=10, expansion_service=address))

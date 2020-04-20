@@ -71,7 +71,7 @@ public class SerializableUtils {
         return ois.readObject();
       }
     } catch (IOException | ClassNotFoundException exn) {
-      throw new IllegalArgumentException(Arrays.toString(encodedValue)  + "unable to deserialize " + description, exn);
+      throw new IllegalArgumentException("unable to deserialize " + description, exn);
     }
   }
 

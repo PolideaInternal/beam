@@ -32,14 +32,14 @@ from apache_beam.testing.test_pipeline import TestPipeline
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.io.external.generate_sequence import GenerateSequence
 
-SERVER_NAME = "raa83096.us-east-1.snowflakecomputing.com"
-USERNAME = "PAWEL"
-PASSWORD = "Uber123"
-SCHEMA = "PUBLIC"
-DATABASE = "TEST_PAWEL"
-STAGING_BUCKET_NAME = "pawel-test-winter"
-STORAGE_INTEGRATION = "pawel_integration"
-TABLE = "TEST_TABLE"
+SERVER_NAME = ""
+USERNAME = ""
+PASSWORD = ""
+SCHEMA = ""
+DATABASE = ""
+STAGING_BUCKET_NAME = ""
+STORAGE_INTEGRATION = ""
+TABLE = ""
 EXPANSION_SERVICE = 'localhost:8097'
 SCHEMA_STRING = """
 {"schema":[
