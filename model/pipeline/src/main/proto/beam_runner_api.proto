@@ -342,6 +342,14 @@ message StandardPTransforms {
     // https://s.apache.org/beam-runner-api-combine-model#heading=h.aj86ew4v1wk
     // Payload: CombinePayload
     COMBINE_GROUPED_VALUES = 3 [(beam_urn) = "beam:transform:combine_grouped_values:v1"];
+
+    // Represents the Convert To Accumulators transform, as described in the
+    // following document:
+    // https://s.apache.org/beam-runner-api-combine-model#heading=h.h5697l1scd9x
+    // Payload: CombinePayload
+    COMBINE_PER_KEY_CONVERT_TO_ACCUMULATORS = 4
+        [(beam_urn) =
+             "beam:transform:combine_per_key_convert_to_accumulators:v1"];
   }
   // Payload for all of these: ParDoPayload containing the user's SDF
   enum SplittableParDoComponents {
@@ -433,11 +441,6 @@ message ParDoPayload {
   // (Required) The FunctionSpec of the DoFn.
   FunctionSpec do_fn = 1;
 
-  // (Required) Additional pieces of context the DoFn may require that
-  // are not otherwise represented in the payload.
-  // (may force runners to execute the ParDo differently)
-  repeated Parameter parameters = 2;
-
   // (Optional) A mapping of local input names to side inputs, describing
   // the expected access pattern.
   map<string, SideInput> side_inputs = 3;
@@ -447,20 +450,14 @@ message ParDoPayload {
   // be placed in the pipeline requirements.
   map<string, StateSpec> state_specs = 4;
 
-  // (Optional) A mapping of local timer names to timer specifications.
-  // If this is set, the stateful processing requirement should also
-  // be placed in the pipeline requirements.
-  map<string, TimerSpec> timer_specs = 5;
-
-  // (Optional) A mapping of local timer family names to timer specifications.
-  // If this is set, the stateful processing requirement should also
-  // be placed in the pipeline requirements.
+  // (Optional) A mapping of local timer family names to timer family
+  // specifications. If this is set, the stateful processing requirement should
+  // also be placed in the pipeline requirements.
   map<string, TimerFamilySpec> timer_family_specs = 9;
 
-  // Whether the DoFn is splittable
-  bool splittable = 6;
-
-  // (Required if splittable == true) Id of the restriction coder.
+  // (Optional) Only set when this ParDo contains a splittable DoFn.
+  // If this is set, the corresponding standard requirement should also
+  // be placed in the pipeline requirements.
   string restriction_coder_id = 7;
 
   // (Optional) Only set when this ParDo can request bundle finalization.
@@ -477,33 +474,8 @@ message ParDoPayload {
   // If this is set, the corresponding standard requirement should also
   // be placed in the pipeline requirements.
   bool requires_stable_input = 11;
-}
 
-// Parameters that a UDF might require.
-//
-// The details of how a runner sends these parameters to the SDK harness
-// are the subject of the Fn API.
-//
-// The details of how an SDK harness delivers them to the UDF is entirely
-// up to the SDK. (for some SDKs there may be parameters that are not
-// represented here if the runner doesn't need to do anything)
-//
-// Here, the parameters are simply indicators to the runner that they
-// need to run the function a particular way.
-//
-// TODO: the evolution of the Fn API will influence what needs explicit
-// representation here
-message Parameter {
-  Type.Enum type = 1;
-
-  message Type {
-    enum Enum {
-      UNSPECIFIED = 0;
-      WINDOW = 1;
-      PIPELINE_OPTIONS = 2;
-      RESTRICTION_TRACKER = 3;
-    }
-  }
+  reserved 6;
 }
 
 message StateSpec {
@@ -536,11 +508,6 @@ message MapStateSpec {
 
 message SetStateSpec {
   string element_coder_id = 1;
-}
-
-message TimerSpec {
-  TimeDomain.Enum time_domain = 1;
-  string timer_coder_id = 2;
 }
 
 message TimerFamilySpec {
@@ -734,9 +701,14 @@ message StandardCoders {
     // Components: Coder for a single element.
     ITERABLE = 3 [(beam_urn) = "beam:coder:iterable:v1"];
 
-    // Encodes a timer containing a timestamp and a user specified payload.
-    // The encoding is represented as: timestamp payload
-    //   timestamp - a big endian 8 byte integer representing millis-since-epoch.
+    // Encodes a timer containing a user key, a dynamic timer tag, a clear bit,
+    // a fire timestamp, a hold timestamp, the windows and the paneinfo.
+    // The encoding is represented as:
+    //   user key - user defined key, uses the component coder.
+    //   dynamic timer tag - a string which identifies a timer.
+    //   windows - uses component coders.
+    //   clear bit - a boolean set for clearing the timer.
+    //   fire timestamp - a big endian 8 byte integer representing millis-since-epoch.
     //     The encoded representation is shifted so that the byte representation of
     //     negative values are lexicographically ordered before the byte representation
     //     of positive values. This is typically done by subtracting -9223372036854775808
@@ -749,8 +721,9 @@ message StandardCoders {
     //                        1: 80 00 00 00 00 00 00 01
     //                      256: 80 00 00 00 00 00 01 00
     //      9223372036854775807: FF FF FF FF FF FF FF FF
-    //   payload - user defined data, uses the component coder
-    // Components: Coder for the payload.
+    //   hold timestamp - similar to the fire timestamp.
+    //   paneinfo - similar to the paneinfo of the windowed_value.
+    // Components: Coder for the key and windows.
     TIMER = 4 [(beam_urn) = "beam:coder:timer:v1"];
 
     /*
@@ -1212,7 +1185,7 @@ message ArtifactFilePayload {
 
 message ArtifactUrlPayload {
   // a string for an artifact URL e.g. "https://.../foo.jar" or "gs://tmp/foo.jar"
-  string path = 1;
+  string url = 1;
 }
 
 message EmbeddedFilePayload {
@@ -1263,7 +1236,6 @@ message Environment {
   // (Optional) The data specifying any parameters to the URN. If
   // the URN does not require any arguments, this may be omitted.
   bytes payload = 3;
-
 
   // (Optional) Static display data for the environment. If there is none,
   // it may be omitted.
@@ -1355,6 +1327,10 @@ message StandardRequirements {
     // This requirement indicates the requires_time_sorted_input field of ParDo
     // transform payloads must be inspected.
     REQUIRES_TIME_SORTED_INPUT = 3 [(beam_urn) = "beam:requirement:pardo:time_sorted_input:v1"];
+
+    // This requirement indicates the restriction_coder_id field of ParDo
+    // transform payloads must be inspected.
+    REQUIRES_SPLITTABLE_DOFN = 4 [(beam_urn) = "beam:requirement:pardo:splittable_dofn:v1"];
   }
 }
 
