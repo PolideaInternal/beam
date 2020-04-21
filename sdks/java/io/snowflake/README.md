@@ -10,6 +10,7 @@ For more information about Snowflake, see the [Snowflake documentation](https://
 * [DataSource Configuration](#datasource-configuration)
 * [Reading from Snowflake](#reading-from-snowflake)
 * [Writing to Snowflake](#writing-to-snowflake)
+* [Location](#location)
 * [Pipeline options](#pipeline-options)
 * [Using SnowflakeIO jar](#using-snowflakeio-jar)
 
@@ -78,20 +79,13 @@ Create the DataSource configuration::
 ```
 Where parameters can be:
 
-* `.withUrl(...)` 
-JDBC-like URL for your Snowflake account, including account name and region, without any parameters.
-* `.withServerName(...)`
-Server Name - full server name with account, zone and domain.
-* `.withDatabase(...)`
-Name of the Snowflake database to use. 
-* `.withWarehouse(...)`
-Name of the Snowflake warehouse to use. This parameter is optional. If no warehouse name is specified, the default 
-warehouse for the user is used.
-* `.withSchema(...)`
-Name of the schema in the database to use. This parameter is optional.
+* `.withUrl(...)` JDBC-like URL for your Snowflake account, including account name and region, without any parameters.
+* `.withServerName(...)` Server Name - full server name with account, zone and domain.
+* `.withDatabase(...)` Name of the Snowflake database to use. 
+* `.withWarehouse(...)` Name of the Snowflake warehouse to use. This parameter is optional. If no warehouse name is specified, the default  warehouse for the user is used.
+* `.withSchema(...)` Name of the schema in the database to use. This parameter is optional.
 
 **Note** - either `.withUrl(...)` or `.withServerName(...)` is required.
-
 
 ## Reading from Snowflake
 One of the functions of SnowflakeIO is reading Snowflake tables - either full tables via table name or custom data 
@@ -102,34 +96,24 @@ of user-defined data type.
 The basic `.read()` operation usage:
 
 ```
+Location location = Location.of("STORAGE INTEGRATION NAME", "GSC BUCKET NAME");
 PCollection<USER_DATA_TYPE> items = pipeline.apply(
    SnowflakeIO.<USER_DATA_TYPE>read()
        .withDataSourceConfiguration(dc)
        .fromTable("MY_TABLE") // or .fromQuery("QUERY")
-       .withStagingBucketName("GSC BUCKET NAME")
-       .withIntegrationName("STORAGE INTEGRATION NAME")
-       .withCsvMapper(MAPPER_TO_USER_DATA_TYPE)
-       .withCoder(BEAM_CODER_FOR_USER_DATA_TYPE));
+       .via(location)
+       .withCsvMapper(mapper)
+       .withCoder(coder));
 )
 ```
 
 Where all below parameters are required:
-* `.withDataSourceConfiguration(...)` 
-accepts a [DataSourceConfiguration](#datasource-configuration) object.
-* `.fromTable(...)` or `.fromQuery(...)`
-specifies a Snowflake table name or custom SQL query.
-* `.withStagingBucketName(...)`
-accepts name of the Google Cloud Storage bucket. It will be used as temporary location for storing CSV files. Those 
-temporary directories will be named `sf_copy_csv_DATE_TIME_RANDOMSUFFIX` and they will be removed automatically once 
-Read operation finishes.
-* `.withIntegrationName(...)`
-accepts the name of a Snowflake storage integration object configured for the GCS bucket specified in the  
- `.withExternalLocation` parameter.
-* `.withCsvMapper(mapper)`
-accepts a [CSVMapper](#csvmapper) instance for mapping `String[]` to USER_DATA_TYPE.
-* `withCoder(coder)`
-accepts the [Coder](https://beam.apache.org/releases/javadoc/2.0.0/org/apache/beam/sdk/coders/Coder.html) 
-for USER_DATA_TYPE. 
+* `.withDataSourceConfiguration(...)` accepts a [DataSourceConfiguration](#datasource-configuration) object.
+* `.fromTable(...)` or `.fromQuery(...)` specifies a Snowflake table name or custom SQL query.
+* `.via(...)` accepts a Location object.
+* `.withCsvMapper(mapper)` accepts a [CSVMapper](#csvmapper) instance for mapping `String[]` to USER_DATA_TYPE.
+* `.withCoder(coder)` accepts the [Coder](https://beam.apache.org/releases/javadoc/2.0.0/org/apache/beam/sdk/coders/Coder.html) for USER_DATA_TYPE. 
+
 
 #### CSVMapper
 SnowflakeIO uses a [COPY INTO <location>](https://docs.snowflake.net/manuals/sql-reference/sql/copy-into-location.html) 
@@ -163,6 +147,7 @@ One of the functions of SnowflakeIO is writing to Snowflake tables. This transfo
 
 The basic .write() operation usage is as follows:
 ```
+Location location = Location.of("STORAGE INTEGRATION NAME", "GSC BUCKET NAME");
 data.apply(
    SnowflakeIO.<type>write()
        .withDataSourceConfiguration(dc)
@@ -179,40 +164,6 @@ All the below parameters are required:
 * `.to()` - accepts the target Snowflake table name.
 * `.via()` - accepts a Location object.
 * `.withUserDataMapper()` - accepts the UserDataMapper function that will map a user's PCollection to an array of String values (`String[]`).
-
-### Location
-
-SnowflakeIO uses COPY statements behind the scenes  to write (using [COPY to table](https://docs.snowflake.net/manuals/sql-reference/sql/copy-into-table.html)) or read (using [COPY to location](https://docs.snowflake.net/manuals/sql-reference/sql/copy-into-location.html)) files staged in cloud storage. The Location object enables passing an external or internal location to a pipeline in various ways.
-
-#### External location
-
-! Important: 
-* Currently, this library only supports Google Cloud Storage for external storage. Please be aware of [Google Cloud Storage Billing](https://cloud.google.com/storage/pricing) while using it as an integration.
-Some data transfer billing charges may apply when loading data from files staged across different platforms. For more information, see [Understanding Snowflake Data Transfer Billing](https://docs.snowflake.net/manuals/user-guide/billing-data-transfer.html). An administrator must configure a Snowflake integration object to allow Snowflake to read data from and write to a Google Cloud Storage bucket. For instructions, see the  [Snowflake documentation](https://docs.snowflake.net/manuals/user-guide/data-load-gcs-config.html).
-
-There are two ways of using an external location:
-1. with url to GCS - this option requires providing the name of storage integration (created previously according to [Snowflake documentation](https://docs.snowflake.net/manuals/sql-reference/sql/create-storage-integration.html)).
-
-To create this type of external location, specify the Location type, the name of a stage , and the URL to the GCS bucket:
-
-`Location location = new ExternalIntegrationLocation("storage-integration-name", "gs://bucket-name/");`
-
-
-Note: Snowflake IO requires the 'gs://' prefix in the bucket URL.
-
-2. with named stage - this option requires providing the name of an external stage (created previously according to [Snowflake documentation](https://docs.snowflake.net/manuals/sql-reference/sql/create-stage.html#external-stage-parameters-externalstageparams).
-
-`Location location = new ExternalStageLocation("stage-name", "gs://bucket-name/");`
-
-#### Internal Location (experimental option)
-
-This option saves data from PCollection locally as temporary .csv files and then sends the files to the [Snowflake Internal stage](https://docs.snowflake.net/manuals/user-guide/data-load-local-file-system-create-stage.html).
-
-`Location location = new InternalLocation("~", "path");`
-Creating the Location object via PipelineOptions
-The Location object can alternatively be created based on PipelineOptions:
-
-`Location location = LocationFactory.of(options);`
 
 ### UserDataMapper function
 
@@ -304,6 +255,37 @@ data.apply(
 )
 ```
 
+## Location 
+
+Location object is used as argument by [write](#writing-from-snowflake) and [read](#reading-from-snowflake).
+
+There are two ways of creating Location object:
+* By passing `stagingBucketName` and `storageIntegration`. `stagingBucketName` is name of the Google Cloud Storage bucket 
+and `storageIntegration` is the name of a Snowflake storage integration object created according to [Snowflake documentation](https://docs.snowflake.net/manuals/sql-reference/sql/create-storage-integration.html) for the GCS bucket. 
+```
+Location location = Location.of(storageIntegration, stagingBucketName)`
+```
+* By passing `SnowflakePipelineOptions` object which must contain `stagingBucketName` and `storageIntegration`.
+```
+Location location = Location.of(options)
+```
+
+General notes:
+* Currently, this library only supports Google Cloud Storage for external storage. Please be aware of [Google Cloud Storage Billing](https://cloud.google.com/storage/pricing) while using it as an integration.
+Some data transfer billing charges may apply when loading data from files staged across different platforms. For more information, see [Understanding Snowflake Data Transfer Billing](https://docs.snowflake.net/manuals/user-guide/billing-data-transfer.html). 
+An administrator must configure a Snowflake integration object to allow Snowflake to read data from and write to a Google Cloud Storage bucket. For instructions, see the  [Snowflake documentation](https://docs.snowflake.net/manuals/user-guide/data-load-gcs-config.html).
+
+Write notes:
+* SnowflakeIO uses COPY statements behind the scenes to write (using [COPY to table](https://docs.snowflake.net/manuals/sql-reference/sql/copy-into-table.html)) 
+* `stagingBucketName` will be used to save CSV files which will end up in Snowflake . 
+Those CSV files will be saved under `stagingBucketName/data` path.
+
+Read notes:
+* SnowflakeIO uses COPY statements behind the scenes to read (using [COPY to location](https://docs.snowflake.net/manuals/sql-reference/sql/copy-into-location.html)) files staged in cloud storage.
+* `stagingBucketName` will be used as temporary location for storing CSV files. 
+Those temporary directories will be named `sf_copy_csv_DATE_TIME_RANDOMSUFFIX` 
+and they will be removed automatically once Read operation finishes.
+
 ## Pipeline options
 
 Use Beam’s [Pipeline options](https://beam.apache.org/releases/javadoc/2.17.0/org/apache/beam/sdk/options/PipelineOptions.html) to set options via the command line.
@@ -335,7 +317,7 @@ Then create your pipeline using created options:
 Example of accessing pipeline options in code:
 
 
-`String externalLocation = options.getExternalLocation();`
+`String stagingBucketName = options.getStagingBucketName();`
 #### Pipelines in tests:
 
 ```
@@ -392,18 +374,17 @@ To pass Pipeline options via the command line, use `--args` in a gradle command 
         --schema=<SNOWFLAKE SCHEMA> 
         --table=<SNOWFLAKE TABLE IN DATABASE> 
         --query=<IF NOT TABLE THEN QUERY> 
-        --integrationName=<SNOWFLAKE INTEGRATION NAME> 
-        --externalLocation=<GCS LOCATION STARTING WITH gcs://...> 
+        --storageIntegration=<SNOWFLAKE STORAGE INTEGRATION NAME> 
+        --stagingBucketName=<GCS BUCKET NAME> 
         --runner=<DirectRunner/DataflowRunner>
         --project=<FOR DATAFLOW RUNNER: GCP PROJECT NAME> 
-        --tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING
-                        WITH gs://...>
+        --tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING WITH gs://...>
         --region=<FOR DATAFLOW RUNNER: GCP REGION> 
         --appName=<OPTIONAL: DATAFLOW JOB NAME PREFIX 
     "
 ```
 
-Then in the code it is possible to access the parameters with arguments using the `options.getExternalLocation();` command.
+Then in the code it is possible to access the parameters with arguments using the `options.getStagingBucketName();` command.
 
 ### Running tests command with pipeline options
 
@@ -417,9 +398,9 @@ To pass pipeline options via the command line, use `-DintegrationTestPipelineOpt
   "--password=<SNOWFLAKE PASSWORD", 
   "--schema=<SNOWFLAKE SCHEMA>", 
   "--table=<SNOWFLAKE TABLE IN DATABASE>", 
-  "--database=<SNOWFLAKE DATABASE>", 
-  "--stage=<SNOWFLAKE STAGE NAME>", 
-  "--externalLocation=<GCS BUCKET URL STARTING WITH GS://>",
+  "--database=<SNOWFLAKE DATABASE>",
+  "--storageIntegration=<SNOWFLAKE STORAGE INTEGRATION NAME>",
+  "--stagingBucketName=<GCS BUCKET NAME>",
 ]' --no-build-cache
 ```
 
@@ -428,7 +409,7 @@ To pass pipeline options via the command line, use `-DintegrationTestPipelineOpt
 By default, pipelines are run on [Direct Runner](https://beam.apache.org/documentation/runners/direct/) on your local machine. To run a pipeline on [Google Dataflow](https://cloud.google.com/dataflow/), you must provide the following Pipeline options:
 * `--runner=DataflowRunner` - Name of a specific runner. Alternatively, use the DirectRunner option.
 * `--project=gcs-project` - Name of the Google Cloud Platform project.
-* `--stagingLocation=gs://temp/` - Google Cloud Services bucket where the Beam files will be staged.
+* `--stagingBucketName=gcs_bucket_name` - Google Cloud Services bucket where the Beam files will be staged.
 * `--maxNumWorkers=5` - (optional) Maximum number of workers.
 * `--appName=prefix` - (optional) Prefix for the job name in the Dataflow Dashboard.
 
@@ -479,17 +460,17 @@ Then run script using:
         --schema=<SNOWFLAKE SCHEMA> 
         --table=<SNOWFLAKE TABLE IN DATABASE> 
         --query=<IF NOT TABLE THEN QUERY> 
-        --integrationName=<SNOWFLAKE INTEGRATION NAME> 
-        --externalLocation=<GCS LOCATION STARTING WITH gs://...> 
+        --storageIntegration=<SNOWFLAKE STORAGE INTEGRATION NAME> 
+        --stagingBucketName=<GCS BUCKET NAME> 
         --runner=<DirectRunner/DataflowRunner>
         --project=<FOR DATAFLOW RUNNER: GCP PROJECT NAME> 
-        --tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING WITH gs://...  
+        --tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING WITH gs://...>
         --region=<FOR DATAFLOW RUNNER: GCP REGION> 
         --appName=<OPTIONAL: DATAFLOW JOB NAME PREFIX 
     "
 ```
 
-It is possible to add integrationName and externalLocation directly to the Pipeline.
+It is possible to add storageIntegration and stagingBucketName directly to the Pipeline.
 
 The other option is to create tests directly in this project using JUnit4, similar to [those](https://gitlab.polidea.com/snowflake-beam/snowflake/blob/master/src/test/java/com/polidea/snowflake/test/BatchWriteTest.java).
 Then run:
@@ -499,12 +480,12 @@ Then run:
         "--serverName=<SNOWFLAKE SERVER NAME>“,  
         "--username=<SNOWFLAKE USERNAME>", 
         "--password=<SNOWFLAKE PASSWORD>", 
-        "--output=<INTERNAL OR EXTERNAL LOCATION FOR SAVING OUTPUT FILES>",  
-        "--externalLocation=<GCS LOCATION STARTING WITH gs://...>", 
-        "--integrationName=<SNOWFLAKE INTEGRATION NAME>", 
-        "--runner=<DirectRunner/DataflowRunner>", 
+        "--output=<EXTERNAL LOCATION FOR SAVING OUTPUT FILES>",  
+        "--stagingBucketName=<GCS BUCKET NAME", 
+        "--storageIntegration=<SNOWFLAKE STORAGE INTEGRATION NAME>", 
+        "--runner=<DirectRunner/DataflowRunner>",
         "--project=<FOR DATAFLOW RUNNER: GCP PROJECT NAME>", 
-        "--tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING WITH gs://...",  
+        "--tempLocation=<FOR DATAFLOW RUNNER: GCS TEMP LOCATION STARTING WITH gs://...>",  
         "--region=<FOR DATAFLOW RUNNER: GCP REGION>", 
         "--appName=<OPTIONAL: DATAFLOW JOB NAME PREFIX", 
         ...]' 

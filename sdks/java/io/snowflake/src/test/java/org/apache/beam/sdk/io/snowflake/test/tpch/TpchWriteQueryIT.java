@@ -55,7 +55,6 @@ import org.junit.runners.JUnit4;
  * "--schema=<SCHEMA>",
  * "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/*",
  * "--stagingBucketName=gs://<BUCKET-NAME>/csv-query-location/",
- * "--stage=<STAGE NAME>",
  * "--runner=DataflowRunner",
  * "--project=<GCP_PROJECT>",
  * "--tempLocation=gs://<BUCKET-NAME>/dataflow-write-table-tmp"]'
