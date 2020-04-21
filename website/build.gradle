@@ -225,7 +225,7 @@ task testWebsite(type: Exec) {
   inputs.dir buildContentDir('local')
   commandLine 'docker', 'exec',
     "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-    """cd $dockerWorkDir/build/website/www && \
+    """cd $dockerWorkDir/website/www && \
       ./check-links.sh
       """
 }
