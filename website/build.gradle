@@ -92,6 +92,8 @@ task setupDockerContainer(type: Exec) {
   commandLine 'docker', 'exec', '-u', 'root',
     "${->startDockerContainer.containerId()}", '/bin/bash', '-c',
     """echo 'branch_repo: "${getBranchRepo()}"' > /tmp/_config_branch_repo.yml"""
+  commandLine 'docker', 'exec', '-u', 'root', '--workdir', '/opt/website/www',
+              "${->startDockerContainer.containerId()}", 'yarn', 'install'
 }
 
 task stopAndRemoveDockerContainer(type: Exec) {
@@ -115,6 +117,7 @@ def createBuildTask = {
   task "build${config.name}Website" (type:Exec) {
     dependsOn setupDockerContainer
     finalizedBy stopAndRemoveDockerContainer
+    inputs.dir 'www'
     outputs.dir buildContentDir(config.name)
 
     def baseUrlFlag = config.baseUrl ? "--baseurl=/${config.baseUrl}" : ""
