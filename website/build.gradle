@@ -22,7 +22,7 @@ plugins {
 }
 
 def dockerImageTag = 'beam-website'
-def dockerWorkDir = "/repo"
+def dockerWorkDir = "/opt"
 def buildDir = "${project.rootDir}/build/website"
 
 def commitedChanges = false
@@ -53,7 +53,6 @@ task setupVirtualenv {
 }
 
 task buildDockerImage(type: Exec) {
-  inputs.files 'Gemfile', 'Gemfile.lock'
   commandLine 'docker', 'build', '-t', dockerImageTag, '.'
 }
 
@@ -66,11 +65,11 @@ task createDockerContainer(type: Exec) {
   gradle.taskGraph.whenReady {
     def extraOptions = ''
     if (gradle.taskGraph.hasTask(":${project.name}:serveWebsite")) {
-      // Publish port 4000 where Jekyll serves website from
-      extraOptions = '--publish 127.0.0.1:4000:4000'
+      // Publish port 1313 where Hugo serves website from
+      extraOptions = "--publish 1313:1313"
     }
     commandLine '/bin/bash', '-c',
-      "docker create -v $project.rootDir:$dockerWorkDir -u \$(id -u):\$(id -g) $extraOptions $dockerImageTag"
+      "docker create -v $project.rootDir:$dockerWorkDir -u \$(id -u):\$(id -g) $extraOptions $dockerImageTag sh -c 'trap \"exit 0\" INT; while true; do sleep 30; done;'"
   }
 }
 
@@ -99,14 +98,6 @@ task stopAndRemoveDockerContainer(type: Exec) {
   commandLine 'docker', 'rm', '-f', "${->createDockerContainer.containerId()}"
 }
 
-task setupBuildDir(type: Copy) {
-  from('.') {
-    include 'Gemfile*'
-    include 'Rakefile'
-  }
-  into buildDir
-}
-
 task cleanWebsite(type: Delete) {
   delete buildDir
 }
@@ -122,28 +113,15 @@ class BuildTaskConfiguration {
 def createBuildTask = {
   BuildTaskConfiguration config = it as BuildTaskConfiguration
   task "build${config.name}Website" (type:Exec) {
-    dependsOn setupDockerContainer, setupBuildDir
+    dependsOn setupDockerContainer
     finalizedBy stopAndRemoveDockerContainer
-    inputs.files 'Gemfile.lock', '_config.yml'
-    inputs.dir 'src'
-    outputs.dir "$buildDir/.sass-cache"
     outputs.dir buildContentDir(config.name)
-    def configs = "${config.dockerWorkDir}/website/_config.yml"
-    if (config.useTestConfig) {
-      configs += ",${config.dockerWorkDir}/website/_config_test.yml"
-    }
-    if (config.useBranchRepoConfig) {
-      configs += ",/tmp/_config_branch_repo.yml"
-    }
+
     def baseUrlFlag = config.baseUrl ? "--baseurl=/${config.baseUrl}" : ""
     commandLine 'docker', 'exec',
       "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-      """cd ${config.dockerWorkDir}/build/website && \
-        bundle exec jekyll build \
-        --destination generated-${config.name.toLowerCase()}-content \
-        --config ${configs} \
-        --incremental ${baseUrlFlag} \
-        --source ${config.dockerWorkDir}/website/src
+      """cd ${config.dockerWorkDir}/website/www && \
+        yarn build \
         """
   }
 }
@@ -228,20 +206,12 @@ def buildContentDir(name) {
 }
 
 task serveWebsite(type: Exec) {
-  dependsOn setupDockerContainer, setupBuildDir
+  dependsOn setupDockerContainer
   finalizedBy stopAndRemoveDockerContainer
-  inputs.files 'Gemfile.lock', '_config.yml'
-  inputs.dir 'src'
-  outputs.dir "$buildDir/.sass-cache"
-  outputs.dir buildContentDir('local')
   commandLine 'docker', 'exec',
     "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-    """cd $dockerWorkDir/build/website && \
-      bundle exec jekyll serve \
-      --config $dockerWorkDir/website/_config.yml,/tmp/_config_branch_repo.yml \
-      --incremental \
-      --source $dockerWorkDir/website/src \
-      --host 0.0.0.0
+    """cd $dockerWorkDir/website/www && \
+      yarn develop --bind="0.0.0.0" --baseURL="http://docker.local:1313"
       """
 }
 
@@ -249,12 +219,12 @@ task testWebsite(type: Exec) {
   // dependsOn setupDockerContainer, 'buildWebsite'
   finalizedBy stopAndRemoveDockerContainer
 
-  inputs.files "$buildDir/Rakefile"
   inputs.dir buildContentDir('local')
   commandLine 'docker', 'exec',
     "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-    """cd $dockerWorkDir/build/website && \
-      bundle exec -- rake test disable_external=${findProperty('disableExternal') ?: true}"""
+    """cd $dockerWorkDir/build/website/www && \
+      ./check-links.sh
+      """
 }
 
 testWebsite.dependsOn 'buildLocalWebsite'
