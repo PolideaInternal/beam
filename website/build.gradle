@@ -92,12 +92,21 @@ task setupDockerContainer(type: Exec) {
   commandLine 'docker', 'exec', '-u', 'root',
     "${->startDockerContainer.containerId()}", '/bin/bash', '-c',
     """echo 'branch_repo: "${getBranchRepo()}"' > /tmp/_config_branch_repo.yml"""
-  commandLine 'docker', 'exec', '-u', 'root', '--workdir', '/opt/website/www',
+  commandLine 'docker', 'exec', '-u', 'root', '--workdir', '/opt/build/website',
               "${->startDockerContainer.containerId()}", 'yarn', 'install'
 }
 
 task stopAndRemoveDockerContainer(type: Exec) {
   commandLine 'docker', 'rm', '-f', "${->createDockerContainer.containerId()}"
+}
+
+task setupBuildDir(type: Copy) {
+  from('./www') {
+    include 'package.json*'
+    include 'yarn.lock'
+    include 'check-links.sh'
+  }
+  into buildDir
 }
 
 task cleanWebsite(type: Delete) {
@@ -115,16 +124,16 @@ class BuildTaskConfiguration {
 def createBuildTask = {
   BuildTaskConfiguration config = it as BuildTaskConfiguration
   task "build${config.name}Website" (type:Exec) {
-    dependsOn setupDockerContainer
+    dependsOn setupDockerContainer, setupBuildDir
     finalizedBy stopAndRemoveDockerContainer
-    inputs.dir 'www'
-    outputs.dir buildContentDir(config.name)
 
     def baseUrlFlag = config.baseUrl ? "--baseurl=/${config.baseUrl}" : ""
     commandLine 'docker', 'exec',
       "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-      """cd ${config.dockerWorkDir}/website/www && \
+      """cd ${config.dockerWorkDir}/build/website && \
         yarn build \
+        -d ${config.dockerWorkDir}/build/website/generated-${config.name.toLowerCase()}-content \
+        -s ${config.dockerWorkDir}/website/www/site
         """
   }
 }
@@ -222,11 +231,10 @@ task testWebsite(type: Exec) {
   // dependsOn setupDockerContainer, 'buildWebsite'
   finalizedBy stopAndRemoveDockerContainer
 
-  inputs.dir buildContentDir('local')
   commandLine 'docker', 'exec',
     "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-    """cd $dockerWorkDir/website/www && \
-      ./check-links.sh
+    """cd $dockerWorkDir/build/website && \
+      ./check-links.sh ./generated-local-content
       """
 }
 

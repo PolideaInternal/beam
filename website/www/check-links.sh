@@ -46,7 +46,7 @@ pushd "${MY_DIR}" &>/dev/null || exit 1
 
 echo "Working directory: ${MY_DIR}"
 
-DIST_DIR="./dist/"
+DIST_DIR=${1:-"./dist"}
 echo "Dist directory: ${DIST_DIR}"
 
 echo ""
