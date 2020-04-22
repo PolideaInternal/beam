@@ -56,7 +56,6 @@ public class SnowflakeCredentialsFactoryTest {
   @Test
   public void keyPairTest() {
     SnowflakePipelineOptions options = PipelineOptionsFactory.as(SnowflakePipelineOptions.class);
-    System.out.println(TestUtils.getPrivateKeyPath(getClass()));
     options.setUsername("username");
     options.setPrivateKeyPath(TestUtils.getPrivateKeyPath(getClass()));
     options.setPrivateKeyPassphrase(TestUtils.getPrivateKeyPassphrase());

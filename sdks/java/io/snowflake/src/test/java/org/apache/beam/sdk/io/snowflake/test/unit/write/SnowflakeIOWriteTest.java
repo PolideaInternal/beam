@@ -27,13 +27,13 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
-import org.apache.beam.sdk.io.snowflake.SnowflakeService;
+import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBatchServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
-import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
-import org.apache.beam.sdk.io.snowflake.test.unit.BatchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
@@ -57,7 +57,7 @@ public class SnowflakeIOWriteTest {
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
-  private static BatchTestPipelineOptions options;
+  private static SnowflakePipelineOptions options;
   private static SnowflakeIO.DataSourceConfiguration dc;
   private static Location location;
 
@@ -67,8 +67,8 @@ public class SnowflakeIOWriteTest {
 
   @BeforeClass
   public static void setupAll() {
-    snowflakeService = new FakeSnowflakeServiceImpl();
     cloudProvider = new FakeSnowflakeCloudProvider();
+    snowflakeService = new FakeSnowflakeBatchServiceImpl();
     testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
   }
 
@@ -76,8 +76,8 @@ public class SnowflakeIOWriteTest {
   public void setup() {
     FakeSnowflakeDatabase.createTable(FAKE_TABLE);
 
-    PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
-    options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
+    PipelineOptionsFactory.register(SnowflakePipelineOptions.class);
+    options = TestPipeline.testingPipelineOptions().as(SnowflakePipelineOptions.class);
     options.setStagingBucketName(BUCKET_NAME);
     options.setServerName("NULL.snowflakecomputing.com");
 

@@ -112,6 +112,10 @@ public class TestUtils {
     return (SnowflakeIO.UserDataMapper<Long>) recordLine -> new Long[] {recordLine};
   }
 
+  public static SnowflakeIO.UserDataMapper<String> getStringCsvMapper() {
+    return (SnowflakeIO.UserDataMapper<String>) recordLine -> new String[] {recordLine};
+  }
+
   public static SnowflakeIO.UserDataMapper<String[]> getLStringCsvMapper() {
     return (SnowflakeIO.UserDataMapper<String[]>) recordLine -> recordLine;
   }

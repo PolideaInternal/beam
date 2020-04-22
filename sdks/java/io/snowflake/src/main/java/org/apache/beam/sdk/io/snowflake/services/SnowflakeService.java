@@ -15,39 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake;
+package org.apache.beam.sdk.io.snowflake.services;
 
 import java.io.Serializable;
-import java.sql.SQLException;
-import java.util.List;
-import javax.sql.DataSource;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
-import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.transforms.SerializableFunction;
 
 /** Interface which defines common methods for interacting with SnowFlake. */
-public interface SnowflakeService extends Serializable {
+public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
   String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
   String createCloudStoragePath(String stagingBucketName);
 
-  String copyIntoStage(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String source,
-      String integrationName,
-      String stagingBucketDir,
-      SnowflakeCloudProvider cloudProvider)
-      throws SQLException;
+  String read(T config) throws Exception;
 
-  void copyToTable(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      List<String> filesList,
-      String table,
-      SFTableSchema tableSchema,
-      String source,
-      CreateDisposition createDisposition,
-      WriteDisposition writeDisposition,
-      Location location)
-      throws SQLException;
+  void write(T config) throws Exception;
 }
