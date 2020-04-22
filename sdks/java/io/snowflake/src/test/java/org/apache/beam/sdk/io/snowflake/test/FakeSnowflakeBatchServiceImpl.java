@@ -29,22 +29,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
-import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import org.apache.beam.sdk.io.snowflake.Location;
-import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
-import org.apache.beam.sdk.io.snowflake.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
-import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeBatchServiceConfig;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
 import org.apache.commons.lang3.RandomStringUtils;
 
-/**
- * Fake implementation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in tests.
- */
-public class FakeSnowflakeServiceImpl implements SnowflakeService {
-
+/** Fake implementation of {@link SnowflakeService} used in tests. */
+public class FakeSnowflakeBatchServiceImpl
+    implements SnowflakeService<SnowflakeBatchServiceConfig> {
   @Override
   public String createCloudStoragePath(String stagingBucketName) {
     String writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
@@ -52,30 +47,30 @@ public class FakeSnowflakeServiceImpl implements SnowflakeService {
   }
 
   @Override
-  public String copyIntoStage(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String source,
-      String integrationName,
-      String stagingBucketDir,
-      SnowflakeCloudProvider cloudProvider)
-      throws SQLException {
+  public void write(SnowflakeBatchServiceConfig config) throws Exception {
+    copyToTable(config);
+  }
+
+  @Override
+  public String read(SnowflakeBatchServiceConfig config) throws Exception {
+    return copyIntoStage(config);
+  }
+
+  public String copyIntoStage(SnowflakeBatchServiceConfig config) throws SQLException {
+    String source = config.getSource();
+    String stagingBucketDir = config.getStagingBucketDir();
 
     writeToFile(stagingBucketDir, FakeSnowflakeDatabase.getElements(source));
 
     return String.format("./%s/*", stagingBucketDir);
   }
 
-  @Override
-  public void copyToTable(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      List<String> filesList,
-      String table,
-      SFTableSchema tableSchema,
-      String source,
-      CreateDisposition createDisposition,
-      WriteDisposition writeDisposition,
-      Location location)
-      throws SQLException {
+  public void copyToTable(SnowflakeBatchServiceConfig config) throws SQLException {
+    List<String> filesList = config.getFilesList();
+    String table = config.getTable();
+    SFTableSchema tableSchema = config.getTableSchema();
+    CreateDisposition createDisposition = config.getCreateDisposition();
+    WriteDisposition writeDisposition = config.getWriteDisposition();
 
     List<String> rows = new ArrayList<>();
     for (String file : filesList) {
@@ -107,7 +102,6 @@ public class FakeSnowflakeServiceImpl implements SnowflakeService {
         } else {
           FakeSnowflakeDatabase.createTable(table);
         }
-
         break;
     }
   }
