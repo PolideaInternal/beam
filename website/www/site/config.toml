@@ -9,13 +9,6 @@ theme = ["docsy"]
 # Will give values to .Lastmod etc.
 enableGitInfo = true
 
-# Language settings
-contentDir = "content/en"
-defaultContentLanguage = "en"
-defaultContentLanguageInSubdir = false
-# Useful when translating.
-enableMissingTranslationPlaceholders = true
-
 # Highlighting config
 pygmentsCodeFences = true
 pygmentsUseClasses = false
@@ -57,12 +50,48 @@ anchor = "smart"
 
 # Language configuration
 
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = false
+# Useful when translating.
+enableMissingTranslationPlaceholders = true
+
 [languages]
 [languages.en]
+contentDir = "content/en"
 title = "Apache Beam"
 description = "Apache Beam is an open source, unified model and set of language-specific SDKs for defining and executing data processing workflows, and also data ingestion and integration flows, supporting Enterprise Integration Patterns (EIPs) and Domain Specific Languages (DSLs). Dataflow pipelines simplify the mechanics of large-scale batch and streaming data processing and can run on a number of runtimes like Apache Flink, Apache Spark, and Google Cloud Dataflow (a cloud service). Beam also brings DSL in different languages, allowing users to easily implement their data integration processes."
 languageName ="English"
-# Weight used for sorting.
+weight = 1
+[[languages.en.menu.home]]
+url = "/"
+name = "Home"
+weight = 1
+[[languages.en.menu.getstarted]]
+url = "/get-started/beam-overview/"
+name = "Get Started"
+weight = 1
+[[languages.en.menu.blog]]
+url = "/blog/"
+name = "Blog"
+weight = 1
+
+[languages.pl]
+contentDir = "content/pl"
+title = "Apache Beam | PL"
+description = "Apache Beam to otwarty kod źródłowy, ujednolicony model i zestaw zestawów SDK specyficznych dla języka do definiowania i wykonywania przepływów pracy przetwarzania danych, a także przetwarzania danych i przepływów integracji, obsługujący wzorce integracji korporacyjnej (EIP) i języki specyficzne dla domeny (DSL). Rurociągi przepływu danych upraszczają mechanizmy przetwarzania danych wsadowych i strumieniowych na dużą skalę i mogą działać w wielu środowiskach wykonawczych, takich jak Apache Flink, Apache Spark i Google Cloud Dataflow (usługa w chmurze). Beam udostępnia również DSL w różnych językach, umożliwiając użytkownikom łatwe wdrażanie procesów integracji danych."
+languageName = "Polish"
+weight = 2
+[[languages.pl.menu.home]]
+url = "/pl"
+name = "Strona Główna"
+weight = 1
+[[languages.pl.menu.getstarted]]
+url = "/get-started/beam-overview/"
+name = "Zaczynaj"
+weight = 1
+[[languages.pl.menu.blog]]
+url = "/blog/"
+name = "Blog"
 weight = 1
 
 # RSS template configuration

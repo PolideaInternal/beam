@@ -1,0 +1,14 @@
+[hero-title]
+  other = "Apache Beam: An advanced unified programming model"
+
+[hero-subtitle]
+  other = "Implement batch and streaming data processing jobs that run on any execution engine."
+
+[blog-title]
+  other = "Apache Beam Blog"
+
+[blog-subtitle]
+  other = "This is the blog for the Apache Beam project. This blog contains news and updates for the project."
+
+[blog-readmore-button]
+  other = "Read more"
