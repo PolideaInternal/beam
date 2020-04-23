@@ -31,6 +31,10 @@ from apache_beam.io.external.snowflake import ReadFromSnowflake, WriteToSnowflak
 from apache_beam.testing.test_pipeline import TestPipeline
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.io.external.generate_sequence import GenerateSequence
+from apache_beam.testing.util import assert_that
+from apache_beam.testing.util import equal_to
+
+import time
 
 SERVER_NAME = ""
 USERNAME = ""
@@ -43,72 +47,62 @@ TABLE = ""
 EXPANSION_SERVICE = 'localhost:8097'
 SCHEMA_STRING = """
 {"schema":[
-    {"dataType":{"type":"text","length":null},"name":"name","nullable":true},
-    {"dataType":{"type":"text","length":null},"name":"description","nullable":false}
+    {"dataType":{"type":"text","length":null},"name":"text_column","nullable":true},
+    {"dataType":{"type":"text","length":null},"name":"description_column","nullable":true}
 ]}
 """
 
-OPTIONS = PipelineOptions([
+OPTIONS = [
     "--runner=FlinkRunner",
     "--flink_version=1.10",
     "--flink_master=localhost:8081",
     "--environment_type=LOOPBACK"
-])
-
+]
 
 @attr('UsesCrossLanguageTransforms')
-class XlangSnowflakeTest(unittest.TestCase):
+class XlangSnowflakeWriteTest(unittest.TestCase):
 
-    def test_snowflake_write(self):
-        # TODO For now is possible only to run write or read due to memory leak
-        write_result = run_write()
-        # read_result = run_read()
-
+    def test_snowflake_write_read(self):
+        run_write()
+        run_read()
 
 def run_write():
-    with TestPipeline(options=OPTIONS, blocking=True) as p:
-        return (p
-                | GenerateSequence(start=1, stop=2, expansion_service=EXPANSION_SERVICE)
-                | beam.Map(lambda num: ["test ", "test test"])
-                | WriteToSnowflake(serverName=SERVER_NAME,
-                                   username=USERNAME,
-                                   password=PASSWORD,
-                                   schema=SCHEMA,
-                                   database=DATABASE,
-                                   stagingBucketName=STAGING_BUCKET_NAME,
-                                   storageIntegration=STORAGE_INTEGRATION,
-                                   createDisposition="CREATE_IF_NEEDED",
-                                   writeDisposition="TRUNCATE",
-                                   parallelization=False,
-                                   tableSchema=SCHEMA_STRING,
-                                   table=TABLE,
-                                   query=None,
-                                   expansion_service=EXPANSION_SERVICE
-                                   )
-                )
 
+    with TestPipeline(options=PipelineOptions(OPTIONS)) as p:
+        p \
+        | GenerateSequence(start=1, stop=10, expansion_service=EXPANSION_SERVICE)\
+        | beam.Map(lambda num: ["test", "test test"])\
+        | WriteToSnowflake(serverName=SERVER_NAME,
+                           username=USERNAME,
+                           password=PASSWORD,
+                           schema=SCHEMA,
+                           database=DATABASE,
+                           stagingBucketName=STAGING_BUCKET_NAME,
+                           storageIntegration=STORAGE_INTEGRATION,
+                           createDisposition="CREATE_IF_NEEDED",
+                           writeDisposition="APPEND",
+                           parallelization=False,
+                           tableSchema=SCHEMA_STRING,
+                           table=TABLE,
+                           query=None,
+                           expansion_service=EXPANSION_SERVICE
+                           )
 
 def run_read():
-    with TestPipeline(options=OPTIONS, blocking=True) as p:
-        def print_fn(message):
-            print('VALUE: {}'.format(message))
-            return message
-
-        return (p
-                | ReadFromSnowflake(serverName=SERVER_NAME,
-                                    username=USERNAME,
-                                    password=PASSWORD,
-                                    schema=SCHEMA,
-                                    database=DATABASE,
-                                    stagingBucketName=STAGING_BUCKET_NAME,
-                                    storageIntegration=STORAGE_INTEGRATION,
-                                    table=TABLE,
-                                    query=None,
-                                    expansion_service=EXPANSION_SERVICE
-                                    )
-                | beam.Map(print_fn)
-                )
-
+    with TestPipeline(options=PipelineOptions(OPTIONS)) as p:
+        result = p \
+                 | ReadFromSnowflake(serverName=SERVER_NAME,
+                                     username=USERNAME,
+                                     password=PASSWORD,
+                                     schema=SCHEMA,
+                                     database=DATABASE,
+                                     stagingBucketName=STAGING_BUCKET_NAME,
+                                     storageIntegration=STORAGE_INTEGRATION,
+                                     table=TABLE,
+                                     query=None,
+                                     expansion_service=EXPANSION_SERVICE
+                                     )
+        assert_that(result, equal_to([]))
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

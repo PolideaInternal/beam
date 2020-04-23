@@ -179,7 +179,8 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
     }
   }
 
-  public static SnowflakeIO.UserDataMapper<List<String>> getLStringCsvMapper() {
-    return (SnowflakeIO.UserDataMapper<List<String>>) recordLine -> recordLine.toArray();
+  public static SnowflakeIO.UserDataMapper<List<byte[]>> getLStringCsvMapper() {
+    return (SnowflakeIO.UserDataMapper<List<byte[]>>)
+        recordLine -> recordLine.stream().map(String::new).toArray();
   }
 }

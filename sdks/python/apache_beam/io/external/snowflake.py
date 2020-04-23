@@ -49,6 +49,8 @@ from apache_beam.transforms.external import ImplicitSchemaPayloadBuilder
   Experimental; no backwards compatibility guarantees.
 """
 class ReadFromSnowflake(ExternalTransform):
+    """An external PTransform which reads from Snowflake."""
+
     URN = 'beam:external:java:snowflake:read:v1'
 
     def __init__(
@@ -63,6 +65,8 @@ class ReadFromSnowflake(ExternalTransform):
             table=None,
             query=None,
             expansion_service=None):
+        
+
         super(ReadFromSnowflake, self).__init__(
             self.URN,
             ImplicitSchemaPayloadBuilder({
@@ -79,6 +83,7 @@ class ReadFromSnowflake(ExternalTransform):
             expansion_service)
 
 class WriteToSnowflake(ExternalTransform):
+    """An external PTransform which writes to Snowflake."""
 
     URN = 'beam:external:java:snowflake:write:v1'
 

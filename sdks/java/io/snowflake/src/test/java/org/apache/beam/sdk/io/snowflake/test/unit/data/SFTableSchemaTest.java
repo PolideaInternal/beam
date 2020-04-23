@@ -24,6 +24,12 @@ import net.snowflake.client.jdbc.internal.fasterxml.jackson.databind.ObjectMappe
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.datetime.SFDate;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SFDateTime;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SFTime;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SFTimestamp;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SFTimestampLTZ;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SFTimestampNTZ;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SFTimestampTZ;
 import org.apache.beam.sdk.io.snowflake.data.logical.SFBoolean;
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFDecimal;
 import org.apache.beam.sdk.io.snowflake.data.numeric.SFDouble;
@@ -66,12 +72,12 @@ public class SFTableSchemaTest {
     SFTableSchema schema =
         new SFTableSchema(
             new SFColumn("date", new SFDate()),
-            new SFColumn("date", new SFDate()),
-            new SFColumn("date", new SFDate()),
-            new SFColumn("date", new SFDate()),
-            new SFColumn("date", new SFDate()),
-            new SFColumn("date", new SFDate()),
-            new SFColumn("date", new SFDate()),
+            new SFColumn("datetime", new SFDateTime()),
+            new SFColumn("time", new SFTime()),
+            new SFColumn("timestamp", new SFTimestamp()),
+            new SFColumn("timestamp_ltz", new SFTimestampLTZ()),
+            new SFColumn("timestamp_ntz", new SFTimestampNTZ()),
+            new SFColumn("timestamp_tz", new SFTimestampTZ()),
             new SFColumn("boolean", new SFBoolean()),
             new SFColumn("decimal", new SFDecimal(38, 1), true),
             new SFColumn("double", new SFDouble()),
@@ -93,12 +99,12 @@ public class SFTableSchemaTest {
     String schemaString =
         "{\"schema\":["
             + "{\"dataType\":{\"type\":\"date\"},\"name\":\"date\",\"nullable\":false},"
-            + "{\"dataType\":{\"type\":\"date\"},\"name\":\"date\",\"nullable\":false},"
-            + "{\"dataType\":{\"type\":\"date\"},\"name\":\"date\",\"nullable\":false},"
-            + "{\"dataType\":{\"type\":\"date\"},\"name\":\"date\",\"nullable\":false},"
-            + "{\"dataType\":{\"type\":\"date\"},\"name\":\"date\",\"nullable\":false},"
-            + "{\"dataType\":{\"type\":\"date\"},\"name\":\"date\",\"nullable\":false},"
-            + "{\"dataType\":{\"type\":\"date\"},\"name\":\"date\",\"nullable\":false},"
+            + "{\"dataType\":{\"type\":\"datetime\"},\"name\":\"datetime\",\"nullable\":false},"
+            + "{\"dataType\":{\"type\":\"time\"},\"name\":\"time\",\"nullable\":false},"
+            + "{\"dataType\":{\"type\":\"timestamp\"},\"name\":\"timestamp\",\"nullable\":false},"
+            + "{\"dataType\":{\"type\":\"timestamp_ltz\"},\"name\":\"timestamp_ltz\",\"nullable\":false},"
+            + "{\"dataType\":{\"type\":\"timestamp_ntz\"},\"name\":\"timestamp_ntz\",\"nullable\":false},"
+            + "{\"dataType\":{\"type\":\"timestamp_tz\"},\"name\":\"timestamp_tz\",\"nullable\":false},"
             + "{\"dataType\":{\"type\":\"boolean\"},\"name\":\"boolean\",\"nullable\":false},"
             + "{\"dataType\":{\"type\":\"decimal\",\"precision\":38,\"scale\":1},\"name\":\"decimal\",\"nullable\":true},"
             + "{\"dataType\":{\"type\":\"double\"},\"name\":\"double\",\"nullable\":false},"

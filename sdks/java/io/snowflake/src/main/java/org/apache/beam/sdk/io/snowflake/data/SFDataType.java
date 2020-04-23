@@ -46,7 +46,6 @@ import org.apache.beam.sdk.io.snowflake.data.text.SFText;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarBinary;
 import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
 
-/** Interface for data types to provide SQLs for themselves. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
   @Type(value = SFDate.class, name = "date"),
