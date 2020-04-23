@@ -8,17 +8,20 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License. See accompanying LICENSE file.
-*/}}{{/*
+*/}}
 
-    There is a reason why the code below is written in 1 line.
-    When we nest a shortcode in another shortcode (in our case, we nest github_sample in highlight),
-    hugo interprets each line of nested shortcode as a new line character.
-    So, if this piece of code consisted of 10 lines, we'd get a highlighted block of code which would
-    start with 10 empty lines.
-    Trimming this result in parent shortcode solves the problem only partially - we can trim new lines
-    at the start and the end of a string. However that wouldn't work if we put TWO or more github_sample
-    shortcodes in a highlight - the new line characters would appear in the middle.
-    Thus a very ugly, but working solution - writing the whole shortcode in 1 line.
-    I wish I found a better solution - if you do, feel free to contribute ¯\_(ツ)_/¯
-
-*/}}{{ $githubApiUrl := "https://api.github.com/repos" }}{{ $path := .Get 0 }}{{ $tag := .Get 1 }}{{ $path := replaceRE "/blob/" "/contents/" $path }}{{ $path := replaceRE "((/.*?){3})/(.*?)(/.*)" "$1$4?ref=$3" $path }}{{ $url := printf "%s%s" $githubApiUrl $path }}{{ $resp := getJSON $url }}{{ $data := $resp.content | base64Decode }}{{ $matchRegex := printf "%s%s%s%s%s" "\\[START " $tag "]\n[\\s\\S]*?\n.*\\[END " $tag "]" }}{{ $match := index (findRE $matchRegex $data) 0 }}{{ $lines := split $match "\n" }}{{ $lineCount := len $lines }}{{ $cleanedLines := $lines | first (sub $lineCount 1) | last (sub $lineCount 2) }}{{ $firstLine := index $cleanedLines 0 }}{{ $numberOfWhitespaces := index (findRE "^\\s*" $firstLine) 0 | len }}{{ $unindentRegex := printf "%s%d%s" "^\\s{" $numberOfWhitespaces "}" }}{{ $unindentedLines := apply $cleanedLines "replaceRE" $unindentRegex "" "." }}{{ $result := delimit $unindentedLines "\n" }}{{ print $result }}
+{{ $tag := .Get 1 }}
+{{ $path := replaceRE "/blob/" "/" (.Get 0) }}
+{{ $path := printf "github_samples/%s" (replaceRE "/" "_" $path) }}
+{{ $data := readFile $path }}
+{{ $matchRegex := printf "%s%s%s%s%s" "\\[START " $tag "]\n[\\s\\S]*?\n.*\\[END " $tag "]" }}
+{{ $match := index (findRE $matchRegex $data) 0 }}
+{{ $lines := split $match "\n" }}
+{{ $lineCount := len $lines }}
+{{ $cleanedLines := $lines | first (sub $lineCount 1) | last (sub $lineCount 2) }}
+{{ $firstLine := index $cleanedLines 0 }}
+{{ $numberOfWhitespaces := index (findRE "^\\s*" $firstLine) 0 | len }}
+{{ $unindentRegex := printf "%s%d%s" "^\\s{" $numberOfWhitespaces "}" }}
+{{ $unindentedLines := apply $cleanedLines "replaceRE" $unindentRegex "" "." }}
+{{ $result := delimit $unindentedLines "\n" }}
+{{ print $result }}
