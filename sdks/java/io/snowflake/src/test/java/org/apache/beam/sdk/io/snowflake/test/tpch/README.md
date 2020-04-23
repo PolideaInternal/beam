@@ -55,9 +55,10 @@ to authorize Snowflake to operate on your GCS bucket.
 "--username=<USERNAME>", 
 "--password=<PASSWORD>", 
 "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/", 
-"--stagingBucketName=<BUCKET NAME>",
+"--stagingBucketName=<GCS BUCKET NAME>",
 "--storageIntegration=<STORAGE INTEGRATION NAME>", 
-"--runner=DataflowRunner", 
+"--runner=DataflowRunner",
+"--region=<FOR DATAFLOW RUNNER: GCP REGION> ",
 "--project=<GCP_PROJECT>", 
 "--testSize=TPCH_SF1000", 
 "--tempLocation=gs://<BUCKET-NAME>/dataflow-read-table-tmp"]'
@@ -73,9 +74,10 @@ to authorize Snowflake to operate on your GCS bucket.
 "--username=<USERNAME>", 
 "--password=<PASSWORD>", 
 "--parquetFilesLocation=gs://<BUCKET-NAME>/query-parquet/",
-"--stagingBucketName=<BUCKET NAME>",
+"--stagingBucketName=<GCS BUCKET NAME>",
 "--storageIntegration=<STORAGE INTEGRATION NAME>", 
-"--runner=DataflowRunner", 
+"--runner=DataflowRunner",
+"--region=<FOR DATAFLOW RUNNER: GCP REGION> ",
 "--project=<GCP_PROJECT>", 
 "--testSize=TPCH_SF1000",
 "--tempLocation=gs://<BUCKET-NAME>/dataflow-read-query-tmp"]'
@@ -100,9 +102,10 @@ run the test
 "--table=<TABLE NAME>", 
 "--schema=<SCHEMA>", 
 "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/*", 
-"--stagingBucketName=gs://<BUCKET-NAME>/csv-table-location/", 
-"--storageIntegration=<STORAGE INTEGRATION NAME>", 
+"--storageIntegration=<SNOWFLAKE STORAGE INTEGRATION NAME>",
+"--stagingBucketName=<GCS BUCKET NAME>",
 "--runner=DataflowRunner", 
+"--region=<FOR DATAFLOW RUNNER: GCP REGION> ",
 "--project=<GCP_PROJECT>", 
 "--tempLocation=gs://<BUCKET-NAME>/dataflow-write-table-tmp"]'
 --tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchWriteTableIT
@@ -132,9 +135,10 @@ run the test
 "--table=<TABLE NAME>", 
 "--schema=<SCHEMA>", 
 "--parquetFilesLocation=gs://<BUCKET-NAME>/table-parquet/*", 
-"--stagingBucketName=gs://<BUCKET-NAME>/csv-query-location/", 
-"--stage=<STAGE NAME>", 
-"--runner=DataflowRunner", 
+"--stagingBucketName=<GCS BUCKET NAME>",
+"--storageIntegration=<SNOWFLAKE STORAGE INTEGRATION NAME>",
+"--runner=DataflowRunner",
+"--region=<FOR DATAFLOW RUNNER: GCP REGION> ",
 "--project=<GCP_PROJECT>", 
 "--tempLocation=gs://<BUCKET-NAME>/dataflow-write-table-tmp"]'
 --tests org.apache.beam.sdk.io.snowflake.test.tpch.TpchWriteQueryIT

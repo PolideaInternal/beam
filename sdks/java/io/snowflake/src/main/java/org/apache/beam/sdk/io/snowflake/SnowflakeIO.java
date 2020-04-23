@@ -120,14 +120,14 @@ import org.slf4j.LoggerFactory;
  * <p>For example
  *
  * <pre>{@code
- * Location location = Location.of(storageIntegration, externalLocation);
+ * Location location = Location.of(storageIntegration, stagingBucketName);
  * PCollection<GenericRecord> items = pipeline.apply(
  *  SnowflakeIO.<GenericRecord>read()
  *    .withDataSourceConfiguration(dataSourceConfiguration)
  *    .fromQuery(QUERY)
  *    .via(location)
- *    .withCsvMapper(...)
- *    .withCoder(...));
+ *    .withCsvMapper(mapper)
+ *    .withCoder(coder));
  * }</pre>
  *
  * <h3>Writing to Snowflake</h3>
@@ -139,13 +139,13 @@ import org.slf4j.LoggerFactory;
  * <p>For example
  *
  * <pre>{@code
- * Location location = Location.of(storageIntegration, externalLocation);
+ * Location location = Location.of(storageIntegration, stagingBucketName);
  * items.apply(
  *     SnowflakeIO.<KV<Integer, String>>write()
  *         .withDataSourceConfiguration(dataSourceConfiguration)
  *         .to(table)
  *         .via(location)
- *         .withUserDataMapper(...);
+ *         .withUserDataMapper(maper);
  * }</pre>
  */
 public class SnowflakeIO {
@@ -991,7 +991,7 @@ public class SnowflakeIO {
               .apply(
                   "Map user data to Objects array",
                   ParDo.of(new MapUserDataObjectsArrayFn<T>(getUserDataMapper())))
-              .apply("Map Objects array to CSV lines", ParDo.of(new MapObjecsArrayToCsvFn()))
+              .apply("Map Objects array to CSV lines", ParDo.of(new MapObjectsArrayToCsvFn()))
               .setCoder(StringUtf8Coder.of());
 
       WriteFilesResult filesResult =
@@ -1051,7 +1051,7 @@ public class SnowflakeIO {
    *
    * <p>Adds Snowflake-specific quotations around strings.
    */
-  private static class MapObjecsArrayToCsvFn extends DoFn<Object[], String> {
+  private static class MapObjectsArrayToCsvFn extends DoFn<Object[], String> {
 
     @ProcessElement
     public void processElement(ProcessContext context) {

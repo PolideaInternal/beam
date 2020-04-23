@@ -23,6 +23,10 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import java.io.Serializable;
 
+/**
+ * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider} used in
+ * production.
+ */
 public class GCSProvider implements SnowflakeCloudProvider, Serializable {
   private static final String GCS_PREFIX = "gcs://";
   private static final String SF_PREFIX = "gs://";

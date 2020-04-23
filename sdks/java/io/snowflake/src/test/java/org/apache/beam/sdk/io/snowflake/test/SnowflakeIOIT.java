@@ -64,10 +64,11 @@ import org.junit.Test;
  * "--password=<PASSWORD>",
  * "--database=<DATABASE NAME>",
  * "--schema=<SCHEMA NAME>",
- * "--stagingBucketName=<BUCKET NAME>",
+ * "--stagingBucketName=<GCS BUCKET NAME>",
  * "--storageIntegration=<STORAGE INTEGRATION NAME>",
  * "--numberOfRecords=<1000, 100000, 600000, 5000000>",
  * "--runner=DataflowRunner",
+ * "--region=<FOR DATAFLOW RUNNER: GCP REGION>",
  * "--project=<GCP_PROJECT>"]'
  * --tests org.apache.beam.sdk.io.snowflake.test.SnowflakeIOIT
  * -DintegrationTestRunner=dataflow
