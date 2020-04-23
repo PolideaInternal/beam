@@ -104,7 +104,7 @@ task setupDockerContainer(type: Exec) {
   // Create the config to point to a GitHub or Colab blob in the repo, e.g. apache/beam/blob/master
   commandLine 'docker', 'exec', '-u', 'root',
     "${->startDockerContainer.containerId()}", '/bin/bash', '-c',
-    """echo 'branch_repo: "${getBranchRepo()}"' > /tmp/_config_branch_repo.yml"""
+    """echo '[params]\n  branch_repo = "${getBranchRepo()}"' > /tmp/_config_branch_repo.toml"""
 }
 
 task stopAndRemoveDockerContainer(type: Exec) {
@@ -129,12 +129,17 @@ def createBuildTask = {
     dependsOn setupDockerContainer
     finalizedBy stopAndRemoveDockerContainer
 
+    def configs = "$dockerSourceDir/site/config.toml"
+    if (config.useBranchRepoConfig) {
+      configs += ",/tmp/_config_branch_repo.toml"
+    }
     def baseUrlFlag = config.baseUrl ? "--baseURL /${config.baseUrl}" : ""
     commandLine 'docker', 'exec',
       "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
       """cd $dockerSourceDir && \
         yarn build \
         -d $dockerBuildDir/generated-${config.name.toLowerCase()}-content \
+        --config $configs \
         $baseUrlFlag
         """
   }
@@ -143,7 +148,6 @@ def createBuildTask = {
 // task buildLocalWebsite
 createBuildTask(
   name:'Local',
-  useTestConfig: true,
   useBranchRepoConfig: true,
 )
 task buildWebsite(dependsOn:buildLocalWebsite)
@@ -152,7 +156,6 @@ build.dependsOn buildWebsite
 // task buildGcsWebsite
 createBuildTask(
   name:'Gcs',
-  useTestConfig: true,
   useBranchRepoConfig: true,
   baseUrl: getBaseUrl(),
 )
@@ -222,7 +225,10 @@ task serveWebsite(type: Exec) {
   commandLine 'docker', 'exec',
     "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
     """cd $dockerSourceDir && \
-      yarn develop --bind="0.0.0.0" --baseURL="http://docker.local:1313"
+      yarn develop \
+      --bind="0.0.0.0" \
+      --baseURL="http://docker.local:1313" \
+      --config $dockerSourceDir/site/config.toml,/tmp/_config_branch_repo.toml
       """
 }
 
