@@ -227,7 +227,6 @@ task serveWebsite(type: Exec) {
     """cd $dockerSourceDir && \
       yarn develop \
       --bind="0.0.0.0" \
-      --baseURL="http://docker.local:1313" \
       --config $dockerSourceDir/site/config.toml,/tmp/_config_branch_repo.toml
       """
 }

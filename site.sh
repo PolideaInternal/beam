@@ -205,7 +205,7 @@ if [[ "${CMD}" == "install-node-deps" ]] ; then
     run_command "/opt/website/www/" yarn install
 elif [[ "${CMD}" == "develop" ]]; then
     ensure_node_module_exists
-    run_command "/opt/website/www/" yarn develop --bind="0.0.0.0" --baseURL="http://docker.local:1313"
+    run_command "/opt/website/www/" yarn develop --bind="0.0.0.0"
 elif [[ "${CMD}" == "build" ]]; then
     ensure_node_module_exists
     build_site
