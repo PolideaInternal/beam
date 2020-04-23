@@ -84,8 +84,19 @@ task startDockerContainer(type: Exec) {
     "${->createDockerContainer.containerId()}" // Lazily evaluate containerId.
 }
 
+task installDependencies(type: Exec) {
+    commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
+                "${->startDockerContainer.containerId()}", 'yarn', 'install'
+}
+
+task buildGithubSamples(type: Exec) {
+  commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
+              "${->startDockerContainer.containerId()}", 'yarn', 'build_github_samples'
+}
+
 task setupDockerContainer(type: Exec) {
   dependsOn startDockerContainer
+  finalizedBy installDependencies, buildGithubSamples
   ext.containerId = {
     return startDockerContainer.containerId()
   }
@@ -94,10 +105,6 @@ task setupDockerContainer(type: Exec) {
   commandLine 'docker', 'exec', '-u', 'root',
     "${->startDockerContainer.containerId()}", '/bin/bash', '-c',
     """echo 'branch_repo: "${getBranchRepo()}"' > /tmp/_config_branch_repo.yml"""
-  commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
-              "${->startDockerContainer.containerId()}", 'yarn', 'install'
-  commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
-              "${->startDockerContainer.containerId()}", 'yarn', 'build_github_samples'
 }
 
 task stopAndRemoveDockerContainer(type: Exec) {
