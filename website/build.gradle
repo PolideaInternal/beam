@@ -24,6 +24,8 @@ plugins {
 def dockerImageTag = 'beam-website'
 def dockerWorkDir = "/opt"
 def buildDir = "${project.rootDir}/build/website"
+def dockerSourceDir = "$dockerWorkDir/website/www"
+def dockerBuildDir = "$dockerWorkDir/build/website"
 
 def commitedChanges = false
 def gitboxUrl = project.findProperty('gitPublishRemote') ?: 'https://gitbox.apache.org/repos/asf/beam.git'
@@ -92,23 +94,14 @@ task setupDockerContainer(type: Exec) {
   commandLine 'docker', 'exec', '-u', 'root',
     "${->startDockerContainer.containerId()}", '/bin/bash', '-c',
     """echo 'branch_repo: "${getBranchRepo()}"' > /tmp/_config_branch_repo.yml"""
-  commandLine 'docker', 'exec', '-u', 'root', '--workdir', '/opt/build/website',
+  commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
               "${->startDockerContainer.containerId()}", 'yarn', 'install'
-  commandLine 'docker', 'exec', '-u', 'root', '--workdir', '/opt/build/website',
+  commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
               "${->startDockerContainer.containerId()}", 'yarn', 'build_github_samples'
 }
 
 task stopAndRemoveDockerContainer(type: Exec) {
   commandLine 'docker', 'rm', '-f', "${->createDockerContainer.containerId()}"
-}
-
-task setupBuildDir(type: Copy) {
-  from('./www') {
-    include 'package.json*'
-    include 'yarn.lock'
-    include 'check-links.sh'
-  }
-  into buildDir
 }
 
 task cleanWebsite(type: Delete) {
@@ -126,16 +119,16 @@ class BuildTaskConfiguration {
 def createBuildTask = {
   BuildTaskConfiguration config = it as BuildTaskConfiguration
   task "build${config.name}Website" (type:Exec) {
-    dependsOn setupDockerContainer, setupBuildDir
+    dependsOn setupDockerContainer
     finalizedBy stopAndRemoveDockerContainer
 
-    def baseUrlFlag = config.baseUrl ? "--baseurl=/${config.baseUrl}" : ""
+    def baseUrlFlag = config.baseUrl ? "--baseURL /${config.baseUrl}" : ""
     commandLine 'docker', 'exec',
       "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-      """cd ${config.dockerWorkDir}/build/website && \
+      """cd $dockerSourceDir && \
         yarn build \
-        -d ${config.dockerWorkDir}/build/website/generated-${config.name.toLowerCase()}-content \
-        -s ${config.dockerWorkDir}/website/www/site
+        -d $dockerBuildDir/generated-${config.name.toLowerCase()}-content \
+        $baseUrlFlag
         """
   }
 }
@@ -145,7 +138,6 @@ createBuildTask(
   name:'Local',
   useTestConfig: true,
   useBranchRepoConfig: true,
-  dockerWorkDir: dockerWorkDir,
 )
 task buildWebsite(dependsOn:buildLocalWebsite)
 build.dependsOn buildWebsite
@@ -156,13 +148,11 @@ createBuildTask(
   useTestConfig: true,
   useBranchRepoConfig: true,
   baseUrl: getBaseUrl(),
-  dockerWorkDir: dockerWorkDir,
 )
 
 // task buildApacheWebsite
 createBuildTask(
   name:'Apache',
-  dockerWorkDir: dockerWorkDir,
 )
 
 /**
@@ -224,7 +214,7 @@ task serveWebsite(type: Exec) {
   finalizedBy stopAndRemoveDockerContainer
   commandLine 'docker', 'exec',
     "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-    """cd $dockerWorkDir/website/www && \
+    """cd $dockerSourceDir && \
       yarn develop --bind="0.0.0.0" --baseURL="http://docker.local:1313"
       """
 }
@@ -235,9 +225,7 @@ task testWebsite(type: Exec) {
 
   commandLine 'docker', 'exec',
     "${->setupDockerContainer.containerId()}", '/bin/bash', '-c',
-    """cd $dockerWorkDir/build/website && \
-      ./check-links.sh ./generated-local-content
-      """
+    "$dockerSourceDir/check-links.sh $dockerBuildDir/generated-local-content"
 }
 
 testWebsite.dependsOn 'buildLocalWebsite'
