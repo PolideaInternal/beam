@@ -94,6 +94,8 @@ task setupDockerContainer(type: Exec) {
     """echo 'branch_repo: "${getBranchRepo()}"' > /tmp/_config_branch_repo.yml"""
   commandLine 'docker', 'exec', '-u', 'root', '--workdir', '/opt/build/website',
               "${->startDockerContainer.containerId()}", 'yarn', 'install'
+  commandLine 'docker', 'exec', '-u', 'root', '--workdir', '/opt/build/website',
+              "${->startDockerContainer.containerId()}", 'yarn', 'build_github_samples'
 }
 
 task stopAndRemoveDockerContainer(type: Exec) {
