@@ -35,7 +35,6 @@ package org.apache.beam.sdk.io.snowflake; /*
 
 import com.google.auto.service.AutoService;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.jdbc.internal.fasterxml.jackson.databind.ObjectMapper;
@@ -66,7 +65,7 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
 
   /** Parameters class to expose the transform to an external SDK. */
   public static class Configuration {
-    private String servername;
+    private String serverName;
     private String username;
     private String password;
     private String database;
@@ -74,64 +73,63 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
     private String table;
     private SFTableSchema tableSchema;
     private String query;
-    private String stagingbucketname;
-    private String storageintegration;
+    private String stagingBucketName;
+    private String storageIntegration;
     private CreateDisposition createDisposition;
     private WriteDisposition writeDisposition;
     private Boolean parallelization;
 
-    public void setServername(byte[] servername) {
-      this.servername = new String(servername, Charset.defaultCharset());
+    public void setServerName(String serverName) {
+      this.serverName = serverName;
     }
 
-    public void setUsername(byte[] username) {
-      this.username = new String(username, Charset.defaultCharset());
+    public void setUsername(String username) {
+      this.username = username;
     }
 
-    public void setDatabase(byte[] database) {
-      this.database = new String(database, Charset.defaultCharset());
+    public void setPassword(String password) {
+      this.password = password;
     }
 
-    public void setPassword(byte[] password) {
-      this.password = new String(password, Charset.defaultCharset());
+    public void setDatabase(String database) {
+      this.database = database;
     }
 
-    public void setSchema(byte[] schema) {
-      this.schema = new String(schema, Charset.defaultCharset());
+    public void setSchema(String schema) {
+      this.schema = schema;
     }
 
-    public void setTable(byte[] table) {
-      this.table = new String(table, Charset.defaultCharset());
+    public void setTable(String table) {
+      this.table = table;
     }
 
-    public void setTableschema(byte[] tableSchema) {
-      String schemaJson = new String(tableSchema, Charset.defaultCharset());
+    public void setTableSchema(String tableSchema) {
       ObjectMapper mapper = new ObjectMapper();
 
       try {
-        this.tableSchema = mapper.readValue(schemaJson, SFTableSchema.class);
+        this.tableSchema = mapper.readValue(tableSchema, SFTableSchema.class);
       } catch (IOException e) {
         throw new RuntimeException("Format of provided table schema is invalid");
       }
     }
 
-    public void setQuery(byte[] query) {
-      this.query = new String(query, Charset.defaultCharset());
+    public void setQuery(String query) {
+      this.query = query;
     }
 
-    public void setStagingbucketname(byte[] stagingbucketname) {
-      this.stagingbucketname = new String(stagingbucketname, Charset.defaultCharset());
+    public void setStagingBucketName(String stagingBucketName) {
+      this.stagingBucketName = stagingBucketName;
     }
 
-    public void setStorageintegration(byte[] storageintegration) {
-      this.storageintegration = new String(storageintegration, Charset.defaultCharset());
+    public void setStorageIntegration(String storageIntegration) {
+      this.storageIntegration = storageIntegration;
     }
 
-    public void setCreatedisposition(byte[] createDisposition) {
+    public void setCreateDisposition(String createDisposition) {
       this.createDisposition = CreateDisposition.valueOf(createDisposition);
     }
 
-    public void setWritedisposition(byte[] writeDisposition) {
+    public void setWriteDisposition(String writeDisposition) {
       this.writeDisposition = WriteDisposition.valueOf(writeDisposition);
     }
 
@@ -152,12 +150,12 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
       writeBuilder.setSnowflakeService(new SnowflakeServiceImpl());
       writeBuilder.setSnowflakeCloudProvider(new GCSProvider());
 
-      writeBuilder.setLocation(Location.of(config.storageintegration, config.stagingbucketname));
+      writeBuilder.setLocation(Location.of(config.storageIntegration, config.stagingBucketName));
       writeBuilder.setDataSourceProviderFn(
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
               SnowflakeIO.DataSourceConfiguration.create(
                       new UsernamePasswordSnowflakeCredentials(config.username, config.password))
-                  .withServerName(config.servername)
+                  .withServerName(config.serverName)
                   .withDatabase(config.database)
                   .withSchema(config.schema)));
       if (config.table != null) {
