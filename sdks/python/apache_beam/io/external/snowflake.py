@@ -18,9 +18,11 @@
 # pytype: skip-file
 
 from __future__ import absolute_import
-
+import apache_beam as beam
+import typing
 from apache_beam.transforms.external import ExternalTransform
 from apache_beam.transforms.external import ImplicitSchemaPayloadBuilder
+from apache_beam.transforms.external import NamedTupleBasedPayloadBuilder
 
 
 """
@@ -48,76 +50,126 @@ from apache_beam.transforms.external import ImplicitSchemaPayloadBuilder
 
   Experimental; no backwards compatibility guarantees.
 """
-class ReadFromSnowflake(ExternalTransform):
+
+ReadFromSnowflakeSchema = typing.NamedTuple(
+    'WriteToSnowflakeSchema',
+    [
+        ('server_name', unicode),
+        ('username', unicode),
+        ('password', unicode),
+        ('schema', unicode),
+        ('database', unicode),
+        ('staging_bucket_name', unicode),
+        ('storage_integration', unicode),
+        ('table', typing.Optional[unicode]),
+        ('query', typing.Optional[unicode])
+    ])
+
+class ReadFromSnowflake(beam.PTransform):
     """An external PTransform which reads from Snowflake."""
 
     URN = 'beam:external:java:snowflake:read:v1'
 
     def __init__(
             self,
-            serverName,
+            server_name,
             username,
             password,
             schema,
             database,
-            stagingBucketName,
-            storageIntegration,
+            staging_bucket_name,
+            storage_integration,
+            csv_mapper,
             table=None,
             query=None,
             expansion_service=None):
-        
 
-        super(ReadFromSnowflake, self).__init__(
-            self.URN,
-            ImplicitSchemaPayloadBuilder({
-                'serverName': serverName,
-                'username': username,
-                'password': password,
-                'schema': schema,
-                'database': database,
-                'stagingBucketName': stagingBucketName,
-                'storageIntegration': storageIntegration,
-                'table': table,
-                'query': query,
-            }),
-            expansion_service)
+        self.params = ReadFromSnowflakeSchema(
+            server_name= server_name,
+            username= username,
+            password= password,
+            schema= schema,
+            database= database,
+            staging_bucket_name= staging_bucket_name,
+            storage_integration= storage_integration,
+            table= table,
+            query= query,
+        )
+        self.csv_mapper = csv_mapper
+        self.expansion_service = expansion_service
 
-class WriteToSnowflake(ExternalTransform):
+    def expand(self, pbegin):
+        return pbegin \
+               | ExternalTransform(self.URN,
+                                   NamedTupleBasedPayloadBuilder(self.params),
+                                   self.expansion_service
+                                   ) \
+               | 'csv_to_array_mapper' >> beam.Map(lambda csv: csv.split(','))\
+               | 'csv_mapper' >> beam.Map(self.csv_mapper)
+
+WriteToSnowflakeSchema = typing.NamedTuple(
+    'WriteToSnowflakeSchema',
+    [
+        ('server_name', unicode),
+        ('username', unicode),
+        ('password', unicode),
+        ('schema', unicode),
+        ('database', unicode),
+        ('staging_bucket_name', unicode),
+        ('storage_integration', unicode),
+        ('create_disposition', unicode),
+        ('write_disposition', unicode),
+        ('parallelization', bool),
+        ('table_schema', unicode),
+        ('table', typing.Optional[unicode]),
+        ('query', typing.Optional[unicode])
+    ])
+
+class WriteToSnowflake(beam.PTransform):
     """An external PTransform which writes to Snowflake."""
 
     URN = 'beam:external:java:snowflake:write:v1'
 
     def __init__(
             self,
-            serverName,
+            server_name,
             username,
             password,
             schema,
             database,
-            stagingBucketName,
-            storageIntegration,
-            createDisposition,
-            writeDisposition,
+            staging_bucket_name,
+            storage_integration,
+            create_disposition,
+            write_disposition,
+            table_schema,
+            user_data_mapper,
             parallelization = True,
-            tableSchema= None,
             table=None,
             query=None,
             expansion_service=None):
-        super(WriteToSnowflake, self).__init__(
-            self.URN,
-            ImplicitSchemaPayloadBuilder({
-                'serverName': serverName,
-                'username': username,
-                'password': password,
-                'schema': schema,
-                'database': database,
-                'stagingBucketName': stagingBucketName,
-                'storageIntegration': storageIntegration,
-                'createDisposition': createDisposition,
-                'writeDisposition': writeDisposition,
-                'parallelization': parallelization,
-                'tableSchema': tableSchema,
-                'table': table,
-                'query': query,
-            }),
-            expansion_service)
+
+        self.params = WriteToSnowflakeSchema(
+            server_name= server_name,
+            username= username,
+            password= password,
+            schema= schema,
+            database= database,
+            staging_bucket_name= staging_bucket_name,
+            storage_integration= storage_integration,
+            create_disposition= create_disposition,
+            write_disposition= write_disposition,
+            parallelization= parallelization,
+            table_schema= table_schema,
+            table= table,
+            query= query,
+        )
+        self.user_data_mapper = user_data_mapper
+        self.expansion_service = expansion_service
+
+    def expand(self, pbegin):
+        return pbegin \
+                | 'user_data_mapper' >> beam.Map(self.user_data_mapper).with_output_types(typing.List[str])\
+                | ExternalTransform(self.URN,
+                                    NamedTupleBasedPayloadBuilder(self.params),
+                                    self.expansion_service
+                                    ).with_output_types(typing.Any)

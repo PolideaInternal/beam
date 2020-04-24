@@ -18,8 +18,6 @@
 package org.apache.beam.sdk.io.snowflake;
 
 import com.google.auto.service.AutoService;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -48,18 +46,18 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
   /** Parameters class to expose the transform to an external SDK. */
   public static class Configuration {
-    private String servername;
+    private String serverName;
     private String username;
     private String password;
     private String database;
     private String schema;
     private String table;
     private String query;
-    private String stagingbucketname;
-    private String storageintegration;
+    private String stagingBucketName;
+    private String storageIntegration;
 
-    public void setServername(String servername) {
-      this.servername = servername;
+    public void setServerName(String serverName) {
+      this.serverName = serverName;
     }
 
     public void setUsername(String username) {
@@ -68,6 +66,10 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
     public void setPassword(String password) {
       this.password = password;
+    }
+
+    public void setDatabase(String database) {
+      this.database = database;
     }
 
     public void setSchema(String schema) {
@@ -82,52 +84,12 @@ public final class ExternalRead implements ExternalTransformRegistrar {
       this.query = query;
     }
 
-    public void setStagingbucketname(String stagingbucketname) {
-      this.stagingbucketname = stagingbucketname;
+    public void setStagingBucketName(String stagingBucketName) {
+      this.stagingBucketName = stagingBucketName;
     }
 
-    public void setStorageintegration(String storageintegration) {
-      this.storageintegration = storageintegration;
-    }
-
-    public void setDatabase(String database) {
-      this.database = database;
-    }
-
-    public void setServername(byte[] servername) {
-      this.servername = new String(servername, Charset.defaultCharset());
-    }
-
-    public void setUsername(byte[] username) {
-      this.username = new String(username, Charset.defaultCharset());
-    }
-
-    public void setPassword(byte[] password) {
-      this.password = new String(password, Charset.defaultCharset());
-    }
-
-    public void setSchema(byte[] schema) {
-      this.schema = new String(schema, Charset.defaultCharset());
-    }
-
-    public void setTable(byte[] table) {
-      this.table = new String(table, Charset.defaultCharset());
-    }
-
-    public void setQuery(byte[] query) {
-      this.query = new String(query, Charset.defaultCharset());
-    }
-
-    public void setStagingbucketname(byte[] stagingbucketname) {
-      this.stagingbucketname = new String(stagingbucketname, Charset.defaultCharset());
-    }
-
-    public void setStorageintegration(byte[] storageintegration) {
-      this.storageintegration = new String(storageintegration, Charset.defaultCharset());
-    }
-
-    public void setDatabase(byte[] database) {
-      this.database = new String(database, Charset.defaultCharset());
+    public void setStorageIntegration(String storageIntegration) {
+      this.storageIntegration = storageIntegration;
     }
   }
 
@@ -142,12 +104,12 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
       readBuilder.setSnowflakeService(new SnowflakeServiceImpl());
       readBuilder.setSnowflakeCloudProvider(new GCSProvider());
-      readBuilder.setLocation(Location.of(config.storageintegration, config.stagingbucketname));
+      readBuilder.setLocation(Location.of(config.storageIntegration, config.stagingBucketName));
       readBuilder.setDataSourceProviderFn(
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
               SnowflakeIO.DataSourceConfiguration.create(
                       new UsernamePasswordSnowflakeCredentials(config.username, config.password))
-                  .withServerName(config.servername)
+                  .withServerName(config.serverName)
                   .withDatabase(config.database)
                   .withSchema(config.schema)));
       if (config.table != null) {
@@ -157,7 +119,7 @@ public final class ExternalRead implements ExternalTransformRegistrar {
         readBuilder.setQuery(config.query);
       }
 
-      readBuilder.setCsvMapper(Sth.defaultMapper());
+      readBuilder.setCsvMapper(CsvMapper.getCsvMapper());
 
       readBuilder.setCoder(ByteArrayCoder.of());
 
@@ -165,17 +127,14 @@ public final class ExternalRead implements ExternalTransformRegistrar {
     }
   }
 
-  public static class Sth implements Serializable {
-    public static SnowflakeIO.CsvMapper defaultMapper() {
+  public static class CsvMapper implements Serializable {
+
+    public static SnowflakeIO.CsvMapper getCsvMapper() {
       return (SnowflakeIO.CsvMapper<byte[]>)
           parts -> {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(parts);
-            objectOutputStream.flush();
-            objectOutputStream.close();
+            String partsCSV = String.join(",", parts);
 
-            return byteArrayOutputStream.toByteArray();
+            return partsCSV.getBytes(Charset.defaultCharset());
           };
     }
   }
