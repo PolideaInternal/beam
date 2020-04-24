@@ -1,0 +1,30 @@
+- id: nav-toggle-navigation
+  translation: "Toggle navigation"
+- id: nav-get-started
+  translation: "Get Started"
+- id: nav-documentation
+  translation: "Documentation"
+- id: nav-languages
+  translation: "Languages"
+- id: nav-runners
+  translation: "RUNNERS"
+- id: nav-roadmap
+  translation: "Roadmap"
+- id: nav-contribute
+  translation: "Contribute"
+- id: nav-community
+  translation: "Community"
+- id: nav-blog
+  translation: "Blog"
+- id: nav-asf-homepage
+  translation: "ASF Homepage"
+- id: nav-license
+  translation: "License"
+- id: nav-security
+  translation: "Security"
+- id: nav-thanks
+  translation: "Thanks"
+- id: nav-sponsorship
+  translation: "Sponsorship"
+- id: nav-code-of-conduct
+  translation: "Code of Conduct"

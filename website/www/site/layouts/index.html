@@ -17,27 +17,27 @@
         <div class="hero__cols__col">
           <div class="hero__cols__col__content">
             <div class="hero__title">
-              {{ T "hero-title" }}
+              {{ T "home-hero-title" }}
             </div>
             <div class="hero__subtitle">
-              {{ T "hero-subtitle" }}
+              {{ T "home-hero-subtitle" }}
             </div>
             <div class="hero__ctas hero__ctas--first">
-              <a class="button button--primary" href={{ "/get-started/beam-overview/" | relLangURL }}>{{ T "learn-more" }}</a>
-              <a class="button button--primary" href={{ "/get-started/try-apache-beam/" | relLangURL }}>{{ T "try-beam" }}</a>
-              <a class="button button--primary" href={{ "/get-started/downloads/" | relLangURL }}>{{ T "download-beam" . }}</a>
+              <a class="button button--primary" href={{ "/get-started/beam-overview/" | relLangURL }}>{{ T "home-learn-more" }}</a>
+              <a class="button button--primary" href={{ "/get-started/try-apache-beam/" | relLangURL }}>{{ T "home-try-beam" }}</a>
+              <a class="button button--primary" href={{ "/get-started/downloads/" | relLangURL }}>{{ T "home-download-beam" . }}</a>
             </div>
             <div class="hero__ctas">
-              <a class="button" href="/get-started/quickstart-java/">{{ T "java-quickstart" }}</a>
-              <a class="button" href="/get-started/quickstart-py/">{{ T "python-quickstart" }}</a>
-              <a class="button" href="/get-started/quickstart-go/">{{ T "go-quickstart" }}</a>
+              <a class="button" href="/get-started/quickstart-java/">{{ T "home-java-quickstart" }}</a>
+              <a class="button" href="/get-started/quickstart-py/">{{ T "home-python-quickstart" }}</a>
+              <a class="button" href="/get-started/quickstart-go/">{{ T "home-go-quickstart" }}</a>
             </div>
           </div>
         </div>
         <div class="hero__cols__col">
           <div class="hero__blog">
             <div class="hero__blog__title">
-              {{ T "hero-blog-title" }}
+              {{ T "home-hero-blog-title" }}
             </div>
             <div class="hero__blog__cards">
 
@@ -59,7 +59,7 @@
 {{ define "pillars-section" }}
   <div class="pillars section">
     <div class="pillars__title">
-      {{ T "pillars-title" }}
+      {{ T "home-pillars-title" }}
     </div>
     <div class="pillars__cols">
       {{ $data := index $.Site.Data .Site.Language.Lang }}
@@ -88,7 +88,7 @@
 {{ define "logos-section" }}
   <div class="logos section">
     <div class="logos__title">
-      {{ T "logos-title" }}
+      {{ T "home-logos-title" }}
     </div>
     <div class="logos__logos">
       {{ $data := index $.Site.Data .Site.Language.Lang }}
@@ -105,7 +105,7 @@
   <div class="cards section section--wide">
     <div class="section__contained">
       <div class="cards__title">
-        {{ T "cards-title" }}
+        {{ T "home-cards-title" }}
       </div>
       <div class="cards__cards">
         {{ $data := index $.Site.Data .Site.Language.Lang }}
@@ -127,7 +127,7 @@
         {{ end }}
       </div>
       <div class="cards__body">
-        {{ T "cards-body" }} <a href={{ "/contribute/" | relLangURL }}>{{ T "contribute" }}</a> {{ T "section" }}.
+        {{ T "home-cards-body" }} <a href={{ "/contribute/" | relLangURL }}>{{ T "home-contribute" }}</a> {{ T "home-section" }}.
       </div>
     </div>
   </div>
@@ -136,16 +136,16 @@
 {{ define "ctas-section" }}
   <div class="ctas section">
     <div class="ctas__title">
-      {{ T "ctas-title" }}
+      {{ T "home-ctas-title" }}
     </div>
     <div class="ctas__ctas ctas__ctas--top">
-    <a class="button button--primary" href={{ "/get-started/beam-overview/" | relLangURL }}>{{ T "learn-more" }}</a>
-    <a class="button button--primary" href={{ "/get-started/downloads/" | relLangURL }}>{{ T "download-beam" . }}</a>
+    <a class="button button--primary" href={{ "/get-started/beam-overview/" | relLangURL }}>{{ T "home-learn-more" }}</a>
+    <a class="button button--primary" href={{ "/get-started/downloads/" | relLangURL }}>{{ T "home-download-beam" . }}</a>
     </div>
     <div class="ctas__ctas">
-    <a class="button" href={{ "/get-started/quickstart-java/" | relLangURL }}>{{ T "java-quickstart" }}</a>
-    <a class="button" href={{ "/get-started/quickstart-py/" | relLangURL }}>{{ T "python-quickstart" }}</a>
-    <a class="button" href={{ "/get-started/quickstart-go/" | relLangURL }}>{{ T "go-quickstart" }}</a>
+    <a class="button" href={{ "/get-started/quickstart-java/" | relLangURL }}>{{ T "home-java-quickstart" }}</a>
+    <a class="button" href={{ "/get-started/quickstart-py/" | relLangURL }}>{{ T "home-python-quickstart" }}</a>
+    <a class="button" href={{ "/get-started/quickstart-go/" | relLangURL }}>{{ T "home-go-quickstart" }}</a>
     </div>
   </div>
 {{ end }}
