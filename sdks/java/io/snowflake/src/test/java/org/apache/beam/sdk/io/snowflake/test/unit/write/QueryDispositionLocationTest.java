@@ -97,14 +97,15 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Truncate before write",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(WriteDisposition.TRUNCATE)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
@@ -125,14 +126,15 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(WriteDisposition.EMPTY)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
   }
@@ -145,14 +147,15 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withWriteDisposition(WriteDisposition.EMPTY)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 

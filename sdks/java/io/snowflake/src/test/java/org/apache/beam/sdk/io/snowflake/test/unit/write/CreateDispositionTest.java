@@ -102,14 +102,15 @@ public class CreateDispositionTest {
         .apply(Create.of(testData))
         .apply(
             "Copy IO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
@@ -129,14 +130,15 @@ public class CreateDispositionTest {
         .apply(Create.of(testData))
         .apply(
             "Copy IO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
   }
@@ -150,7 +152,7 @@ public class CreateDispositionTest {
         .apply(Create.of(testData))
         .apply(
             "Copy IO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -158,7 +160,8 @@ public class CreateDispositionTest {
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong("NO_EXIST_TABLE");
@@ -175,14 +178,15 @@ public class CreateDispositionTest {
         .apply(Create.of(testData))
         .apply(
             "Copy IO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
@@ -200,14 +204,15 @@ public class CreateDispositionTest {
         .apply(Create.of(testData))
         .apply(
             "Copy IO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_NEVER)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
   }

@@ -145,6 +145,8 @@ One of the functions of SnowflakeIO is writing to Snowflake tables. This transfo
 
 ### General usage
 
+#### Batch write (from a bounded source)
+
 The basic .write() operation usage is as follows:
 ```
 Location location = Location.of("STORAGE INTEGRATION NAME", "GSC BUCKET NAME");
@@ -164,6 +166,48 @@ All the below parameters are required:
 * `.to()` - accepts the target Snowflake table name.
 * `.via()` - accepts a Location object.
 * `.withUserDataMapper()` - accepts the UserDataMapper function that will map a user's PCollection to an array of String values (`String[]`).
+
+#### Streaming write (from an unbounded source)
+
+It is required to create a [SnowPipe](https://docs.snowflake.com/en/user-guide/data-load-snowpipe.html) in the Snowflake console. SnowPipe should use the same integration and the same bucket as specified in the location object. The write operation might look as follows:
+
+```
+data.apply(
+   SnowflakeIO.<type>write()
+	.via(location)
+      .withDataSourceConfiguration(dc)
+      .withUserDataMapper(mapper)
+      .withSnowPipe("MY_SNOW_PIPE")
+      .withFlushTimeLimit(Duration.millis(time))
+      .withFlushRowLimit(rowsNumber)
+      .withShardsNumber(shardsNumber)
+)
+```
+
+##### Parameters
+
+**Required** for streaming:
+* `.withDataSourceConfiguration()` - accepts a DatasourceConfiguration object.
+* `.to()` - accepts the target Snowflake table name.
+* `.via()` - accepts a Location object.
+* `.withSnowPipe()` - accepts the target SnowPipe name
+* `.withUserDataMapper()` - accepts the UserDataMapper function that will map a user's PCollection to an array of String values (`String[]`).
+
+**Optional** for streaming:
+
+* `.withFlushTimeLimit()` - accepts Duration objects with the specified time after each the streaming write will be repeated. Default value: 30 seconds.
+* `.withFlushRowLimit()` - accepts limit number of rows written to each file staged file. Default value: 10,000 rows.
+* `.withShardNumber()` - accepts number of files that will be saved in every flush (for purposes of parallel write). Default value: 1 shard.
+
+**Important notice**: Streaming accepts only key pair **authentication**.
+
+##### Flush time: duration & number of rows
+
+Duration: streaming write will write periodically files on stage according to time duration specified in flush time limit (for example. every 1 minute). 
+
+Number of rows: files staged for write will have number of rows specified in flush row limit unless the flush time limit will be reached (for example if the limit is 1000 rows and buffor collected 99 rows and the 1 minute flush time passes, the rows will be sent to SnowPipe for insertion).
+
+Size of staged files will depend on the rows size and used compression (GZIP).
 
 ### UserDataMapper function
 

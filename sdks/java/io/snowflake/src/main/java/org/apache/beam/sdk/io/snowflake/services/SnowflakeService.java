@@ -23,8 +23,6 @@ import java.io.Serializable;
 public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
   String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
-  String createCloudStoragePath(String stagingBucketName);
-
   String read(T config) throws Exception;
 
   void write(T config) throws Exception;

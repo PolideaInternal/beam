@@ -39,13 +39,6 @@ import org.slf4j.LoggerFactory;
 public class SnowflakeBatchServiceImpl implements SnowflakeService<SnowflakeBatchServiceConfig> {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeBatchServiceImpl.class);
 
-  private static final String WRITE_TMP_PATH = "data";
-
-  @Override
-  public String createCloudStoragePath(String stagingBucketName) {
-    return String.format("gs://%s/%s/", stagingBucketName, WRITE_TMP_PATH);
-  }
-
   @Override
   public void write(SnowflakeBatchServiceConfig config) throws Exception {
     copyToTable(config);

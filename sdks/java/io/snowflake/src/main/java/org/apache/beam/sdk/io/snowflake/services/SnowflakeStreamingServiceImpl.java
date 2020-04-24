@@ -33,16 +33,10 @@ public class SnowflakeStreamingServiceImpl
     implements SnowflakeService<SnowflakeStreamingServiceConfig> {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeStreamingServiceImpl.class);
   private transient SimpleIngestManager ingestManager;
-  private static final String WRITE_TMP_PATH = "data";
 
   @Override
   public void write(SnowflakeStreamingServiceConfig config) throws Exception {
     ingest(config);
-  }
-
-  @Override
-  public String createCloudStoragePath(String stagingBucketName) {
-    return String.format("gs://%s/%s/", stagingBucketName, WRITE_TMP_PATH);
   }
 
   @Override
