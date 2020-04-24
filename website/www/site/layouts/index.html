@@ -91,8 +91,7 @@
       {{ T "home-logos-title" }}
     </div>
     <div class="logos__logos">
-      {{ $data := index $.Site.Data .Site.Language.Lang }}
-      {{ range $logo := $data.works_with }}
+      {{ range $logo := $.Site.Data.works_with }}
       <div class="logos__logos__logo">
         <a href="{{ $logo.url }}"><img src="{{ $logo.image_url }}" alt="{{ $logo.title }}"></a>
       </div>
