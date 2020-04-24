@@ -62,8 +62,8 @@ readarray -d '' pages < <(find "${DIST_DIR}" -name '*.html' -print0)
 echo "Found ${#pages[@]} HTML files."
 
 echo "Searching links."
-mapfile -t links < <(printf '%s\n' "${pages[@]}" | xargs -n 1 lynx -listonly -nonumbers -dump | grep -v " ")
-mapfile -t external_links < <(printf '%s\n' "${links[@]}" | grep "^https\?://" | grep -v "http://localhost" | grep -v "http://link/" | grep -v "http://docker.local" | sort | uniq)
+mapfile -t links < <(printf '%s\n' "${pages[@]}" | xargs -n 1 lynx -listonly -nonumbers -dump -display_charset=iso-8859-1 | grep -v " ")
+mapfile -t external_links < <(printf '%s\n' "${links[@]}" | grep "^https\?://" | grep -v "http://localhost" | grep -v "http://link/" | grep -v "http://docker.local" | grep -v "https://github.com/apache/beam/edit/master/website/www/site/content/" | sort | uniq)
 echo "Found ${#links[@]} links including ${#external_links[@]} unique external links."
 
 echo "Checking links."
@@ -73,8 +73,9 @@ for external_link in "${external_links[@]}"
 do
     redraw_progress_bar 50 1 $i ${#external_links[@]}
 
-    if ! curl --max-time 3 --silent --head "${external_link}" > /dev/null ; then
+    if ! curl -sSfL --max-time 60 --connect-timeout 30 --retry 3 -4 "${external_link}" > /dev/null ; then
         invalid_links+=("${external_link}")
+        echo "${external_link}"
     fi
     i=$((i+1))
 done
