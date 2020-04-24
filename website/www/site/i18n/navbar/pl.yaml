@@ -1,0 +1,43 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# Welcome to Jekyll!
+
+- id: nav-toggle-navigation
+  translation: "PL | Toggle"
+- id: nav-get-started
+  translation: "PL | Get Started"
+- id: nav-documentation
+  translation: "PL | Documentation"
+- id: nav-languages
+  translation: "PL | Languages"
+- id: nav-runners
+  translation: "PL | RUNNERS"
+- id: nav-roadmap
+  translation: "PL | Roadmap"
+- id: nav-contribute
+  translation: "PL | Contribute"
+- id: nav-community
+  translation: "PL | Community"
+- id: nav-blog
+  translation: "PL | Blog"
+- id: nav-asf-homepage
+  translation: "PL | ASF Homepage"
+- id: nav-license
+  translation: "PL | License"
+- id: nav-security
+  translation: "PL | Security"
+- id: nav-thanks
+  translation: "PL | Thanks"
+- id: nav-sponsorship
+  translation: "PL | Sponsorship"
+- id: nav-code-of-conduct
+  translation: "PL | Code of Conduct"

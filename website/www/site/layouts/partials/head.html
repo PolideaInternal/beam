@@ -16,6 +16,12 @@
 
 <title>{{ if .Title }}{{ .Title }}{{ else }}{{ .Site.Title }}{{ end }}</title>
 <meta name="description" content="{{ .Description | default $.Site.Params.description }}">
+
+{{ if .IsTranslated }}
+	{{ range .Translations }}
+	<link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ .Permalink }}" title="{{ .Language.LanguageName }}">
+	{{ end }}
+{{ end }}
  
 <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400" rel="stylesheet">
  

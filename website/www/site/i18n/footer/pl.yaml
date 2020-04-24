@@ -1,0 +1,59 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# Welcome to Jekyll!
+
+- id: footer-start
+  translation: "PL | Start"
+- id: footer-overview
+  translation: "PL | Overview"
+- id: footer-quickstart-java
+  translation: "PL | Quickstart (Java)"
+- id: footer-quickstart-python
+  translation: "PL | Quickstart (Python)"
+- id: footer-quickstart-go
+  translation: "PL | Quickstart (Go)"
+- id: footer-downloads
+  translation: "PL | Downloads"
+- id: footer-docs
+  translation: "PL | Docs"
+- id: footer-concepts
+  translation: "PL | Concepts"
+- id: footer-pipelines
+  translation: "PL | Pipelines"
+- id: footer-runners
+  translation: "PL | Runners"
+- id: footer-community
+  translation: "PL | Community"
+- id: footer-contribute
+  translation: "PL | Contribute"
+- id: footer-team
+  translation: "PL | Team"
+- id: footer-media
+  translation: "PL | Media"
+- id: footer-events
+  translation: "PL | Events/Meetups"
+- id: footer-resources
+  translation: "PL | Resources"
+- id: footer-blog
+  translation: "PL | Blog"
+- id: footer-contact-us
+  translation: "PL | Contact Us"
+- id: footer-github
+  translation: "PL | Github"
+- id: footer-apache
+  translation: "PL | The Apache Software Foundation"
+- id: footer-privacy-policy
+  translation: "PL | Privacy Policy"
+- id: footer-rss-feed
+  translation: "PL | RSS Feed"
+- id: footer-copy
+  translation: "PL | Apache Beam, Apache, Beam, the Beam logo, and the Apache feather logo are either registered trademarks or trademarks of The Apache Software Foundation. All other products or name brands are trademarks of their respective holders, including The Apache Software Foundation."

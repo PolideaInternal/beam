@@ -52,6 +52,19 @@
         <li><a href={{ "/blog/" | relLangURL }}>{{ T "nav-blog" }}</a></li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
+        {{ if .Site.IsMultiLingual }}
+          {{ range .Site.Languages }}
+            {{ if eq . $.Site.Language }}
+              <li><a href="#" class="active-language">{{ .LanguageName }}</a></li>
+            {{ else }}
+              {{ range $.Translations }}
+              <li><a href="{{ .Permalink }}" class="">{{ .Language.LanguageName }}</a></li>
+              {{ end }}
+            {{ end }}
+          {{ end }}
+        {{ end }}
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
         <li>
           <div style="width: 300px;">
             <script>
