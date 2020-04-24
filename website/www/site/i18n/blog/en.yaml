@@ -1,0 +1,6 @@
+- id: blog-title
+  translation: "Apache Beam Blog"
+- id: blog-subtitle
+  translation: "This is the blog for the Apache Beam project. This blog contains news and updates for the project."
+- id: blog-readmore
+  translation: "Read more"
