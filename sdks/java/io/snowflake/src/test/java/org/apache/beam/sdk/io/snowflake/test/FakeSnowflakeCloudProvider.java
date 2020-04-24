@@ -19,6 +19,7 @@ package org.apache.beam.sdk.io.snowflake.test;
 
 import java.io.Serializable;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
+import org.apache.commons.lang3.RandomStringUtils;
 
 /** Fake implementation of {@link SnowflakeCloudProvider} used in test code. */
 public class FakeSnowflakeCloudProvider implements SnowflakeCloudProvider, Serializable {
@@ -49,5 +50,11 @@ public class FakeSnowflakeCloudProvider implements SnowflakeCloudProvider, Seria
   @Override
   public String transformCloudPathToSnowflakePath(String path) {
     return path;
+  }
+
+  @Override
+  public String createCloudStoragePath(String stagingBucketName) {
+    String writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
+    return String.format("./%s/%s", stagingBucketName, writeTmpPath);
   }
 }

@@ -18,7 +18,6 @@
 package org.apache.beam.sdk.io.snowflake.test;
 
 import static org.apache.beam.sdk.io.snowflake.test.TestUtils.getStringCsvMapper;
-import static org.junit.Assume.assumeNotNull;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -33,13 +32,8 @@ import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.ToString;
-import org.apache.beam.sdk.transforms.windowing.AfterPane;
-import org.apache.beam.sdk.transforms.windowing.FixedWindows;
-import org.apache.beam.sdk.transforms.windowing.Repeatedly;
-import org.apache.beam.sdk.transforms.windowing.Window;
 import org.joda.time.Duration;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -54,14 +48,16 @@ import org.junit.Test;
  * ./gradlew integrationTest -DintegrationTestPipelineOptions='[
  * "--serverName=<YOUR SNOWFLAKE SERVER NAME>",
  * "--username=<USERNAME>",
- * "--privateKeyPath=<PATH_TO_KEY>",
- * "--privateKeyPassphrase=<KEY_PASSPHRASE>",
+ * "--privateKeyPath=<PATH TO KEY>",
+ * "--privateKeyPassphrase=<KEY PASSPHRASE>",
  * "--database=<DATABASE NAME>",
  * "--schema=<SCHEMA NAME>",
- * "--stagingBucketName=<BUCKET-NAME>",
+ * "--stagingBucketName=<BUCKET NAME>",
  * "--storageIntegration=<STORAGE INTEGRATION NAME>",
+ * "--snowPipe=<SNOWPIPE NAME>
+ * "--region=<GCP REGION>"
  * "--runner=DataflowRunner",
- * "--project=<GCP_PROJECT>"]'
+ * "--project=<GCP PROJECT>"]'
  * --tests org.apache.beam.sdk.io.snowflake.test.SnowflakeIOIT
  * -DintegrationTestRunner=dataflow
  * </pre>
@@ -81,8 +77,6 @@ public class SnowflakeStreamingIOIT {
     PipelineOptionsFactory.register(SnowflakeIOITPipelineOptions.class);
     options = TestPipeline.testingPipelineOptions().as(SnowflakeIOITPipelineOptions.class);
 
-    assumeNotNull(options.getServerName());
-
     dc =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
             .withServerName(options.getServerName())
@@ -94,15 +88,9 @@ public class SnowflakeStreamingIOIT {
   }
 
   @Test
-  @Ignore
   public void writeStreamOfSequence() {
     pipeline
         .apply(GenerateSequence.from(0))
-        .apply(
-            Window.<Long>into(FixedWindows.of(Duration.millis(1000)))
-                .withAllowedLateness(Duration.ZERO)
-                .triggering(Repeatedly.forever(AfterPane.elementCountAtLeast(100)))
-                .discardingFiredPanes())
         .apply(ToString.elements())
         .apply(
             "Write SnowflakeIO",
@@ -121,19 +109,17 @@ public class SnowflakeStreamingIOIT {
         .apply(
             PubsubIO.readStrings()
                 .fromTopic("projects/pubsub-public-data/topics/taxirides-realtime"))
-        .apply(
-            Window.<String>into(FixedWindows.of(Duration.millis(100)))
-                .withAllowedLateness(Duration.ZERO)
-                .triggering(Repeatedly.forever(AfterPane.elementCountAtLeast(2000)))
-                .discardingFiredPanes())
         .apply(ToString.elements())
         .apply(
             "Write SnowflakeIO",
             SnowflakeIO.<String>write()
+                .via(location)
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(getStreamingCsvMapper())
                 .withSnowPipe(options.getSnowPipe())
-                .via(location));
+                .withFlushTimeLimit(Duration.millis(180000))
+                .withFlushRowLimit(500000)
+                .withShardsNumber(1));
     PipelineResult pipelineResult = pipeline.run(options);
     pipelineResult.waitUntilFinish();
   }

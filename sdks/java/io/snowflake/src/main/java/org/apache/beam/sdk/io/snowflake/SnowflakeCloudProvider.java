@@ -26,4 +26,6 @@ public interface SnowflakeCloudProvider {
   String transformSnowflakePathToCloudPath(String path);
 
   String transformCloudPathToSnowflakePath(String path);
+
+  String createCloudStoragePath(String stagingBucketName);
 }

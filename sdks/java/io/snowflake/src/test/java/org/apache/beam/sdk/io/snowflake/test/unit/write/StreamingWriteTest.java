@@ -19,8 +19,15 @@ package org.apache.beam.sdk.io.snowflake.test.unit.write;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -53,9 +60,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RunWith(JUnit4.class)
 public class StreamingWriteTest {
+  private static final Logger LOG = LoggerFactory.getLogger(StreamingWriteTest.class);
   private static final String FAKE_TABLE = "TEST_TABLE";
   private static final String BUCKET_NAME = "bucket";
   private static final String SNOW_PIPE = "Snowpipe";
@@ -131,12 +141,14 @@ public class StreamingWriteTest {
     pipeline
         .apply(Create.of(testData))
         .apply(
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withSnowPipe(SNOW_PIPE)
-                .withUserDataMapper(TestUtils.getLongCsvMapper()));
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options);
   }
@@ -156,18 +168,20 @@ public class StreamingWriteTest {
     pipeline
         .apply(Create.of(testData))
         .apply(
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withSnowPipe(SNOW_PIPE)
-                .withUserDataMapper(TestUtils.getLongCsvMapper()));
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options);
   }
 
   @Test
-  public void streamWriteWithKey() throws SnowflakeSQLException {
+  public void streamWriteWithKey() throws SnowflakeSQLException, IOException {
     options.setPrivateKeyPath(TestUtils.getPrivateKeyPath(getClass()));
     options.setPrivateKeyPassphrase(TestUtils.getPrivateKeyPassphrase());
 
@@ -196,20 +210,62 @@ public class StreamingWriteTest {
         .apply(stringsStream)
         .apply(Window.into(FixedWindows.of(WINDOW_DURATION)))
         .apply(
-            SnowflakeIO.<String>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<String>write()
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .via(location)
                 .withSnowPipe(SNOW_PIPE)
-                .withUserDataMapper(TestUtils.getStringCsvMapper()));
+                .withFlushRowLimit(4)
+                .withFlushTimeLimit(WINDOW_DURATION)
+                .withUserDataMapper(TestUtils.getStringCsvMapper())
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
     List<String> actualDataFirstWin =
-        FakeSnowflakeDatabase.getElements(String.format(FAKE_TABLE)).stream()
-            .map(s -> s.replaceAll("'", ""))
-            .collect(Collectors.toList());
+        parseResults(FakeSnowflakeDatabase.getElements(String.format(FAKE_TABLE)));
 
-    MatcherAssert.assertThat(actualDataFirstWin, equalTo(FIRST_WIN_WORDS));
+    Map<String, List<String>> mapOfResults = getMapOfFilesAndResults();
+
+    String firstFileKey = "0";
+    List<String> filesResult = parseResults(mapOfResults.get(firstFileKey));
+
+    int amountOfCreatedFiles = 2;
+    MatcherAssert.assertThat(mapOfResults.size(), equalTo(amountOfCreatedFiles));
+    MatcherAssert.assertThat(filesResult, equalTo(FIRST_WIN_WORDS));
+    MatcherAssert.assertThat(actualDataFirstWin, equalTo(SENTENCES));
+  }
+
+  private List<String> parseResults(List<String> resultsList) {
+    return resultsList.stream().map(s -> s.replaceAll("'", "")).collect(Collectors.toList());
+  }
+
+  private Map<String, List<String>> getMapOfFilesAndResults() {
+    Map<String, List<String>> filesResult = new HashMap<>();
+    try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(BUCKET_NAME))) {
+      paths.forEach(
+          path -> {
+            filesResult.putAll(getFiles(path));
+          });
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to create collection", e);
+    }
+    return filesResult;
+  }
+
+  private Map<String, List<String>> getFiles(Path file) {
+    Map<String, List<String>> fileNames = new HashMap<>();
+    try (DirectoryStream<Path> paths = Files.newDirectoryStream(file, "*.gz")) {
+
+      paths.forEach(
+          path -> {
+            String key = path.getFileName().toString().split("-", -1)[1];
+            fileNames.put(key, TestUtils.readGZIPFile(path.toString()));
+          });
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to retrieve files", e);
+    }
+    return fileNames;
   }
 
   private TimestampedValue<String> event(String word, Long timestamp) {

@@ -17,34 +17,23 @@
  */
 package org.apache.beam.sdk.io.snowflake.test;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.services.SnowflakeBatchServiceConfig;
 import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
-import org.apache.commons.lang3.RandomStringUtils;
 
 /** Fake implementation of {@link SnowflakeService} used in tests. */
 public class FakeSnowflakeBatchServiceImpl
     implements SnowflakeService<SnowflakeBatchServiceConfig> {
-  @Override
-  public String createCloudStoragePath(String stagingBucketName) {
-    String writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
-    return String.format("./%s/%s", stagingBucketName, writeTmpPath);
-  }
 
   @Override
   public void write(SnowflakeBatchServiceConfig config) throws Exception {
@@ -74,7 +63,7 @@ public class FakeSnowflakeBatchServiceImpl
 
     List<String> rows = new ArrayList<>();
     for (String file : filesList) {
-      rows.addAll(readGZIPFile(file.replace("'", "")));
+      rows.addAll(TestUtils.readGZIPFile(file.replace("'", "")));
     }
 
     prepareTableAccordingCreateDisposition(table, tableSchema, createDisposition);
@@ -133,22 +122,5 @@ public class FakeSnowflakeBatchServiceImpl
     } catch (IOException e) {
       throw new RuntimeException("Failed to create files", e);
     }
-  }
-
-  private List<String> readGZIPFile(String file) {
-    List<String> lines = new ArrayList<>();
-    try {
-      GZIPInputStream gzip = new GZIPInputStream(new FileInputStream(file));
-      BufferedReader br = new BufferedReader(new InputStreamReader(gzip, Charset.defaultCharset()));
-
-      String line;
-      while ((line = br.readLine()) != null) {
-        lines.add(line);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to read file", e);
-    }
-
-    return lines;
   }
 }

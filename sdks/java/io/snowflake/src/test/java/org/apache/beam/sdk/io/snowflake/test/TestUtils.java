@@ -17,8 +17,12 @@
  */
 package org.apache.beam.sdk.io.snowflake.test;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,9 +30,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 import javax.sql.DataSource;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -126,5 +132,22 @@ public class TestUtils {
       KV stringIntKV = KV.of(c.element().toString(), c.element().longValue());
       c.output(stringIntKV);
     }
+  }
+
+  public static List<String> readGZIPFile(String file) {
+    List<String> lines = new ArrayList<>();
+    try {
+      GZIPInputStream gzip = new GZIPInputStream(new FileInputStream(file));
+      BufferedReader br = new BufferedReader(new InputStreamReader(gzip, Charset.defaultCharset()));
+
+      String line;
+      while ((line = br.readLine()) != null) {
+        lines.add(line);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to read file", e);
+    }
+
+    return lines;
   }
 }

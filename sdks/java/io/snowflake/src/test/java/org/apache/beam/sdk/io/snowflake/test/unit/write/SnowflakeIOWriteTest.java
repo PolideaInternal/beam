@@ -100,11 +100,13 @@ public class SnowflakeIOWriteTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .to(FAKE_TABLE)
-                .via(location));
+                .via(location)
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
     pipeline.run(options).waitUntilFinish();
 
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
@@ -120,11 +122,13 @@ public class SnowflakeIOWriteTest {
         .apply(Create.of(testData))
         .apply(
             "External text write IO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .to(FAKE_TABLE)
                 .via(location)
                 .withDataSourceConfiguration(dc)
-                .withUserDataMapper(TestUtils.getLongCsvMapper()));
+                .withUserDataMapper(TestUtils.getLongCsvMapper())
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
@@ -142,11 +146,13 @@ public class SnowflakeIOWriteTest {
         .apply(ParDo.of(new TestUtils.ParseToKv()))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<KV<String, Long>>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<KV<String, Long>>write()
                 .withDataSourceConfiguration(dc)
                 .withUserDataMapper(TestUtils.getLongCsvMapperKV())
                 .to(FAKE_TABLE)
-                .via(location));
+                .via(location)
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
   }
@@ -161,12 +167,14 @@ public class SnowflakeIOWriteTest {
         .apply(ParDo.of(new TestUtils.ParseToKv()))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<KV<String, Long>>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<KV<String, Long>>write()
                 .to(FAKE_TABLE)
                 .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapperKV())
                 .withDataSourceConfiguration(dc)
-                .withQueryTransformation(query));
+                .withQueryTransformation(query)
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 

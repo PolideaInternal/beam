@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.services.SnowflakeStreamingServiceConfig;
-import org.apache.commons.lang3.RandomStringUtils;
 
 /** Fake implementation of {@link SnowflakeService} used in tests. */
 public class FakeSnowflakeStreamingServiceImpl
@@ -38,12 +37,6 @@ public class FakeSnowflakeStreamingServiceImpl
   public void write(SnowflakeStreamingServiceConfig config) throws Exception {
     snowflakeIngestManager = new FakeSnowflakeIngestManager();
     ingest(config);
-  }
-
-  @Override
-  public String createCloudStoragePath(String stagingBucketName) {
-    String writeTmpPath = String.format("ioit_tmp_%s", RandomStringUtils.randomAlphanumeric(16));
-    return String.format("./%s/%s", stagingBucketName, writeTmpPath);
   }
 
   @Override

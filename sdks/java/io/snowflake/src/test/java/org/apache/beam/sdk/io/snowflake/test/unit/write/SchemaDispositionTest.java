@@ -122,7 +122,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testDates))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<String[]>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -130,7 +130,8 @@ public class SchemaDispositionTest {
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLStringCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
@@ -160,7 +161,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testNulls))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<String[]>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -168,7 +169,8 @@ public class SchemaDispositionTest {
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
@@ -199,7 +201,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testStructuredData))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<String[]>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -207,7 +209,8 @@ public class SchemaDispositionTest {
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
