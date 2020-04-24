@@ -26,7 +26,7 @@ Before applying a SQL query to a `PCollection`, the data in the collection must
 be in `Row` format. A `Row` represents a single, immutable record in a Beam SQL
 `PCollection`. The names and types of the fields/columns in the row are defined
 by its associated [Schema](https://beam.apache.org/releases/javadoc/{{< param release_latest >}}/index.html?org/apache/beam/sdk/schemas/Schema.html).
-You can use the [Schema.builder()](https://beam.apache.org/releases/javadoc{{< param release_latest >}}/index.html?org/apache/beam/sdk/schemas/Schema.html) to create
+You can use the [Schema.builder()](https://beam.apache.org/releases/javadoc/{{< param release_latest >}}/index.html?org/apache/beam/sdk/schemas/Schema.html) to create
 `Schemas`. See [Data
 Types](/documentation/dsls/sql/data-types) for more details on supported primitive data types.
 
