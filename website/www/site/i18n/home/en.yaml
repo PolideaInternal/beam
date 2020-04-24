@@ -1,0 +1,32 @@
+- id: hero-title
+  translation: "Apache Beam: An advanced unified programming model"
+- id: hero-subtitle
+  translation: "Implement batch and streaming data processing jobs that run on any execution engine."
+- id: learn-more
+  translation: "Learn more"
+- id: try-beam
+  translation: "Try Beam"
+- id: download-beam
+  translation: "Download Beam SDK {{ .Site.Params.release_latest }}"
+- id: java-quickstart
+  translation: "Java Quickstart"
+- id: python-quickstart
+  translation: "Python Quickstart"
+- id: go-quickstart
+  translation: "Go Quickstart"
+- id: "hero-blog-title"
+  translation: "The latest from the blog"
+- id: "pillars-title"
+  translation: "All about Apache Beam"
+- id: "logos-title"
+  translation: "Works with"
+- id: "cards-title"
+  translation: "Testimonials"
+- id: "cards-body"
+  translation: "Beam is an open source community and contributions are greatly appreciated! If you’d like to contribute, please see the"
+- id: "contribute"
+  translation: "Contribute"
+- id: "section"
+  translation: "section"
+- id: "ctas-title"
+  translation: "Get started"
