@@ -11,10 +11,9 @@
 */}}
 
 {{ define "main" }}
-    <h1>Apache Beam Blog</h1>
+    <h1>{{ T "blog-title" }}</h1>
 
-    <p>This is the blog for the Apache Beam project. This blog contains news and updates
-    for the project.</p>
+    <p>{{ T "blog-subtitle" }}</p>
 
     {{ range .Pages }}
         {{ $authors := .Params.authors }}
@@ -41,7 +40,7 @@
         {{ if .Truncated }}
             <p>
                 <a class="btn btn-default btn-sm" href="{{ .RelPermalink }}" role="button">
-                Read more&nbsp;<span class="glyphicon glyphicon-menu-right" aria-hidden="true"></span>
+                {{ T "blog-readmore" }}&nbsp;<span class="glyphicon glyphicon-menu-right" aria-hidden="true"></span>
                 </a>
             </p>
         {{ end }}
