@@ -26,7 +26,7 @@ https://beam.apache.org/.
 
 The Beam website is built using [Hugo](https://gohugo.io/). Additionally,
 for additional formatting capabilities, this website uses
-[Twitter Bootstrap](http://getbootstrap.com/).
+[Twitter Bootstrap](https://getbootstrap.com/).
 
 Documentation generated from source code, such as Javadoc and Pydoc, is stored
 separately on the [beam-site

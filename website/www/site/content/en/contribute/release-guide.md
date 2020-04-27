@@ -148,7 +148,7 @@ __NOTE__: When generating the key, please make sure you choose the key type as _
 
 #### Access to Apache Nexus repository
 
-Configure access to the [Apache Nexus repository](http://repository.apache.org/), which enables final deployment of releases to the Maven Central Repository.
+Configure access to the [Apache Nexus repository](https://repository.apache.org/), which enables final deployment of releases to the Maven Central Repository.
 
 1. You log in with your Apache account.
 1. Confirm you have appropriate access by finding `org.apache.beam` under `Staging Profiles`.
@@ -178,7 +178,7 @@ In order to make yourself have right permission to stage java artifacts in Apach
 please submit your GPG public key into [MIT PGP Public Key Server](http://pgp.mit.edu:11371/).
 
 If MIT doesn't work for you (it probably won't, it's slow, returns 502 a lot, Nexus might error out not being able to find the keys),
-use a keyserver at `ubuntu.com` instead: http://keyserver.ubuntu.com/.
+use a keyserver at `ubuntu.com` instead: https://keyserver.ubuntu.com/.
 
 #### Website development setup
 
@@ -642,8 +642,8 @@ Copy the source release to the dev repository of `dist.apache.org`.
 
 1. Download source zip from GitHub:
 
-    wget https://github.com/apache/beam/archive/release-${RELEASE}.zip \
-         -O apache-beam-${RELEASE}-source-release.zip
+        wget https://github.com/apache/beam/archive/release-${RELEASE}.zip \
+            -O apache-beam-${RELEASE}-source-release.zip
 
 1. Create hashes and sign the source distribution:
 
@@ -695,13 +695,7 @@ done
 * Build Java images and push to DockerHub.
 
 ```
-./gradlew :sdks:java:container:dockerPush -Pdocker-tag=${RELEASE}_rc{RC_NUM}
-```
-
-* Build Go images and push to DockerHub.
-
-```
-./gradlew :sdks:go:container:dockerPush -Pdocker-tag=${RELEASE}_rc{RC_NUM}
+./gradlew :sdks:java:container:dockerPush -Pdocker-pull-licenses -Pdocker-tag=${RELEASE}_rc{RC_NUM}
 ```
 
 * Build Flink job server images and push to DockerHub.
@@ -1181,6 +1175,7 @@ _Note_: -Prepourl and -Pver can be found in the RC vote email sent by Release Ma
     ```
     python -m apache_beam.examples.complete.game.leader_board \ 
     --project=${YOUR_PROJECT} \ 
+    --region=${GCE_REGION} \
     --topic projects/${YOUR_PROJECT}/topics/${YOUR_PUBSUB_TOPIC} \ 
     --dataset ${USER}_test \ 
     --runner DataflowRunner \ 
@@ -1209,7 +1204,8 @@ _Note_: -Prepourl and -Pver can be found in the RC vote email sent by Release Ma
   * Run GameStats with Dataflow Runner
     ```
     python -m apache_beam.examples.complete.game.game_stats \ 
-    --project=${YOUR_PROJECT} \ 
+    --project=${YOUR_PROJECT} \
+    --region=${GCE_REGION} \
     --topic projects/${YOUR_PROJECT}/topics/${YOUR_PUBSUB_TOPIC} \ 
     --dataset ${USER}_test \ 
     --runner DataflowRunner \ 

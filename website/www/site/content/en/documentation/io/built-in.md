@@ -72,7 +72,7 @@ Consult the [Programming Guide I/O section](/documentation/programming-guide#pip
 <tr>
   <td>Python/Batch</td>
   <td>
-    <p>Beam Python supports Apache HDFS, Google Cloud Storage, and local filesystems.</p>
+    <p>Beam Python supports Apache HDFS, Amazon S3, Google Cloud Storage, and local filesystems.</p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/avroio.py">avroio</a></p>
     <p><a href="/documentation/io/built-in/parquet">parquetio.py</a></p>
     <p><a href="https://github.com/apache/beam/blob/master/sdks/python/apache_beam/io/textio.py">textio</a></p>
