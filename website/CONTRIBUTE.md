@@ -22,8 +22,9 @@
 This guide consists of:
 
 - [Project structure](#project-structure)
+- [How to add a new doc](#how-to-add-a-new-doc)
 - [How to add a new blogpost](#how-to-add-a-new-blogpost)
-- [How to add a new page](#how-to-add-a-new-page)
+- [How to add a new landing page](#how-to-add-a-new-landing-page)
 - [How to write in Hugo way](#how-to-write-in-hugo-way)
   - [Define TableOfContents](#define-tableofcontents)
   - [Language switching](#language-switching)
@@ -32,6 +33,7 @@ This guide consists of:
   - [Table](#table)
   - [Github sample](#github-sample)
   - [Others](#others)
+- [Translation guide](#translation-guide)
 
 ## Project structure
 
@@ -62,19 +64,44 @@ www/
 │   │   └── js
 │   └── themes
 │       └── docsy
+├── build_github_samples.sh
 ├── check-links.sh                        # links checker
 └── package.json
 ```
 
+## How to add a new doc
+
+Let's start with an example as you'd like to add a new doc named `new-doc` in `/www/site/content/en/documentation/runtime/`. Locate to `/www/site/` and run:
+
+```
+$ hugo new documentation/runtime/new-doc.md
+```
+
+A markdown file will be created  with pre-filled frontmatter:
+
+```
+---
+title: "New Doc"
+---
+```
+
+Then, put your content below the frontmatter. Do not worry about its layout, since its inside `documentation`, the layout at `/www/site/layouts/documentation/` will be shared with its children.
+
+**Note**: if you'd like to add a new doc in another language, apart from English version. For example, a new doc inside `pl` directory. Use:
+
+```
+$ hugo new -c content/pl documentation/runtime/new-doc.md
+```
+
 ## How to add a new blogpost
 
-To add a new blogpost with pre-filled frontmatter, in `/www/site` run:
+To add a new blogpost with pre-filled frontmatter, in `/www/site/` run:
 
 ```
 $ hugo new blog/my-new-blogpost.md
 ```
 
-That will create a markdown file `/www/site/content/<LANGUAGE_VERSION>/blog/my-new-blogpost.md` with following content:
+That will create a markdown file `/www/site/content/en/blog/my-new-blogpost.md` with following content:
 
 ```
 ---
@@ -87,9 +114,15 @@ authors:
 ---
 ```
 
-Below frontmatter, put your blogpost content. The filename will also serve as URL for your blogpost as `/blog/{filename}`.
+Below frontmatter, put your blogpost content. The filename will also serve as URL for your blogpost as `/blog/{filename}`. Don't forget to add `<!--more-->`, which is the delimiter between summary and the main content.
 
-## How to add a new page
+**Note**: if you'd like to add a new blog in another language, apart from English version. For example, a new blog inside `pl` directory. Use:
+
+```
+$ hugo new -c content/pl blog/my-new-blogpost.md
+```
+
+## How to add a new landing page
 
 For example, you would like to add a new `About` page.
 
@@ -104,6 +137,18 @@ title: "Your page title"
 Below frontmatter, put your page content. The filename will also serve as URL for your page as `/about`.
 
 Second, define your page layout in the `layout` section with the same structure `/www/site/layout/about/{your_template}`. Hugo will help you to pick up the template behind the scene. Please refer to [Hugo documentation](https://gohugo.io/templates/) for the usage of templates.
+
+You can also create a new page with pre-filled frontmatter, for instance, in `/www/site/` run:
+
+```
+$ hugo new about/_index.md
+```
+
+**Note**: if you'd like to add a new page in another language, apart from English version. For example, a new page inside `pl` directory. Use:
+
+```
+$ hugo new -c content/pl about/_index.md
+```
 
 ## How to write in Hugo
 
@@ -125,6 +170,8 @@ To have a programming language tab switcher, for instance of java, python and go
 {{< language-switchers java py go >}}
 ```
 
+The purpose is to switch languages of codeblocks.
+
 ### Code highlighting
 
 To be consistent, please prefer to use `{{< highlight >}}` syntax instead of ` ``` `, for code-blocks or syntax-highlighters.
@@ -137,19 +184,33 @@ To be consistent, please prefer to use `{{< highlight >}}` syntax instead of ` `
 {{< /highlight >}}
 ```
 
-2. To apply code highlighting to a wrapper class. Use:
+2. To apply code highlighting to a wrapper class
+
+Usage:
 
 ```
-{{< highlight class="runner-direct" >}}
-// This is java
+{{< highlight class="class-name" >}}
+Write some code here.
 {{< /highlight >}}
+```
+
+Render:
+
+```
+<div class="class-name">
+  <pre>
+    <code>
+    "Write some code here."
+    </code>
+  </pre>
+</div>
 ```
 
 The purpose of adding classes or programming languages (java, py or go) in code highlighting is to activate the language switching feature.
 
 ### Adding class to markdown text
 
-1. To add a class to an inline text. Use:
+1. To add a class to a single line in mardown. Use:
 
 ```
 {{< paragraph class="java-language">}}
@@ -157,7 +218,7 @@ This is an inline markdown text.
 {{< /paragraph >}}
 ```
 
-2. To add a class to a block text. Use:
+2. To add a class to multi lines in markdown. Use:
 
 ```
 {{< paragraph class="java-language" wrap="span">}}
@@ -186,7 +247,7 @@ To retrieve a piece of code in github.
 Usage:
 
 ```
-{{< github_sample /path/to/file selected_tag >}}
+{{< github_sample "/path/to/file" selected_tag >}}
 ```
 
 Example:
@@ -209,7 +270,58 @@ To get branch of the repository in markdown:
 {{< param branch_repo >}}
 ```
 
-<!-- 
-  TODO: Add a repository link of an example when be merged to master
--->
-To render capability matrix, please take a look at [this example]().
+To render capability matrix, please take a look at [this example](/www/site/content/en/documentation/runners/capability-matrix/#beam-capability-matrix).
+
+## Translation guide
+
+In order to add a new language into Apache Beam website, please follow this guide. You could take a look at an [example branch](https://github.com/PolideaInternal/beam/tree/feature/i18n-example) to see how we completely translate the whole website.
+
+For more details of syntax, please refer to [Hugo documentation](https://gohugo.io/content-management/multilingual/). Below is a step-by-step instructions of translating our website to Polish as an example.
+
+1. Configuring a new language
+  
+Firstly, we add the following params to our config file `/www/site/config.toml`.
+
+```
+[languages.pl]
+contentDir = "content/pl"
+title = "Apache Beam title"
+description = "Apache Beam description"
+languageName = "Polish"
+weight = 2
+```
+
+2. Translating markdown contents
+
+The `www/site/content/pl` directory will be your main workspace of contents here. Therefore, you need to translate all of the markdown files inside `/www/site/content/en` and place them into your workspace. Remember to keep the same project structure for both, since they're sharing the same layouts.
+
+2. Localizing our strings
+
+Some of the texts are placed into layouts which are html files, you need to translate all of these phrases inside `www/site/i18n`. Afterwards from our templates, Hugo's `i18n` function does the localization job. Please follow [our example](https://github.com/PolideaInternal/beam/tree/feature/i18n-example/website/www/site/i18n) to understand the structure.
+
+3. Data files
+
+Consider the following structure for your data directories `/www/site/data` where `en` and `pl` are your website’s languages’ respective codes.
+
+```
+data
+  ├── en
+  │   └── people.yaml
+  └── pl
+      └── people.yaml
+```
+
+Now from your template:
+
+```
+{{ $data := index .Site.Data .Site.Language.Lang }}
+{{ range $data.people }}
+  <a href="{{ .url }}">{{ .name }}</a>
+{{ end }}
+```
+
+4. Section menus
+
+Similar to markdown content translation, there are two separated section menus `/www/site/layouts/partials/section-menu` corresponding to your languages. Your job is to take the section menus in `en` directory, translate and place them inside your `pl` directory.
+
+**Note**: if you get stuck at adding translation, please refer to [our example](https://github.com/PolideaInternal/beam/tree/feature/i18n-example/).
