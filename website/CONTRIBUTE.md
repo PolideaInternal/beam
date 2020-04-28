@@ -22,6 +22,7 @@
 This guide consists of:
 
 - [Project structure](#project-structure)
+- [Configuration walkthrough](#configuration-walkthrough)
 - [How to add a new doc](#how-to-add-a-new-doc)
 - [How to add a new blogpost](#how-to-add-a-new-blogpost)
 - [How to add a new landing page](#how-to-add-a-new-landing-page)
@@ -68,6 +69,14 @@ www/
 ├── check-links.sh                        # links checker
 └── package.json
 ```
+
+## Configuration walkthrough
+
+When we mention the `config file` in this documentation, we mean the Hugo configuration file located at `/www/site/config.toml`.
+
+Most of the setup are self-explained in the comments. Please refer to [Hugo documentation](https://gohugo.io/getting-started/configuration/) for more details.
+
+You should notice at `[params]`, they are considered as global variables. For instance, when you'd like to replace the release latest version, make a change on `release_latest = ""` to replace it everywhere in the project.
 
 ## How to add a new doc
 
