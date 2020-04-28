@@ -71,7 +71,7 @@ task createDockerContainer(type: Exec) {
       extraOptions = "--publish 1313:1313"
     }
     commandLine '/bin/bash', '-c',
-      "docker create -v $project.rootDir:$dockerWorkDir -u \$(id -u):\$(id -g) $extraOptions $dockerImageTag sh -c 'trap \"exit 0\" INT; while true; do sleep 30; done;'"
+      "docker create -v $project.rootDir:$dockerWorkDir $extraOptions $dockerImageTag sh -c 'trap \"exit 0\" INT; while true; do sleep 30; done;'"
   }
 }
 
