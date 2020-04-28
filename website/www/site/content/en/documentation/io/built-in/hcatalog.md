@@ -33,7 +33,7 @@ pipeline
   .withConfigProperties(configProperties)
   .withDatabase("default") //optional, assumes default if none specified
   .withTable("employee")
-  .withFilter(filterString) //optional, may be specified if the table is partitioned
+  .withFilter(filterString)) //optional, may be specified if the table is partitioned
 {{< /highlight >}}
 
 {{< highlight py >}}
