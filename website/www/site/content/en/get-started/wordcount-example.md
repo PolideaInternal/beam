@@ -362,6 +362,7 @@ $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
 {{< highlight class="runner-dataflow" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WordCount \
      -Dexec.args="--runner=DataflowRunner --gcpTempLocation=gs://YOUR_GCS_BUCKET/tmp \
+                  --project=YOUR_PROJECT --region=GCE_REGION \
                   --inputFile=gs://apache-beam-samples/shakespeare/* --output=gs://YOUR_GCS_BUCKET/counts" \
      -Pdataflow-runner
 {{< /highlight >}}
@@ -416,6 +417,7 @@ python -m apache_beam.examples.wordcount --input gs://dataflow-samples/shakespea
                                          --output gs://YOUR_GCS_BUCKET/counts \
                                          --runner DataflowRunner \
                                          --project YOUR_GCP_PROJECT \
+                                         --region YOUR_GCP_REGION \
                                          --temp_location gs://YOUR_GCS_BUCKET/tmp/
 {{< /highlight >}}
 
@@ -465,6 +467,7 @@ $ wordcount --input gs://dataflow-samples/shakespeare/kinglear.txt \
             --output gs://<your-gcs-bucket>/counts \
             --runner dataflow \
             --project your-gcp-project \
+            --region your-gcp-region \
             --temp_location gs://<your-gcs-bucket>/tmp/ \
             --staging_location gs://<your-gcs-bucket>/binaries/ \
             --worker_harness_container_image=apache/beam_go_sdk:latest
@@ -702,6 +705,7 @@ $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordC
 {{< highlight class="runner-dataflow" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.DebuggingWordCount \
    -Dexec.args="--runner=DataflowRunner --gcpTempLocation=gs://<your-gcs-bucket>/tmp \
+                --project=YOUR_PROJECT --region=GCE_REGION \
                 --inputFile=gs://apache-beam-samples/shakespeare/* --output=gs://<your-gcs-bucket>/counts" \
      -Pdataflow-runner
 {{< /highlight >}}
@@ -802,6 +806,7 @@ $ debugging_wordcount --input gs://dataflow-samples/shakespeare/kinglear.txt \
                       --output gs://<your-gcs-bucket>/counts \
                       --runner dataflow \
                       --project your-gcp-project \
+                      --region your-gcp-region \
                       --temp_location gs://<your-gcs-bucket>/tmp/ \
                       --staging_location gs://<your-gcs-bucket>/binaries/ \
                       --worker_harness_container_image=apache-docker-beam-snapshots-docker.bintray.io/beam/go:20180515
@@ -1042,6 +1047,7 @@ $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCo
 {{< highlight class="runner-dataflow" >}}
 $ mvn compile exec:java -Dexec.mainClass=org.apache.beam.examples.WindowedWordCount \
    -Dexec.args="--runner=DataflowRunner --gcpTempLocation=gs://YOUR_GCS_BUCKET/tmp \
+                --project=YOUR_PROJECT --region=GCE_REGION \
                 --inputFile=gs://apache-beam-samples/shakespeare/* --output=gs://YOUR_GCS_BUCKET/counts" \
      -Pdataflow-runner
 {{< /highlight >}}
@@ -1146,6 +1152,7 @@ $ windowed_wordcount --input gs://dataflow-samples/shakespeare/kinglear.txt \
             --output gs://<your-gcs-bucket>/counts \
             --runner dataflow \
             --project your-gcp-project \
+            --region YOUR_GCP_REGION \
             --temp_location gs://<your-gcs-bucket>/tmp/ \
             --staging_location gs://<your-gcs-bucket>/binaries/ \
             --worker_harness_container_image=apache-docker-beam-snapshots-docker.bintray.io/beam/go:20180515
@@ -1404,6 +1411,7 @@ pip install apache-beam[gcp]
 python -m apache_beam.examples.streaming_wordcount \
   --runner DataflowRunner \
   --project YOUR_GCP_PROJECT \
+  --region YOUR_GCP_REGION \
   --temp_location gs://YOUR_GCS_BUCKET/tmp/ \
   --input_topic "projects/YOUR_PUBSUB_PROJECT_NAME/topics/YOUR_INPUT_TOPIC" \
   --output_topic "projects/YOUR_PUBSUB_PROJECT_NAME/topics/YOUR_OUTPUT_TOPIC" \
