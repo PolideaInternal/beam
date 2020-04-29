@@ -1025,9 +1025,7 @@ public class SnowflakeIO {
 
     private PCollection writeBatch(PCollection input, String path) {
       SnowflakeService snowflakeService =
-          getSnowflakeService() != null
-              ? getSnowflakeService()
-              : new SnowflakeStreamingServiceImpl();
+          getSnowflakeService() != null ? getSnowflakeService() : new SnowflakeBatchServiceImpl();
 
       PCollection files = writeBatchFiles(input, path);
 
