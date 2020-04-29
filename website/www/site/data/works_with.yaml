@@ -9,8 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# Welcome to Jekyll!
-
+ 
 - title: APEX
   image_url: /images/logo_apex.png
   url: https://apex.apache.org
