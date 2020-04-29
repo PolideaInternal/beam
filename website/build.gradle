@@ -92,6 +92,11 @@ task startDockerContainer(type: Exec) {
     "${->createDockerContainer.containerId()}" // Lazily evaluate containerId.
 }
 
+task initGitSubmodules(type: Exec) {
+    commandLine 'docker', 'exec', '-u', 'root',
+                "${->startDockerContainer.containerId()}", 'git',  'submodule', 'update', '--init',  '--recursive'
+}
+
 task installDependencies(type: Exec) {
     commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
                 "${->startDockerContainer.containerId()}", 'yarn', 'install'
@@ -104,7 +109,7 @@ task buildGithubSamples(type: Exec) {
 
 task setupDockerContainer(type: Exec) {
   dependsOn startDockerContainer
-  finalizedBy installDependencies, buildGithubSamples
+  finalizedBy initGitSubmodules, installDependencies, buildGithubSamples
   ext.containerId = {
     return startDockerContainer.containerId()
   }
