@@ -15,34 +15,58 @@
 # limitations under the License.
 #
 
-"""Unit tests for cross-language generate sequence."""
+"""
+Unit tests for cross-language snowflake io operations.
+
+To run this test you need to perform this script first:
+set -xe
+./gradlew -p sdks/java/io/snowflake spotlessApply build
+./gradlew -p sdks/java docker
+docker tag apache/beam_java_sdk:2.21.0.dev apache/beam_java_sdk:2.20.0.dev #hack for X-lang that on 2.21 branch 2.20 is still used
+./gradlew -p runners/flink/1.10/job-server shadowJar
+./gradlew -p runners/flink/1.10/job-server run
+
+Example of run:
+
+python setup.py nosetests --tests=apache_beam.io.external.snowflake_test --test-pipeline-options="
+  --server_name=<SNOWFLAKE_SERVER_NAME>
+  --username=<SNOWFLAKE_USERNAME>
+  --password=<SNOWFLAKE_PASSWORD>
+  --private_key_file=<PATH_TO_PRIVATE_KEY_FILE>
+  --private_key_passphrase=<PASSWORD_TO_PRIVATE_KEY>
+  --oauth_token=<TOKEN>
+  --staging_bucket_name=<GCP_BUCKET_NAME_NOT_PATH>
+  --storage_integration=<SNOWFLAKE_STORAGE_INTEGRATION_NAME>
+  --database=<DATABASE>
+  --schema=<SCHEMA>
+  --table=<TABLE_NAME>
+  --expansion_service=<EXPANSION_SERVICE_URL>
+  --runner=FlinkRunner
+  --flink_version=1.10
+  --flink_master=localhost:8081
+  --environment_type=LOOPBACK"
+
+"""
 
 # pytype: skip-file
 
 from __future__ import absolute_import
 from __future__ import print_function
 
+import argparse
 import logging
 import unittest
 
 from nose.plugins.attrib import attr
+
 import apache_beam as beam
-from apache_beam.io.external.snowflake import ReadFromSnowflake, WriteToSnowflake
-from apache_beam.testing.test_pipeline import TestPipeline
-from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.io.external.generate_sequence import GenerateSequence
+from apache_beam.io.external.snowflake import ReadFromSnowflake, WriteToSnowflake
+from apache_beam.options.pipeline_options import PipelineOptions
+from apache_beam.testing.test_pipeline import TestPipeline
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
 
-SERVER_NAME = "pr05452.europe-west4.gcp.snowflakecomputing.com"
-USERNAME = "PSZUBERSKI"
-PASSWORD = "EgHJwBVmhZKdE96"
-SCHEMA = "TPCH_SF001"
-DATABASE = "SNOWFLAKE_SAMPLE_DATA"
-STAGING_BUCKET_NAME = "snowpiotrek"
-STORAGE_INTEGRATION = "gcs_int"
-TABLE = "LINEITEM"
-EXPANSION_SERVICE = 'localhost:8097'
 SCHEMA_STRING = """
 {"schema":[
     {"dataType":{"type":"text","length":null},"name":"text_column","nullable":true},
@@ -51,78 +75,172 @@ SCHEMA_STRING = """
 ]}
 """
 
-OPTIONS = [
-    "--runner=FlinkRunner",
-    "--flink_version=1.10",
-    "--flink_master=localhost:8081",
-    "--environment_type=LOOPBACK"
-]
 
 class TestRow(object):
-    def __init__(self, text_column, number_column, boolean_column):
-        self.text_column = text_column
-        self.number_column = number_column
-        self.boolean_column = boolean_column
+  def __init__(self, text_column, number_column, boolean_column):
+    self.text_column = text_column
+    self.number_column = number_column
+    self.boolean_column = boolean_column
 
-    def __eq__(self, other):
-        return self.text_column == other.text_column and self.number_column == other.number_column and self.boolean_column == other.boolean_column
+  def __eq__(self, other):
+    return self.text_column == other.text_column and self.number_column == other.number_column and self.boolean_column == other.boolean_column
 
 
 @attr('UsesCrossLanguageTransforms')
 class SnowflakeTest(unittest.TestCase):
+  def test_snowflake_write_read(self):
+    self._run_write()
+    self._run_read()
 
-    def test_snowflake_write_read(self):
-        run_write()
-        run_read()
-
-def run_write():
-
+  def _run_write(self):
     def user_data_mapper(test_row):
-        return [test_row.text_column, str(test_row.number_column), str(test_row.boolean_column)]
+      return [
+          test_row.text_column,
+          str(test_row.number_column),
+          str(test_row.boolean_column)
+      ]
 
-    with TestPipeline(options=PipelineOptions(OPTIONS)) as p:
-        # TODO make it work with beam.Create([TestRow())
-        p \
-        | GenerateSequence(start=1, stop=3, expansion_service=EXPANSION_SERVICE) \
-        | beam.Map(lambda num: TestRow("test" + str(num) , num, True)) \
-        | WriteToSnowflake(server_name=SERVER_NAME,
-                           username=USERNAME,
-                           password=PASSWORD,
-                           schema=SCHEMA,
-                           database=DATABASE,
-                           staging_bucket_name=STAGING_BUCKET_NAME,
-                           storage_integration=STORAGE_INTEGRATION,
-                           create_disposition="CREATE_IF_NEEDED",
-                           write_disposition="TRUNCATE",
-                           table_schema=SCHEMA_STRING,
-                           user_data_mapper= user_data_mapper,
-                           parallelization=False,
-                           table=TABLE,
-                           query=None,
-                           expansion_service=EXPANSION_SERVICE
-                           )
+    with TestPipeline(options=PipelineOptions(self.pipeline_args)) as p:
+      # TODO make it work with beam.Create([TestRow())
+      (
+          p
+          | GenerateSequence(
+              start=1, stop=3, expansion_service=self.expansion_service)
+          | beam.Map(lambda num: TestRow("test" + str(num), num, True))
+          | WriteToSnowflake(
+              server_name=self.server_name,
+              username=self.username,
+              password=self.password,
+              o_auth_token=self.o_auth_token,
+              private_key_file=self.private_key_file,
+              private_key_password=self.private_key_password,
+              schema=self.schema,
+              database=self.database,
+              staging_bucket_name=self.staging_bucket_name,
+              storage_integration=self.storage_integration,
+              create_disposition="CREATE_IF_NEEDED",
+              write_disposition="TRUNCATE",
+              table_schema=SCHEMA_STRING,
+              user_data_mapper=user_data_mapper,
+              parallelization=False,
+              table=self.table,
+              query=None,
+              expansion_service=self.expansion_service,
+          ))
 
-def run_read():
+  def _run_read(self):
     def csv_mapper(strings_array):
-        return TestRow(strings_array[0], int(strings_array[1]), bool(strings_array[2]))
+      return TestRow(
+          strings_array[0], int(strings_array[1]), bool(strings_array[2]))
 
-    with TestPipeline(options=PipelineOptions(OPTIONS)) as p:
-        result = p \
-                 | ReadFromSnowflake(server_name=SERVER_NAME,
-                                     username=USERNAME,
-                                     password=PASSWORD,
-                                     schema=SCHEMA,
-                                     database=DATABASE,
-                                     staging_bucket_name=STAGING_BUCKET_NAME,
-                                     storage_integration=STORAGE_INTEGRATION,
-                                     csv_mapper=csv_mapper,
-                                     table=TABLE,
-                                     query=None,
-                                     expansion_service=EXPANSION_SERVICE
-                                     )
+    with TestPipeline(options=PipelineOptions(self.pipeline_args)) as p:
+      result = (
+          p
+          | ReadFromSnowflake(
+              server_name=self.server_name,
+              username=self.username,
+              password=self.password,
+              o_auth_token=self.o_auth_token,
+              private_key_file=self.private_key_file,
+              private_key_password=self.private_key_password,
+              schema=self.schema,
+              database=self.database,
+              staging_bucket_name=self.staging_bucket_name,
+              storage_integration=self.storage_integration,
+              csv_mapper=csv_mapper,
+              table=self.table,
+              query=None,
+              expansion_service=self.expansion_service,
+          ))
 
-        assert_that(result, equal_to([TestRow("test1",1, True),TestRow("test2",2, True)]))
+      assert_that(
+          result,
+          equal_to([TestRow("test1", 1, True), TestRow("test2", 2, True)]))
+
+  def setUp(self):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--server_name',
+        required=True,
+        help=(
+            'Snowflake server name of the form '
+            '<SNOWFLAKE_ACCOUNT_NAME>.snowflakecomputing.com'),
+    )
+    parser.add_argument(
+        '--username',
+        help='Snowflake username',
+    )
+    parser.add_argument(
+        '--password',
+        help='Snowflake password',
+    )
+    parser.add_argument(
+        '--private_key_file',
+        help='Private key file path',
+    )
+    parser.add_argument(
+        '--private_key_password',
+        help='Password to private key',
+    )
+    parser.add_argument(
+        '--o_auth_token',
+        help='OAuth token',
+    )
+    parser.add_argument(
+        '--staging_bucket_name',
+        required=True,
+        help='GCP staging bucket name (not path)',
+    )
+    parser.add_argument(
+        '--storage_integration',
+        required=True,
+        help='Snowflake integration name',
+    )
+    parser.add_argument(
+        '--database',
+        required=True,
+        help='Snowflake database name',
+    )
+    parser.add_argument(
+        '--schema',
+        required=True,
+        help='Snowflake schema name',
+    )
+    parser.add_argument(
+        '--table',
+        required=True,
+        help='Snowflake table name',
+    )
+    parser.add_argument(
+        '--expansion_service',
+        default='localhost:8097',
+    )
+
+    pipeline = TestPipeline()
+    argv = pipeline.get_full_options_as_args()
+
+    known_args, self.pipeline_args = parser.parse_known_args(argv)
+
+    self.server_name = known_args.server_name
+    self.database = known_args.database
+    self.schema = known_args.schema
+    self.table = known_args.table
+    self.username = known_args.username
+    self.password = known_args.password
+    self.private_key_file = known_args.private_key_file
+    self.private_key_password = known_args.private_key_password
+    self.o_auth_token = known_args.o_auth_token
+    self.staging_bucket_name = known_args.staging_bucket_name
+    self.storage_integration = known_args.storage_integration
+    self.expansion_service = known_args.expansion_service
+
+    self.assertTrue(
+        self.o_auth_token or (self.username and self.password) or
+        (self.username and self.private_key_file and self.private_key_password),
+        'No credentials given',
+    )
+
 
 if __name__ == '__main__':
-    logging.getLogger().setLevel(logging.INFO)
-    unittest.main()
+  logging.getLogger().setLevel(logging.INFO)
+  unittest.main()
