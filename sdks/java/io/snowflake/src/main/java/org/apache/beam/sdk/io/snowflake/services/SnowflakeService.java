@@ -15,17 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake;
+package org.apache.beam.sdk.io.snowflake.services;
 
-/** Interface which defines common methods for cloud providers. */
-public interface SnowflakeCloudProvider {
-  void removeFiles(String stagingBucketName, String pathOnBucket);
+import java.io.Serializable;
 
-  String formatCloudPath(String... pathSteps);
+/** Interface which defines common methods for interacting with SnowFlake. */
+public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
+  String CSV_QUOTE_CHAR_FOR_COPY = "''";
 
-  String transformSnowflakePathToCloudPath(String path);
+  String read(T config) throws Exception;
 
-  String transformCloudPathToSnowflakePath(String path);
-
-  String createCloudStoragePath(String stagingBucketName);
+  void write(T config) throws Exception;
 }

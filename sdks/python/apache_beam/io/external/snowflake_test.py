@@ -75,8 +75,8 @@ class TestRow(object):
 class SnowflakeTest(unittest.TestCase):
 
     def test_snowflake_write_read(self):
-        # run_write()
-        # run_read()
+        run_write()
+        run_read()
         clean_up()
 
 def run_write():
@@ -100,7 +100,6 @@ def run_write():
                            write_disposition="TRUNCATE",
                            table_schema=SCHEMA_STRING,
                            user_data_mapper= user_data_mapper,
-                           parallelization=False,
                            table=TABLE,
                            query=None,
                            expansion_service=EXPANSION_SERVICE

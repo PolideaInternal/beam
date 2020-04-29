@@ -15,17 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake;
+package org.apache.beam.sdk.io.snowflake.test;
 
-/** Interface which defines common methods for cloud providers. */
-public interface SnowflakeCloudProvider {
-  void removeFiles(String stagingBucketName, String pathOnBucket);
+import java.util.List;
 
-  String formatCloudPath(String... pathSteps);
+public class FakeSnowflakeIngestManager {
+  // Only for testing purposes
+  private String table = "TEST_TABLE";
 
-  String transformSnowflakePathToCloudPath(String path);
+  public FakeSnowflakeIngestManager() {}
 
-  String transformCloudPathToSnowflakePath(String path);
+  public void ingestFiles(List<String> rows) {
+    FakeSnowflakeDatabase.createTableWithElements(this.table, rows);
+  }
 
-  String createCloudStoragePath(String stagingBucketName);
+  public String getTable() {
+    return this.table;
+  }
 }

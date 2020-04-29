@@ -21,12 +21,14 @@ import com.google.auto.service.AutoService;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Map;
+import javax.sql.DataSource;
 import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.coders.ByteArrayCoder;
 import org.apache.beam.sdk.expansion.ExternalTransformRegistrar;
 import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCredentials;
 import org.apache.beam.sdk.transforms.ExternalTransformBuilder;
 import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
@@ -99,31 +101,23 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
     @Override
     public PTransform<PBegin, PCollection<byte[]>> buildExternal(Configuration config) {
+      Location location = Location.of(config.storageIntegration, config.stagingBucketName);
 
-      SnowflakeIO.Read.Builder<byte[]> readBuilder = new AutoValue_SnowflakeIO_Read.Builder<>();
-
-      readBuilder.setSnowflakeService(new SnowflakeServiceImpl());
-      readBuilder.setSnowflakeCloudProvider(new GCSProvider());
-      readBuilder.setLocation(Location.of(config.storageIntegration, config.stagingBucketName));
-      readBuilder.setDataSourceProviderFn(
+      SerializableFunction<Void, DataSource> dataSourceSerializableFunction =
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
               SnowflakeIO.DataSourceConfiguration.create(
                       new UsernamePasswordSnowflakeCredentials(config.username, config.password))
                   .withServerName(config.serverName)
                   .withDatabase(config.database)
-                  .withSchema(config.schema)));
-      if (config.table != null) {
-        readBuilder.setTable(config.table);
-      }
-      if (config.query != null) {
-        readBuilder.setQuery(config.query);
-      }
+                  .withSchema(config.schema));
 
-      readBuilder.setCsvMapper(CsvMapper.getCsvMapper());
-
-      readBuilder.setCoder(ByteArrayCoder.of());
-
-      return readBuilder.build();
+      return SnowflakeIO.<byte[]>read()
+          .via(location)
+          .withDataSourceProviderFn(dataSourceSerializableFunction)
+          .withCsvMapper(CsvMapper.getCsvMapper())
+          .withCoder(ByteArrayCoder.of())
+          .fromTable(config.table)
+          .fromQuery(config.query);
     }
   }
 

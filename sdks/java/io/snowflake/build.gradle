@@ -38,10 +38,13 @@ dependencies {
   compile group: 'net.snowflake', name: 'snowflake-jdbc', version: '3.11.0'
   compile group: 'com.opencsv', name: 'opencsv', version: '5.0'
   compile 'com.google.cloud:google-cloud-storage:1.102.0'
+  compile 'net.snowflake:snowflake-ingest-sdk:0.9.6'
   testCompile project(path: ":sdks:java:core", configuration: "shadowTest")
   testCompile project(path: ":sdks:java:io:common", configuration: "testRuntime")
   testCompile project(path: ":sdks:java:testing:test-utils", configuration: "testRuntime")
   testCompile project(path: ":sdks:java:io:parquet")
+  testCompile project(path: ":sdks:java:io:google-cloud-platform", configuration: "testRuntime")
+  testCompile library.java.joda_time
   testCompile library.java.avro
   testCompile library.java.junit
   testCompile library.java.hamcrest_core

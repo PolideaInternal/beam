@@ -119,7 +119,6 @@ WriteToSnowflakeSchema = typing.NamedTuple(
         ('storage_integration', unicode),
         ('create_disposition', unicode),
         ('write_disposition', unicode),
-        ('parallelization', bool),
         ('table_schema', unicode),
         ('table', typing.Optional[unicode]),
         ('query', typing.Optional[unicode])
@@ -143,7 +142,6 @@ class WriteToSnowflake(beam.PTransform):
             write_disposition,
             table_schema,
             user_data_mapper,
-            parallelization = True,
             table=None,
             query=None,
             expansion_service=None):
@@ -158,7 +156,6 @@ class WriteToSnowflake(beam.PTransform):
             storage_integration= storage_integration,
             create_disposition= create_disposition,
             write_disposition= write_disposition,
-            parallelization= parallelization,
             table_schema= table_schema,
             table= table,
             query= query,

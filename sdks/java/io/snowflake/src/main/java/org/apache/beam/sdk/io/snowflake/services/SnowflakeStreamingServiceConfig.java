@@ -15,17 +15,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake;
+package org.apache.beam.sdk.io.snowflake.services;
 
-/** Interface which defines common methods for cloud providers. */
-public interface SnowflakeCloudProvider {
-  void removeFiles(String stagingBucketName, String pathOnBucket);
+import java.util.List;
+import net.snowflake.ingest.SimpleIngestManager;
 
-  String formatCloudPath(String... pathSteps);
+public class SnowflakeStreamingServiceConfig extends ServiceConfig {
+  SimpleIngestManager ingestManager;
+  List<String> filesList;
+  String filesPath;
 
-  String transformSnowflakePathToCloudPath(String path);
+  public SnowflakeStreamingServiceConfig(
+      List<String> filesList, String filesPath, SimpleIngestManager ingestManager) {
+    this.filesList = filesList;
+    this.filesPath = filesPath;
+    this.ingestManager = ingestManager;
+  }
 
-  String transformCloudPathToSnowflakePath(String path);
+  public SimpleIngestManager getIngestManager() {
+    return ingestManager;
+  }
 
-  String createCloudStoragePath(String stagingBucketName);
+  public List<String> getFilesList() {
+    return filesList;
+  }
+
+  public String getFilesPath() {
+    return filesPath;
+  }
 }

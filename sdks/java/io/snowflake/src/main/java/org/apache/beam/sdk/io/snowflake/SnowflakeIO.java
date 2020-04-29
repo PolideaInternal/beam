@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
+import net.snowflake.ingest.SimpleIngestManager;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.Compression;
@@ -49,6 +50,11 @@ import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCre
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeBatchServiceConfig;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeBatchServiceImpl;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeStreamingServiceConfig;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeStreamingServiceImpl;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.transforms.Combine;
 import org.apache.beam.sdk.transforms.Create;
@@ -59,11 +65,19 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.Wait;
 import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.sdk.transforms.display.HasDisplayData;
+import org.apache.beam.sdk.transforms.windowing.AfterFirst;
+import org.apache.beam.sdk.transforms.windowing.AfterPane;
+import org.apache.beam.sdk.transforms.windowing.AfterProcessingTime;
+import org.apache.beam.sdk.transforms.windowing.GlobalWindows;
+import org.apache.beam.sdk.transforms.windowing.Repeatedly;
+import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Joiner;
+import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Splitter;
+import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,14 +127,14 @@ import org.slf4j.LoggerFactory;
  * <p>For example
  *
  * <pre>{@code
- * Location location = Location.of(storageIntegration, externalLocation);
+ * Location location = Location.of(storageIntegration, stagingBucketName);
  * PCollection<GenericRecord> items = pipeline.apply(
  *  SnowflakeIO.<GenericRecord>read()
  *    .withDataSourceConfiguration(dataSourceConfiguration)
  *    .fromQuery(QUERY)
  *    .via(location)
- *    .withCsvMapper(...)
- *    .withCoder(...));
+ *    .withCsvMapper(mapper)
+ *    .withCoder(coder));
  * }</pre>
  *
  * <h3>Writing to Snowflake</h3>
@@ -132,19 +146,24 @@ import org.slf4j.LoggerFactory;
  * <p>For example
  *
  * <pre>{@code
- * Location location = Location.of(storageIntegration, externalLocation);
+ * Location location = Location.of(storageIntegration, stagingBucketName);
  * items.apply(
  *     SnowflakeIO.<KV<Integer, String>>write()
  *         .withDataSourceConfiguration(dataSourceConfiguration)
  *         .to(table)
  *         .via(location)
- *         .withUserDataMapper(...);
+ *         .withUserDataMapper(maper);
  * }</pre>
  */
 public class SnowflakeIO {
   private static final Logger LOG = LoggerFactory.getLogger(SnowflakeIO.class);
 
   private static final String CSV_QUOTE_CHAR = "'";
+
+  static final int DEFAULT_FLUSH_ROW_LIMIT = 10000;
+  static final int DEFAULT_STREAMING_SHARDS_NUMBER = 1;
+  static final int DEFAULT_BATCH_SHARDS_NUMBER = 0;
+  static final Duration DEFAULT_FLUSH_TIME_LIMIT = Duration.millis(30000); // 30 seconds
 
   /**
    * Read data from Snowflake via COPY statement via user-defined {@link SnowflakeService}.
@@ -161,12 +180,12 @@ public class SnowflakeIO {
   }
 
   /**
-   * Read data from Snowflake via COPY statement via default {@link SnowflakeServiceImpl}.
+   * Read data from Snowflake via COPY statement via default {@link SnowflakeBatchServiceImpl}.
    *
    * @param <T> Type of the data to be read.
    */
   public static <T> Read<T> read() {
-    return read(new SnowflakeServiceImpl(), new GCSProvider());
+    return read(new SnowflakeBatchServiceImpl(), new GCSProvider());
   }
 
   /**
@@ -192,30 +211,20 @@ public class SnowflakeIO {
   }
 
   /**
-   * Write data to Snowflake via COPY statement via user-defined {@link SnowflakeService}.
-   *
-   * @param <T> Type of data to be written.
-   * @param snowflakeService user-defined {@link SnowflakeService}
-   */
-  public static <T> Write<T> write(
-      SnowflakeService snowflakeService, SnowflakeCloudProvider cloudProvider) {
-    return new AutoValue_SnowflakeIO_Write.Builder<T>()
-        .setFileNameTemplate("output*")
-        .setParallelization(true)
-        .setCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-        .setWriteDisposition(WriteDisposition.APPEND)
-        .setSnowflakeService(snowflakeService)
-        .setSnowflakeCloudProvider(cloudProvider)
-        .build();
-  }
-
-  /**
-   * Write data to Snowflake via COPY statement via default {@link SnowflakeServiceImpl}.
+   * Write data to Snowflake via COPY statement.
    *
    * @param <T> Type of data to be written.
    */
   public static <T> Write<T> write() {
-    return write(new SnowflakeServiceImpl(), new GCSProvider());
+    return new AutoValue_SnowflakeIO_Write.Builder<T>()
+        .setFileNameTemplate("output*")
+        .setCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
+        .setWriteDisposition(WriteDisposition.APPEND)
+        .setSnowflakeCloudProvider(new GCSProvider())
+        .setFlushTimeLimit(DEFAULT_FLUSH_TIME_LIMIT)
+        .setShardsNumber(DEFAULT_BATCH_SHARDS_NUMBER)
+        .setFlushRowLimit(DEFAULT_FLUSH_ROW_LIMIT)
+        .build();
   }
 
   /** Implementation of {@link #read()}. */
@@ -413,14 +422,15 @@ public class SnowflakeIO {
       @ProcessElement
       public void processElement(ProcessContext context) throws Exception {
         String stagingBucketDir = this.cloudProvider.formatCloudPath(stagingBucketName, tmpDirName);
-
-        String output =
-            snowflakeService.copyIntoStage(
+        SnowflakeBatchServiceConfig config =
+            new SnowflakeBatchServiceConfig(
                 dataSourceProviderFn,
                 source,
                 storageIntegration,
                 stagingBucketDir,
                 this.cloudProvider);
+
+        String output = snowflakeService.read(config);
 
         context.output(output);
       }
@@ -766,6 +776,10 @@ public class SnowflakeIO {
       return new DataSourceProviderFromDataSourceConfiguration(config);
     }
 
+    public DataSourceConfiguration getConfig() {
+      return this.config;
+    }
+
     @Override
     public DataSource apply(Void input) {
       return instances.computeIfAbsent(config, (config) -> config.buildDatasource());
@@ -793,10 +807,19 @@ public class SnowflakeIO {
     abstract Location getLocation();
 
     @Nullable
-    abstract String getFileNameTemplate();
+    abstract String getSnowPipe();
 
     @Nullable
-    abstract Boolean getParallelization();
+    abstract Integer getFlushRowLimit();
+
+    @Nullable
+    abstract Integer getShardsNumber();
+
+    @Nullable
+    abstract Duration getFlushTimeLimit();
+
+    @Nullable
+    abstract String getFileNameTemplate();
 
     @Nullable
     abstract WriteDisposition getWriteDisposition();
@@ -829,9 +852,15 @@ public class SnowflakeIO {
 
       abstract Builder<T> setLocation(Location location);
 
-      abstract Builder<T> setFileNameTemplate(String fileNameTemplate);
+      abstract Builder<T> setSnowPipe(String snowPipe);
 
-      abstract Builder<T> setParallelization(Boolean parallelization);
+      abstract Builder<T> setFlushRowLimit(Integer rowsCount);
+
+      abstract Builder<T> setShardsNumber(Integer shardsNumber);
+
+      abstract Builder<T> setFlushTimeLimit(Duration triggeringFrequency);
+
+      abstract Builder<T> setFileNameTemplate(String fileNameTemplate);
 
       abstract Builder<T> setUserDataMapper(UserDataMapper userDataMapper);
 
@@ -873,12 +902,24 @@ public class SnowflakeIO {
       return toBuilder().setFileNameTemplate(fileNameTemplate).build();
     }
 
-    public Write<T> withParallelization(Boolean parallelization) {
-      return toBuilder().setParallelization(parallelization).build();
-    }
-
     public Write<T> withUserDataMapper(UserDataMapper userDataMapper) {
       return toBuilder().setUserDataMapper(userDataMapper).build();
+    }
+
+    public Write<T> withFlushTimeLimit(Duration triggeringFrequency) {
+      return toBuilder().setFlushTimeLimit(triggeringFrequency).build();
+    }
+
+    public Write<T> withSnowPipe(String snowPipe) {
+      return toBuilder().setSnowPipe(snowPipe).build();
+    }
+
+    public Write<T> withShardsNumber(Integer shardsNumber) {
+      return toBuilder().setShardsNumber(shardsNumber).build();
+    }
+
+    public Write<T> withFlushRowLimit(Integer rowsCount) {
+      return toBuilder().setFlushRowLimit(rowsCount).build();
     }
 
     public Write<T> withWriteDisposition(WriteDisposition writeDisposition) {
@@ -893,40 +934,113 @@ public class SnowflakeIO {
       return toBuilder().setTableSchema(tableSchema).build();
     }
 
+    public Write<T> withSnowflakeService(SnowflakeService snowflakeService) {
+      return toBuilder().setSnowflakeService(snowflakeService).build();
+    }
+
+    public Write<T> withSnowflakeCloudProvider(SnowflakeCloudProvider cloudProvider) {
+      return toBuilder().setSnowflakeCloudProvider(cloudProvider).build();
+    }
+
     @Override
     public PDone expand(PCollection<T> input) {
-      checkArguments();
+      checkArguments(input);
+      PCollection out;
 
-      String path =
-          this.getSnowflakeService().createCloudStoragePath(getLocation().getStagingBucketName());
+      SnowflakeCloudProvider cloudProvider =
+          getSnowflakeCloudProvider() != null ? getSnowflakeCloudProvider() : new GCSProvider();
+
+      String path = cloudProvider.createCloudStoragePath(getLocation().getStagingBucketName());
       getLocation().setFilesPath(path);
 
-      PCollection files = writeToFiles(input, path);
-
-      files =
-          (PCollection)
-              files.apply("Create list of files to copy", Combine.globally(new Concatenate()));
-      PCollection out = (PCollection) files.apply("Copy files to table", copyToTable());
+      if (getSnowPipe() != null) {
+        out = writeStream(input, path);
+      } else {
+        out = writeBatch(input, path);
+      }
       out.setCoder(StringUtf8Coder.of());
 
       return PDone.in(out.getPipeline());
     }
 
-    private void checkArguments() {
+    private void checkArguments(PCollection<T> input) {
       Location location = getLocation();
 
       checkArgument(location != null, "via() is required");
 
       checkArgument(getUserDataMapper() != null, "withUserDataMapper() is required");
 
-      checkArgument(getTable() != null, "withTable() is required");
-
       checkArgument(
           (getDataSourceProviderFn() != null),
           "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
+
+      if (input.isBounded() == PCollection.IsBounded.UNBOUNDED) {
+        checkArgument(getSnowPipe() != null, "withSnowPipe() is required");
+      } else {
+        checkArgument(getTable() != null, "withTable() is required");
+      }
     }
 
-    private PCollection writeToFiles(PCollection<T> input, String outputDirectory) {
+    private PCollection<T> writeStream(PCollection<T> input, String path) {
+      SnowflakeService snowflakeService =
+          getSnowflakeService() != null
+              ? getSnowflakeService()
+              : new SnowflakeStreamingServiceImpl();
+
+      /* Ensure that files will be created after specific record count or duration specified in flush time frequency. */
+      PCollection<T> inputInGlobalWindow =
+          input.apply(
+              "rewindowIntoGlobal",
+              Window.<T>into(new GlobalWindows())
+                  .triggering(
+                      Repeatedly.forever(
+                          AfterFirst.of(
+                              AfterProcessingTime.pastFirstElementInPane()
+                                  .plusDelayOf(getFlushTimeLimit()),
+                              AfterPane.elementCountAtLeast(getFlushRowLimit()))))
+                  .discardingFiredPanes());
+
+      int shards = (getShardsNumber() > 0) ? getShardsNumber() : DEFAULT_STREAMING_SHARDS_NUMBER;
+      PCollection files = writeFiles(inputInGlobalWindow, path, shards);
+
+      /* Ensuring that files will be ingested after flush time */
+      files =
+          (PCollection)
+              files.apply(
+                  "applyUserTrigger",
+                  Window.<T>into(new GlobalWindows())
+                      .triggering(
+                          Repeatedly.forever(
+                              AfterProcessingTime.pastFirstElementInPane()
+                                  .plusDelayOf(getFlushTimeLimit())))
+                      .discardingFiredPanes());
+      files =
+          (PCollection)
+              files.apply(
+                  "Create list of files to copy",
+                  Combine.globally(new Concatenate()).withoutDefaults());
+
+      return (PCollection) files.apply("Stream files to table", streamToTable(snowflakeService));
+    }
+
+    private PCollection writeBatch(PCollection input, String path) {
+      SnowflakeService snowflakeService =
+          getSnowflakeService() != null ? getSnowflakeService() : new SnowflakeBatchServiceImpl();
+
+      PCollection files = writeBatchFiles(input, path);
+
+      files =
+          (PCollection)
+              files.apply("Create list of files to copy", Combine.globally(new Concatenate()));
+
+      return (PCollection) files.apply("Copy files to table", copyToTable(snowflakeService));
+    }
+
+    private PCollection writeBatchFiles(PCollection<T> input, String outputDirectory) {
+      return writeFiles(input, outputDirectory, DEFAULT_BATCH_SHARDS_NUMBER);
+    }
+
+    private PCollection writeFiles(PCollection<T> input, String outputDirectory, int numShards) {
       class Parse extends DoFn<KV<T, String>, String> {
         @ProcessElement
         public void processElement(ProcessContext c) {
@@ -939,7 +1053,7 @@ public class SnowflakeIO {
               .apply(
                   "Map user data to Objects array",
                   ParDo.of(new MapUserDataObjectsArrayFn<T>(getUserDataMapper())))
-              .apply("Map Objects array to CSV lines", ParDo.of(new MapObjecsArrayToCsvFn()))
+              .apply("Map Objects array to CSV lines", ParDo.of(new MapObjectsArrayToCsvFn()))
               .setCoder(StringUtf8Coder.of());
 
       WriteFilesResult filesResult =
@@ -949,7 +1063,10 @@ public class SnowflakeIO {
                   FileIO.write()
                       .via((FileIO.Sink) new CSVSink())
                       .to(outputDirectory)
+                      .withPrefix(getFileNameTemplate())
                       .withSuffix(".csv")
+                      .withPrefix(UUID.randomUUID().toString().subSequence(0, 8).toString())
+                      .withNumShards(numShards)
                       .withCompression(Compression.GZIP));
 
       return (PCollection)
@@ -958,7 +1075,7 @@ public class SnowflakeIO {
               .apply("Parse KV filenames to Strings", ParDo.of(new Parse()));
     }
 
-    private ParDo.SingleOutput<Object, Object> copyToTable() {
+    private ParDo.SingleOutput<Object, Object> copyToTable(SnowflakeService snowflakeService) {
       return ParDo.of(
           new CopyToTableFn<>(
               getDataSourceProviderFn(),
@@ -968,8 +1085,14 @@ public class SnowflakeIO {
               getCreateDisposition(),
               getWriteDisposition(),
               getTableSchema(),
-              getSnowflakeService(),
+              snowflakeService,
               getSnowflakeCloudProvider()));
+    }
+
+    protected PTransform streamToTable(SnowflakeService snowflakeService) {
+      return ParDo.of(
+          new StreamToTableFn(
+              getDataSourceProviderFn(), getSnowPipe(), getLocation(), snowflakeService));
     }
   }
 
@@ -991,7 +1114,7 @@ public class SnowflakeIO {
    *
    * <p>Adds Snowflake-specific quotations around strings.
    */
-  private static class MapObjecsArrayToCsvFn extends DoFn<Object[], String> {
+  private static class MapObjectsArrayToCsvFn extends DoFn<Object[], String> {
 
     @ProcessElement
     public void processElement(ProcessContext context) {
@@ -1045,7 +1168,6 @@ public class SnowflakeIO {
       this.location = location;
       this.createDisposition = createDisposition;
       this.writeDisposition = writeDisposition;
-      this.snowflakeService = snowflakeService;
 
       if (query != null) {
         this.source = String.format("(%s)", query);
@@ -1053,21 +1175,77 @@ public class SnowflakeIO {
         String directory = location.getFilesLocationForCopy();
         this.source = cloudProvider.transformSnowflakePathToCloudPath(directory);
       }
+
+      this.snowflakeService = snowflakeService;
     }
 
     @ProcessElement
     public void processElement(ProcessContext context) throws Exception {
-      LOG.error("ERROR" + (tableSchema == null));
+      SnowflakeBatchServiceConfig config =
+          new SnowflakeBatchServiceConfig(
+              dataSourceProviderFn,
+              (List<String>) context.element(),
+              table,
+              tableSchema,
+              source,
+              createDisposition,
+              writeDisposition,
+              location);
+      snowflakeService.write(config);
+    }
+  }
 
-      snowflakeService.copyToTable(
-          dataSourceProviderFn,
-          (List<String>) context.element(),
-          table,
-          tableSchema,
-          source,
-          createDisposition,
-          writeDisposition,
-          location);
+  /** Custom DoFn that streams data to Snowflake table. */
+  private static class StreamToTableFn<ParameterT, OutputT> extends DoFn<ParameterT, OutputT> {
+    private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
+    private final String filesPath;
+    private final String snowPipe;
+    private final SnowflakeService snowflakeService;
+    private transient SimpleIngestManager ingestManager;
+
+    private transient DataSource dataSource;
+
+    StreamToTableFn(
+        SerializableFunction<Void, DataSource> dataSourceProviderFn,
+        String snowPipe,
+        Location location,
+        SnowflakeService snowflakeService) {
+      this.dataSourceProviderFn = dataSourceProviderFn;
+      this.filesPath = location.getFilesPath();
+      this.snowPipe = snowPipe;
+      this.snowflakeService = snowflakeService;
+    }
+
+    @Setup
+    public void setup() throws Exception {
+      dataSource = dataSourceProviderFn.apply(null);
+
+      DataSourceProviderFromDataSourceConfiguration dataSourceProviderFromDataSourceConfiguration =
+          (DataSourceProviderFromDataSourceConfiguration) this.dataSourceProviderFn;
+      DataSourceConfiguration config = dataSourceProviderFromDataSourceConfiguration.getConfig();
+
+      checkArgument(config.getPrivateKey() != null, "KeyPair is required for authentication");
+
+      String hostName = config.getServerName().get();
+      List<String> path = Splitter.on('.').splitToList(hostName);
+      String account = path.get(0);
+      String username = config.getUsername().get();
+      PrivateKey privateKey = config.getPrivateKey().get();
+      String schema = config.getSchema().get();
+      String database = config.getDatabase().get();
+      String snowPipeName = String.format("%s.%s.%s", database, schema, snowPipe);
+
+      this.ingestManager =
+          new SimpleIngestManager(
+              account, username, snowPipeName, privateKey, "https", hostName, 443);
+    }
+
+    @ProcessElement
+    public void processElement(ProcessContext context) throws Exception {
+      List<String> filesList = (List<String>) context.element();
+      SnowflakeStreamingServiceConfig config =
+          new SnowflakeStreamingServiceConfig(filesList, this.filesPath, this.ingestManager);
+      snowflakeService.write(config);
     }
   }
 }

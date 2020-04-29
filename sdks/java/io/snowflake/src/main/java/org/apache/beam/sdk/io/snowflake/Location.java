@@ -19,6 +19,10 @@ package org.apache.beam.sdk.io.snowflake;
 
 import java.io.Serializable;
 
+/**
+ * Used as one of the arguments for {@link org.apache.beam.sdk.io.snowflake.SnowflakeIO} write and
+ * read method.
+ */
 public class Location implements Serializable {
   private String storageIntegration;
   private String stagingBucketName;
