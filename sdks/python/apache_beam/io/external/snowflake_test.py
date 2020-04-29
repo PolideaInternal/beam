@@ -34,14 +34,14 @@ from apache_beam.io.external.generate_sequence import GenerateSequence
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
 
-SERVER_NAME = ""
-USERNAME = ""
-PASSWORD = ""
-SCHEMA = ""
-DATABASE = ""
-STAGING_BUCKET_NAME = ""
-STORAGE_INTEGRATION = ""
-TABLE = ""
+SERVER_NAME = "pr05452.europe-west4.gcp.snowflakecomputing.com"
+USERNAME = "PSZUBERSKI"
+PASSWORD = "EgHJwBVmhZKdE96"
+SCHEMA = "TPCH_SF001"
+DATABASE = "SNOWFLAKE_SAMPLE_DATA"
+STAGING_BUCKET_NAME = "snowpiotrek"
+STORAGE_INTEGRATION = "gcs_int"
+TABLE = "LINEITEM"
 EXPANSION_SERVICE = 'localhost:8097'
 SCHEMA_STRING = """
 {"schema":[

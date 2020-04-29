@@ -18,8 +18,12 @@
 # pytype: skip-file
 
 from __future__ import absolute_import
+
+from past.builtins import unicode
+
 import apache_beam as beam
 import typing
+
 from apache_beam.transforms.external import ExternalTransform
 from apache_beam.transforms.external import ImplicitSchemaPayloadBuilder
 from apache_beam.transforms.external import NamedTupleBasedPayloadBuilder
@@ -55,12 +59,15 @@ ReadFromSnowflakeSchema = typing.NamedTuple(
     'WriteToSnowflakeSchema',
     [
         ('server_name', unicode),
-        ('username', unicode),
-        ('password', unicode),
         ('schema', unicode),
         ('database', unicode),
         ('staging_bucket_name', unicode),
         ('storage_integration', unicode),
+        ('username', typing.Optional[unicode]),
+        ('password', typing.Optional[unicode]),
+        ('private_key_file', typing.Optional[unicode]),
+        ('private_key_password', typing.Optional[unicode]),
+        ('o_auth_token', typing.Optional[unicode]),
         ('table', typing.Optional[unicode]),
         ('query', typing.Optional[unicode])
     ])
@@ -73,46 +80,53 @@ class ReadFromSnowflake(beam.PTransform):
     def __init__(
             self,
             server_name,
-            username,
-            password,
             schema,
             database,
             staging_bucket_name,
             storage_integration,
             csv_mapper,
+            username=None,
+            password=None,
+            private_key_file=None,
+            private_key_password=None,
+            o_auth_token=None,
             table=None,
             query=None,
             expansion_service=None):
 
         self.params = ReadFromSnowflakeSchema(
-            server_name= server_name,
-            username= username,
-            password= password,
-            schema= schema,
-            database= database,
-            staging_bucket_name= staging_bucket_name,
-            storage_integration= storage_integration,
-            table= table,
-            query= query,
+            server_name=server_name,
+            schema=schema,
+            database=database,
+            staging_bucket_name=staging_bucket_name,
+            storage_integration=storage_integration,
+            username=username,
+            password=password,
+            private_key_file=private_key_file,
+            private_key_password=private_key_password,
+            o_auth_token=o_auth_token,
+            table=table,
+            query=query,
         )
         self.csv_mapper = csv_mapper
         self.expansion_service = expansion_service
 
     def expand(self, pbegin):
-        return pbegin \
-               | ExternalTransform(self.URN,
-                                   NamedTupleBasedPayloadBuilder(self.params),
-                                   self.expansion_service
-                                   ) \
-               | 'csv_to_array_mapper' >> beam.Map(lambda csv: csv.split(','))\
-               | 'csv_mapper' >> beam.Map(self.csv_mapper)
+        return (
+            pbegin
+            | ExternalTransform(
+                  self.URN,
+                  NamedTupleBasedPayloadBuilder(self.params),
+                  self.expansion_service,
+              )
+            | 'csv_to_array_mapper' >> beam.Map(lambda csv: csv.split(','))
+            | 'csv_mapper' >> beam.Map(self.csv_mapper)
+        )
 
 WriteToSnowflakeSchema = typing.NamedTuple(
     'WriteToSnowflakeSchema',
     [
         ('server_name', unicode),
-        ('username', unicode),
-        ('password', unicode),
         ('schema', unicode),
         ('database', unicode),
         ('staging_bucket_name', unicode),
@@ -121,6 +135,11 @@ WriteToSnowflakeSchema = typing.NamedTuple(
         ('write_disposition', unicode),
         ('parallelization', bool),
         ('table_schema', unicode),
+        ('username', typing.Optional[unicode]),
+        ('password', typing.Optional[unicode]),
+        ('private_key_file', typing.Optional[unicode]),
+        ('private_key_password', typing.Optional[unicode]),
+        ('o_auth_token', typing.Optional[unicode]),
         ('table', typing.Optional[unicode]),
         ('query', typing.Optional[unicode])
     ])
@@ -133,8 +152,6 @@ class WriteToSnowflake(beam.PTransform):
     def __init__(
             self,
             server_name,
-            username,
-            password,
             schema,
             database,
             staging_bucket_name,
@@ -143,33 +160,44 @@ class WriteToSnowflake(beam.PTransform):
             write_disposition,
             table_schema,
             user_data_mapper,
-            parallelization = True,
+            username=None,
+            password=None,
+            private_key_file=None,
+            private_key_password=None,
+            o_auth_token=None,
+            parallelization=True,
             table=None,
             query=None,
             expansion_service=None):
 
         self.params = WriteToSnowflakeSchema(
-            server_name= server_name,
-            username= username,
-            password= password,
-            schema= schema,
-            database= database,
-            staging_bucket_name= staging_bucket_name,
-            storage_integration= storage_integration,
-            create_disposition= create_disposition,
-            write_disposition= write_disposition,
-            parallelization= parallelization,
-            table_schema= table_schema,
-            table= table,
-            query= query,
+            server_name=server_name,
+            schema=schema,
+            database=database,
+            staging_bucket_name=staging_bucket_name,
+            storage_integration=storage_integration,
+            create_disposition=create_disposition,
+            write_disposition=write_disposition,
+            parallelization=parallelization,
+            table_schema=table_schema,
+            username=username,
+            password=password,
+            private_key_file=private_key_file,
+            private_key_password=private_key_password,
+            o_auth_token=o_auth_token,
+            table=table,
+            query=query,
         )
         self.user_data_mapper = user_data_mapper
         self.expansion_service = expansion_service
 
     def expand(self, pbegin):
-        return pbegin \
-                | 'user_data_mapper' >> beam.Map(self.user_data_mapper).with_output_types(typing.List[str])\
-                | ExternalTransform(self.URN,
-                                    NamedTupleBasedPayloadBuilder(self.params),
-                                    self.expansion_service
-                                    ).with_output_types(typing.Any)
+        return (
+            pbegin
+            | 'user_data_mapper' >> beam.Map(self.user_data_mapper).with_output_types(typing.List[str])
+            | ExternalTransform(
+                  self.URN,
+                  NamedTupleBasedPayloadBuilder(self.params),
+                  self.expansion_service,
+              ).with_output_types(typing.Any)
+        )

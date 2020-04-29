@@ -24,6 +24,9 @@ import java.util.Map;
 import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.coders.ByteArrayCoder;
 import org.apache.beam.sdk.expansion.ExternalTransformRegistrar;
+import org.apache.beam.sdk.io.snowflake.credentials.KeyPairSnowflakeCredentials;
+import org.apache.beam.sdk.io.snowflake.credentials.OAuthTokenSnowflakeCredentials;
+import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentials;
 import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCredentials;
 import org.apache.beam.sdk.transforms.ExternalTransformBuilder;
 import org.apache.beam.sdk.transforms.PTransform;
@@ -49,6 +52,9 @@ public final class ExternalRead implements ExternalTransformRegistrar {
     private String serverName;
     private String username;
     private String password;
+    private String privateKeyFile;
+    private String privateKeyPassword;
+    private String oAuthToken;
     private String database;
     private String schema;
     private String table;
@@ -66,6 +72,18 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
     public void setPassword(String password) {
       this.password = password;
+    }
+
+    public void setPrivateKeyFile(String privateKeyFile) {
+      this.privateKeyFile = privateKeyFile;
+    }
+
+    public void setPrivateKeyPassword(String privateKeyPassword) {
+      this.privateKeyPassword = privateKeyPassword;
+    }
+
+    public void setOAuthToken(String oAuthToken) {
+      this.oAuthToken = oAuthToken;
     }
 
     public void setDatabase(String database) {
@@ -105,10 +123,11 @@ public final class ExternalRead implements ExternalTransformRegistrar {
       readBuilder.setSnowflakeService(new SnowflakeServiceImpl());
       readBuilder.setSnowflakeCloudProvider(new GCSProvider());
       readBuilder.setLocation(Location.of(config.storageIntegration, config.stagingBucketName));
+
+      SnowflakeCredentials credentials = createCredentials(config);
       readBuilder.setDataSourceProviderFn(
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
-              SnowflakeIO.DataSourceConfiguration.create(
-                      new UsernamePasswordSnowflakeCredentials(config.username, config.password))
+              SnowflakeIO.DataSourceConfiguration.create(credentials)
                   .withServerName(config.serverName)
                   .withDatabase(config.database)
                   .withSchema(config.schema)));
@@ -136,6 +155,21 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
             return partsCSV.getBytes(Charset.defaultCharset());
           };
+    }
+  }
+
+  private static SnowflakeCredentials createCredentials(Configuration config) {
+    if (config.oAuthToken != null) {
+      return new OAuthTokenSnowflakeCredentials(config.oAuthToken);
+    } else if (config.privateKeyFile != null
+        && config.privateKeyPassword != null
+        && config.username != null) {
+      return new KeyPairSnowflakeCredentials(
+          config.username, config.privateKeyFile, config.privateKeyPassword);
+    } else if (config.username != null && config.password != null) {
+      return new UsernamePasswordSnowflakeCredentials(config.username, config.password);
+    } else {
+      throw new RuntimeException("No credentials given");
     }
   }
 }
