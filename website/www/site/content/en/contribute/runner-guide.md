@@ -1,8 +1,5 @@
 ---
-layout: section
 title: "Runner Authoring Guide"
-section_menu: section-menu/contribute.html
-permalink: /contribute/runner-guide/
 ---
 <!--
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,17 +25,7 @@ throughout the development of your runner.
 
 Topics covered:
 
- * Basics of the Beam model, focused on what a runner author needs to know to
-   execute a pipeline
- * Details of how to implement each of Beam's five primitives (of which two are
-   rather trivial and three are rather complex)
- * Support code we provide for manipulating and executing pipelines
- * How to test your runner
- * How to make your runner play nice with SDKs
- * The low-level Runner API protos used for cross-language pipelines
-
-* TOC
-{:toc}
+{{< toc >}}
 
 ## Basics of the Beam model
 
@@ -238,8 +225,7 @@ different for bounded and unbounded data.
 
 That's OK! You don't have to do it all at once, and there may even be features
 that don't make sense for your runner to ever support.  We maintain a
-[capability matrix]({{ site.baseurl
-}}/documentation/runners/capability-matrix/) on the Beam site so you can tell
+[capability matrix](/documentation/runners/capability-matrix/) on the Beam site so you can tell
 users what you support. When you receive a `Pipeline`, you should traverse it
 and determine whether or not you can execute each `DoFn` that you find. If
 you cannot execute some `DoFn` in the pipeline (or if there is any other
@@ -311,15 +297,14 @@ the Python codebase.
 In Java, the `beam-runners-core-java` library provides an interface
 `DoFnRunner` for bundle processing, with implementations for many situations.
 
-{:.no-toggle}
-```java
+{{< highlight class="language-java no-toggle" >}}
 interface DoFnRunner<InputT, OutputT> {
   void startBundle();
   void processElement(WindowedValue<InputT> elem);
   void onTimer(String timerId, BoundedWindow window, Instant timestamp, TimeDomain timeDomain);
   void finishBundle();
 }
-```
+{{< /highlight >}}
 
 There are some implementations and variations of this for different scenarios:
 
@@ -566,7 +551,7 @@ collection of log files, or a database table. The capabilities are:
  * timestamps to associate with each element read
  * `splitAtFraction` for dynamic splitting to enable work stealing, and other
    methods to support it - see the [Beam blog post on dynamic work
-   rebalancing]({{ site.baseurl }}/blog/2016/05/18/splitAtFraction-method.html)
+   rebalancing](/blog/2016/05/18/splitAtFraction-method.html)
 
 The `BoundedSource` does not report a watermark currently. Most of the time, reading
 from a bounded source can be parallelized in ways that result in utterly out-of-order
@@ -654,7 +639,6 @@ very easily!  To enable these tests in a Java-based runner using Gradle, you
 scan the dependencies of the SDK for tests with the JUnit category
 `ValidatesRunner`.
 
-{:.no-toggle}
 ```
 task validatesRunner(type: Test) {
   group = "Verification"
@@ -689,8 +673,7 @@ what you know, and follow the rules, and `PipelineOptions` will treat you well.
 You must implement a sub-interface for your runner with getters and setters
 with matching names, like so:
 
-{:.no-toggle}
-```java
+{{< highlight class="language-java no-toggle" >}}
 public interface MyRunnerOptions extends PipelineOptions {
   @Description("The Foo to use with MyRunner")
   @Required
@@ -702,7 +685,7 @@ public interface MyRunnerOptions extends PipelineOptions {
   public Boolean isBazEnabled();
   public void setBazEnabled(Boolean newValue);
 }
-```
+{{< /highlight >}}
 
 You can set up defaults, etc. See the javadoc for details.  When your runner is
 instantiated with a `PipelineOptions` object, you access your interface by
@@ -711,8 +694,7 @@ instantiated with a `PipelineOptions` object, you access your interface by
 To make these options available on the command line, you register your options
 with a `PipelineOptionsRegistrar`. It is easy if you use `@AutoService`:
 
-{:.no-toggle}
-```java
+{{< highlight class="language-java no-toggle" >}}
 @AutoService(PipelineOptionsRegistrar.class)
 public static class MyOptionsRegistrar implements PipelineOptionsRegistrar {
   @Override
@@ -720,15 +702,14 @@ public static class MyOptionsRegistrar implements PipelineOptionsRegistrar {
     return ImmutableList.<Class<? extends PipelineOptions>>of(MyRunnerOptions.class);
   }
 }
-```
+{{< /highlight >}}
 
 #### Registering your runner with SDKs for command line use
 
 To make your runner available on the command line, you register your options
 with a `PipelineRunnerRegistrar`. It is easy if you use `@AutoService`:
 
-{:.no-toggle}
-```java
+{{< highlight class="language-java no-toggle" >}}
 @AutoService(PipelineRunnerRegistrar.class)
 public static class MyRunnerRegistrar implements PipelineRunnerRegistrar {
   @Override
@@ -736,7 +717,7 @@ public static class MyRunnerRegistrar implements PipelineRunnerRegistrar {
     return ImmutableList.<Class<? extends PipelineRunner>>of(MyRunner.class);
   }
 }
-```
+{{< /highlight >}}
 
 ### Integrating with the Python SDK
 
@@ -853,8 +834,7 @@ The heart of cross-language portability is the `FunctionSpec`. This is a
 language-independent specification of a function, in the usual programming
 sense that includes side effects, etc.
 
-{:.no-toggle}
-```proto
+```
 message FunctionSpec {
   string urn;
   google.protobuf.Any parameter;
@@ -885,8 +865,7 @@ it will be guaranteed to understand it. So in that case, it will always come
 with an environment that can understand and execute the function. This is
 represented by the `SdkFunctionSpec`.
 
-{:.no-toggle}
-```proto
+```
 message SdkFunctionSpec {
   FunctionSpec spec;
   bytes environment_id;
@@ -917,8 +896,7 @@ A `ParDo` transform carries its `DoFn` in an `SdkFunctionSpec` and then
 provides language-independent specifications for its other features - side
 inputs, state declarations, timer declarations, etc.
 
-{:.no-toggle}
-```proto
+```
 message ParDoPayload {
   SdkFunctionSpec do_fn;
   map<string, SideInput> side_inputs;
@@ -932,8 +910,7 @@ message ParDoPayload {
 
 A `Read` transform carries an `SdkFunctionSpec` for its `Source` UDF.
 
-{:.no-toggle}
-```proto
+```
 message ReadPayload {
   SdkFunctionSpec source;
   ...
@@ -946,8 +923,7 @@ A `Window` transform carries an `SdkFunctionSpec` for its `WindowFn` UDF. It is
 part of the Fn API that the runner passes this UDF along and tells the SDK
 harness to use it to assign windows (as opposed to merging).
 
-{:.no-toggle}
-```proto
+```
 message WindowIntoPayload {
   SdkFunctionSpec window_fn;
   ...
@@ -963,8 +939,7 @@ In order to effectively carry out the optimizations desired, it is also
 necessary to know the coder for intermediate accumulations, so it also carries
 a reference to this coder.
 
-{:.no-toggle}
-```proto
+```
 message CombinePayload {
   SdkFunctionSpec combine_fn;
   string accumulator_coder_id;
@@ -979,8 +954,7 @@ represented in the proto using a FunctionSpec. Note that this is not an
 `SdkFunctionSpec`, since it is the runner that observes these. They will never
 be passed back to an SDK harness; they do not represent a UDF.
 
-{:.no-toggle}
-```proto
+```
 message PTransform {
   FunctionSpec spec;
   repeated string subtransforms;
@@ -1004,8 +978,7 @@ serialized UDFs.
 A `PCollection` just stores a coder, windowing strategy, and whether or not it
 is bounded.
 
-{:.no-toggle}
-```proto
+```
 message PCollection {
   string coder_id;
   IsBounded is_bounded;
@@ -1021,8 +994,7 @@ only be understood by a particular SDK, hence an `SdkFunctionSpec`, but also
 may have component coders that fully define it. For example, a `ListCoder` is
 only a meta-format, while `ListCoder(VarIntCoder)` is a fully specified format.
 
-{:.no-toggle}
-```proto
+```
 message Coder {
   SdkFunctionSpec spec;
   repeated string component_coder_ids;
@@ -1051,16 +1023,14 @@ rich and convenient API.
 This will take the same form, but `PipelineOptions` will have to be serialized
 to JSON (or a proto `Struct`) and passed along.
 
-{:.no-toggle}
-```proto
+```
 message RunPipelineRequest {
   Pipeline pipeline;
   Struct pipeline_options;
 }
 ```
 
-{:.no-toggle}
-```proto
+```
 message RunPipelineResponse {
   bytes pipeline_id;
 
@@ -1080,8 +1050,7 @@ be generalized to support draining a job (stop reading input and let watermarks
 go to infinity). Today, verifying our test framework benefits (but does not
 depend upon wholly) querying metrics over this channel.
 
-{:.no-toggle}
-```proto
+```
 message CancelPipelineRequest {
   bytes pipeline_id;
   ...
