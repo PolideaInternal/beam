@@ -26,7 +26,6 @@ from past.builtins import unicode
 import apache_beam as beam
 from apache_beam.transforms.external import ExternalTransform
 from apache_beam.transforms.external import NamedTupleBasedPayloadBuilder
-
 """
   PTransforms for supporting Snowflake in Python pipelines. These transforms do not
   run a Snowflake client in Python. Instead, they expand to ExternalTransforms
@@ -55,14 +54,20 @@ from apache_beam.transforms.external import NamedTupleBasedPayloadBuilder
 
 ReadFromSnowflakeSchema = typing.NamedTuple(
     'WriteToSnowflakeSchema',
-    [('server_name', unicode), ('schema', unicode), ('database', unicode),
-     ('staging_bucket_name', unicode), ('storage_integration', unicode),
-     ('username', typing.Optional[unicode]),
-     ('password', typing.Optional[unicode]),
-     ('private_key_file', typing.Optional[unicode]),
-     ('private_key_password', typing.Optional[unicode]),
-     ('o_auth_token', typing.Optional[unicode]),
-     ('table', typing.Optional[unicode]), ('query', typing.Optional[unicode])])
+    [
+        ('server_name', unicode),
+        ('schema', unicode),
+        ('database', unicode),
+        ('staging_bucket_name', unicode),
+        ('storage_integration', unicode),
+        ('username', typing.Optional[unicode]),
+        ('password', typing.Optional[unicode]),
+        ('private_key_file', typing.Optional[unicode]),
+        ('private_key_password', typing.Optional[unicode]),
+        ('o_auth_token', typing.Optional[unicode]),
+        ('table', typing.Optional[unicode]),
+        ('query', typing.Optional[unicode]),
+    ])
 
 
 class ReadFromSnowflake(beam.PTransform):
@@ -112,22 +117,30 @@ class ReadFromSnowflake(beam.PTransform):
             NamedTupleBasedPayloadBuilder(self.params),
             self.expansion_service,
         )
-        | 'csv_to_array_mapper' >> beam.Map(lambda csv: csv.split(','))
+        | 'csv_to_array_mapper' >> beam.Map(lambda csv: csv.split(b','))
         | 'csv_mapper' >> beam.Map(self.csv_mapper))
 
 
 WriteToSnowflakeSchema = typing.NamedTuple(
     'WriteToSnowflakeSchema',
-    [('server_name', unicode), ('schema', unicode), ('database', unicode),
-     ('staging_bucket_name', unicode), ('storage_integration', unicode),
-     ('create_disposition', unicode), ('write_disposition', unicode),
-     ('parallelization', bool), ('table_schema', unicode),
-     ('username', typing.Optional[unicode]),
-     ('password', typing.Optional[unicode]),
-     ('private_key_file', typing.Optional[unicode]),
-     ('private_key_password', typing.Optional[unicode]),
-     ('o_auth_token', typing.Optional[unicode]),
-     ('table', typing.Optional[unicode]), ('query', typing.Optional[unicode])])
+    [
+        ('server_name', unicode),
+        ('schema', unicode),
+        ('database', unicode),
+        ('staging_bucket_name', unicode),
+        ('storage_integration', unicode),
+        ('create_disposition', unicode),
+        ('write_disposition', unicode),
+        ('parallelization', bool),
+        ('table_schema', unicode),
+        ('username', typing.Optional[unicode]),
+        ('password', typing.Optional[unicode]),
+        ('private_key_file', typing.Optional[unicode]),
+        ('private_key_password', typing.Optional[unicode]),
+        ('o_auth_token', typing.Optional[unicode]),
+        ('table', typing.Optional[unicode]),
+        ('query', typing.Optional[unicode]),
+    ])
 
 
 class WriteToSnowflake(beam.PTransform):
@@ -181,7 +194,7 @@ class WriteToSnowflake(beam.PTransform):
     return (
         pbegin
         | 'user_data_mapper' >> beam.Map(
-            self.user_data_mapper).with_output_types(typing.List[str])
+            self.user_data_mapper).with_output_types(typing.List[bytes])
         | ExternalTransform(
             self.URN,
             NamedTupleBasedPayloadBuilder(self.params),

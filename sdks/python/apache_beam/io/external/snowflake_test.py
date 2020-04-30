@@ -95,9 +95,9 @@ class SnowflakeTest(unittest.TestCase):
   def _run_write(self):
     def user_data_mapper(test_row):
       return [
-          test_row.text_column,
-          str(test_row.number_column),
-          str(test_row.boolean_column)
+          test_row.text_column.encode('utf-8'),
+          str(test_row.number_column).encode('utf-8'),
+          str(test_row.boolean_column).encode('utf-8'),
       ]
 
     with TestPipeline(options=PipelineOptions(self.pipeline_args)) as p:
@@ -155,7 +155,7 @@ class SnowflakeTest(unittest.TestCase):
 
       assert_that(
           result,
-          equal_to([TestRow("test1", 1, True), TestRow("test2", 2, True)]))
+          equal_to([TestRow(b'test1', 1, True), TestRow(b'test2', 2, True)]))
 
   def setUp(self):
     parser = argparse.ArgumentParser()
