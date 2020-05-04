@@ -79,6 +79,13 @@ languageName ="English"
 # Weight used for sorting.
 weight = 1
 
+[languages.pl]
+contentDir = "content/pl"
+title = "Apache Beam | PL"
+description = "Apache Beam to otwarty kod źródłowy, ujednolicony model i zestaw zestawów SDK specyficznych dla języka do definiowania i wykonywania przepływów pracy przetwarzania danych, a także przetwarzania danych i przepływów integracji, obsługujący wzorce integracji korporacyjnej (EIP) i języki specyficzne dla domeny (DSL). Rurociągi przepływu danych upraszczają mechanizmy przetwarzania danych wsadowych i strumieniowych na dużą skalę i mogą działać w wielu środowiskach wykonawczych, takich jak Apache Flink, Apache Spark i Google Cloud Dataflow (usługa w chmurze). Beam udostępnia również DSL w różnych językach, umożliwiając użytkownikom łatwe wdrażanie procesów integracji danych."
+languageName = "Polish"
+weight = 2
+
 # RSS template configuration
 [outputs]
 home = ["HTML","FEED"]
