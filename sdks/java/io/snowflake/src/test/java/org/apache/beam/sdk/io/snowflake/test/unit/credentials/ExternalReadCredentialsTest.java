@@ -17,6 +17,7 @@
  */
 package org.apache.beam.sdk.io.snowflake.test.unit.credentials;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
 import org.apache.beam.sdk.io.snowflake.ExternalRead;
@@ -39,7 +40,7 @@ public class ExternalReadCredentialsTest {
   public void testBuildExternalTransformUsingOAuthToken() {
     ExternalRead.Configuration configuration = createTestConfiguration();
     configuration.setOAuthToken("token");
-    new ExternalRead.ReadBuilder().buildExternal(configuration);
+    assertNotNull(new ExternalRead.ReadBuilder().buildExternal(configuration));
   }
 
   @Test
@@ -47,16 +48,16 @@ public class ExternalReadCredentialsTest {
     ExternalRead.Configuration configuration = createTestConfiguration();
     configuration.setUsername("username");
     configuration.setPassword("password");
-    new ExternalRead.ReadBuilder().buildExternal(configuration);
+    assertNotNull(new ExternalRead.ReadBuilder().buildExternal(configuration));
   }
 
   @Test
   public void testBuildExternalTransformUsingKeyPair() {
     ExternalRead.Configuration configuration = createTestConfiguration();
     configuration.setUsername("username");
-    configuration.setPrivatekeyfile(TestUtils.getPrivateKeyPath(getClass()));
+    configuration.setPrivateKeyFile(TestUtils.getPrivateKeyPath(getClass()));
     configuration.setPrivateKeyPassword(TestUtils.getPrivateKeyPassphrase());
-    new ExternalRead.ReadBuilder().buildExternal(configuration);
+    assertNotNull(new ExternalRead.ReadBuilder().buildExternal(configuration));
   }
 
   private ExternalRead.Configuration createTestConfiguration() {
