@@ -21,6 +21,7 @@ import com.google.auto.service.AutoService;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
 import net.snowflake.client.jdbc.internal.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.expansion.ExternalTransformRegistrar;
@@ -33,6 +34,7 @@ import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.transforms.ExternalTransformBuilder;
 import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
@@ -67,7 +69,6 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
     private String storageIntegration;
     private CreateDisposition createDisposition;
     private WriteDisposition writeDisposition;
-    private Boolean parallelization;
 
     public void setServerName(String serverName) {
       this.serverName = serverName;
@@ -134,10 +135,6 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
     public void setWriteDisposition(String writeDisposition) {
       this.writeDisposition = WriteDisposition.valueOf(writeDisposition);
     }
-
-    public void setParallelization(Boolean parallelization) {
-      this.parallelization = parallelization;
-    }
   }
 
   public static class WriteBuilder
@@ -147,39 +144,29 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
     @Override
     public PTransform<PCollection<byte[]>, PDone> buildExternal(Configuration config) {
 
-      SnowflakeIO.Write.Builder<byte[]> writeBuilder = new AutoValue_SnowflakeIO_Write.Builder<>();
-
-      writeBuilder.setSnowflakeService(new SnowflakeServiceImpl());
-      writeBuilder.setSnowflakeCloudProvider(new GCSProvider());
-
+      Location location = Location.of(config.storageIntegration, config.stagingBucketName);
       SnowflakeCredentials credentials = createCredentials(config);
-      writeBuilder.setLocation(Location.of(config.storageIntegration, config.stagingBucketName));
-      writeBuilder.setDataSourceProviderFn(
+
+      SerializableFunction<Void, DataSource> dataSourceSerializableFunction =
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
               SnowflakeIO.DataSourceConfiguration.create(credentials)
                   .withServerName(config.serverName)
                   .withDatabase(config.database)
-                  .withSchema(config.schema)));
-      if (config.table != null) {
-        writeBuilder.setTable(config.table);
-      }
-      if (config.query != null) {
-        writeBuilder.setQuery(config.query);
-      }
+                  .withSchema(config.schema));
 
-      writeBuilder.setTableSchema(config.tableSchema);
-      writeBuilder.setCreateDisposition(config.createDisposition);
-      writeBuilder.setWriteDisposition(config.writeDisposition);
-      writeBuilder.setParallelization(config.parallelization);
-
-      // TODO hard-coded function. Planned to be implement in SNOW-158
-      writeBuilder.setUserDataMapper(getLStringCsvMapper());
-
-      return writeBuilder.build();
+      return SnowflakeIO.<byte[]>write()
+          .via(location)
+          .withDataSourceProviderFn(dataSourceSerializableFunction)
+          .withTableSchema(config.tableSchema)
+          .withCreateDisposition(config.createDisposition)
+          .withWriteDisposition(config.writeDisposition)
+          .withUserDataMapper(getStringCsvMapper())
+          .withQueryTransformation(config.query)
+          .to(config.table);
     }
   }
 
-  public static SnowflakeIO.UserDataMapper<List<byte[]>> getLStringCsvMapper() {
+  public static SnowflakeIO.UserDataMapper<List<byte[]>> getStringCsvMapper() {
     return (SnowflakeIO.UserDataMapper<List<byte[]>>)
         recordLine -> recordLine.stream().map(String::new).toArray();
   }

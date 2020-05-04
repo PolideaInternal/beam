@@ -25,7 +25,9 @@ from past.builtins import unicode
 
 import apache_beam as beam
 from apache_beam.transforms.external import ExternalTransform
+from apache_beam.transforms.external import ImplicitSchemaPayloadBuilder
 from apache_beam.transforms.external import NamedTupleBasedPayloadBuilder
+
 """
   PTransforms for supporting Snowflake in Python pipelines. These transforms do not
   run a Snowflake client in Python. Instead, they expand to ExternalTransforms
@@ -131,7 +133,6 @@ WriteToSnowflakeSchema = typing.NamedTuple(
         ('storage_integration', unicode),
         ('create_disposition', unicode),
         ('write_disposition', unicode),
-        ('parallelization', bool),
         ('table_schema', unicode),
         ('username', typing.Optional[unicode]),
         ('password', typing.Optional[unicode]),
@@ -164,7 +165,6 @@ class WriteToSnowflake(beam.PTransform):
       private_key_file=None,
       private_key_password=None,
       o_auth_token=None,
-      parallelization=True,
       table=None,
       query=None,
       expansion_service=None):
@@ -177,7 +177,6 @@ class WriteToSnowflake(beam.PTransform):
         storage_integration=storage_integration,
         create_disposition=create_disposition,
         write_disposition=write_disposition,
-        parallelization=parallelization,
         table_schema=table_schema,
         username=username,
         password=password,

@@ -18,9 +18,6 @@
 package org.apache.beam.sdk.io.snowflake;
 
 import com.google.auto.service.AutoService;
-import java.io.Serializable;
-import java.nio.charset.Charset;
-import java.util.Map;
 import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.coders.ByteArrayCoder;
 import org.apache.beam.sdk.expansion.ExternalTransformRegistrar;
@@ -30,9 +27,15 @@ import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentials;
 import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCredentials;
 import org.apache.beam.sdk.transforms.ExternalTransformBuilder;
 import org.apache.beam.sdk.transforms.PTransform;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
+
+import javax.sql.DataSource;
+import java.io.Serializable;
+import java.nio.charset.Charset;
+import java.util.Map;
 
 /** Exposes {@link SnowflakeIO.Read} as an external transform for cross-language usage. */
 @Experimental
@@ -117,32 +120,23 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
     @Override
     public PTransform<PBegin, PCollection<byte[]>> buildExternal(Configuration config) {
-
-      SnowflakeIO.Read.Builder<byte[]> readBuilder = new AutoValue_SnowflakeIO_Read.Builder<>();
-
-      readBuilder.setSnowflakeService(new SnowflakeServiceImpl());
-      readBuilder.setSnowflakeCloudProvider(new GCSProvider());
-      readBuilder.setLocation(Location.of(config.storageIntegration, config.stagingBucketName));
-
+      Location location = Location.of(config.storageIntegration, config.stagingBucketName);
       SnowflakeCredentials credentials = createCredentials(config);
-      readBuilder.setDataSourceProviderFn(
+
+      SerializableFunction<Void, DataSource> dataSourceSerializableFunction =
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
               SnowflakeIO.DataSourceConfiguration.create(credentials)
                   .withServerName(config.serverName)
                   .withDatabase(config.database)
-                  .withSchema(config.schema)));
-      if (config.table != null) {
-        readBuilder.setTable(config.table);
-      }
-      if (config.query != null) {
-        readBuilder.setQuery(config.query);
-      }
+                  .withSchema(config.schema));
 
-      readBuilder.setCsvMapper(CsvMapper.getCsvMapper());
-
-      readBuilder.setCoder(ByteArrayCoder.of());
-
-      return readBuilder.build();
+      return SnowflakeIO.<byte[]>read()
+          .via(location)
+          .withDataSourceProviderFn(dataSourceSerializableFunction)
+          .withCsvMapper(CsvMapper.getCsvMapper())
+          .withCoder(ByteArrayCoder.of())
+          .fromTable(config.table)
+          .fromQuery(config.query);
     }
   }
 
@@ -150,11 +144,11 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
     public static SnowflakeIO.CsvMapper getCsvMapper() {
       return (SnowflakeIO.CsvMapper<byte[]>)
-          parts -> {
-            String partsCSV = String.join(",", parts);
+              parts -> {
+                String partsCSV = String.join(",", parts);
 
-            return partsCSV.getBytes(Charset.defaultCharset());
-          };
+                return partsCSV.getBytes(Charset.defaultCharset());
+              };
     }
   }
 

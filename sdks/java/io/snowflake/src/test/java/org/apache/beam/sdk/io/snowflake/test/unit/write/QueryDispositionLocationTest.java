@@ -27,14 +27,14 @@ import java.util.stream.LongStream;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
-import org.apache.beam.sdk.io.snowflake.SnowflakeService;
+import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBatchServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
-import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
-import org.apache.beam.sdk.io.snowflake.test.unit.BatchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
@@ -55,7 +55,7 @@ public class QueryDispositionLocationTest {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
-  private static BatchTestPipelineOptions options;
+  private static SnowflakePipelineOptions options;
   private static SnowflakeIO.DataSourceConfiguration dc;
   private static Location location;
 
@@ -65,10 +65,10 @@ public class QueryDispositionLocationTest {
 
   @BeforeClass
   public static void setupAll() {
-    PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
-    options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
+    PipelineOptionsFactory.register(SnowflakePipelineOptions.class);
+    options = TestPipeline.testingPipelineOptions().as(SnowflakePipelineOptions.class);
 
-    snowflakeService = new FakeSnowflakeServiceImpl();
+    snowflakeService = new FakeSnowflakeBatchServiceImpl();
     cloudProvider = new FakeSnowflakeCloudProvider();
     testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
   }
@@ -97,14 +97,15 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Truncate before write",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(WriteDisposition.TRUNCATE)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
@@ -125,14 +126,15 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withFileNameTemplate("output*")
                 .withWriteDisposition(WriteDisposition.EMPTY)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
   }
@@ -145,14 +147,15 @@ public class QueryDispositionLocationTest {
         .apply(Create.of(testData))
         .apply(
             "Write SnowflakeIO",
-            SnowflakeIO.<Long>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<Long>write()
                 .withDataSourceConfiguration(dc)
                 .to(FAKE_TABLE)
                 .via(location)
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLongCsvMapper())
                 .withWriteDisposition(WriteDisposition.EMPTY)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 

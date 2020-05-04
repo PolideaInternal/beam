@@ -77,20 +77,23 @@ SCHEMA_STRING = """
 
 
 class TestRow(object):
-  def __init__(self, text_column, number_column, boolean_column):
-    self.text_column = text_column
-    self.number_column = number_column
-    self.boolean_column = boolean_column
+    def __init__(self, text_column, number_column, boolean_column):
+        self.text_column = text_column
+        self.number_column = number_column
+        self.boolean_column = boolean_column
 
-  def __eq__(self, other):
-    return self.text_column == other.text_column and self.number_column == other.number_column and self.boolean_column == other.boolean_column
+    def __eq__(self, other):
+        return self.text_column == other.text_column and \
+               self.number_column == other.number_column and \
+               self.boolean_column == other.boolean_column
 
 
 @attr('UsesCrossLanguageTransforms')
 class SnowflakeTest(unittest.TestCase):
   def test_snowflake_write_read(self):
-    self._run_write()
-    self._run_read()
+    run_write()
+    run_read()
+    clean_up()
 
   def _run_write(self):
     def user_data_mapper(test_row):
@@ -122,7 +125,6 @@ class SnowflakeTest(unittest.TestCase):
               write_disposition="TRUNCATE",
               table_schema=SCHEMA_STRING,
               user_data_mapper=user_data_mapper,
-              parallelization=False,
               table=self.table,
               query=None,
               expansion_service=self.expansion_service,
@@ -156,6 +158,10 @@ class SnowflakeTest(unittest.TestCase):
       assert_that(
           result,
           equal_to([TestRow(b'test1', 1, True), TestRow(b'test2', 2, True)]))
+
+  def clean_up():
+    GCSFileSystem(pipeline_options=PipelineOptions())\
+        .delete([GCSFileSystem.GCS_PREFIX + STAGING_BUCKET_NAME + '/data/*'])
 
   def setUp(self):
     parser = argparse.ArgumentParser()

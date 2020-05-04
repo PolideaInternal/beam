@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake;
+package org.apache.beam.sdk.io.snowflake.services;
 
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
@@ -26,30 +26,35 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.sql.DataSource;
+import org.apache.beam.sdk.io.snowflake.Location;
+import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Implemenation of {@link org.apache.beam.sdk.io.snowflake.SnowflakeService} used in production.
- */
-public class SnowflakeServiceImpl implements SnowflakeService {
-  private static final String WRITE_TMP_PATH = "data";
+/** Implemenation of {@link SnowflakeService} used in production. */
+public class SnowflakeBatchServiceImpl implements SnowflakeService<SnowflakeBatchServiceConfig> {
+  private static final Logger LOG = LoggerFactory.getLogger(SnowflakeBatchServiceImpl.class);
 
   @Override
-  public String createCloudStoragePath(String stagingBucketName) {
-    return String.format("gs://%s/%s/", stagingBucketName, WRITE_TMP_PATH);
+  public void write(SnowflakeBatchServiceConfig config) throws Exception {
+    copyToTable(config);
   }
 
   @Override
-  public String copyIntoStage(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      String source,
-      String integrationName,
-      String stagingBucketDir,
-      SnowflakeCloudProvider cloudProvider)
-      throws SQLException {
+  public String read(SnowflakeBatchServiceConfig config) throws Exception {
+    return copyIntoStage(config);
+  }
+
+  public String copyIntoStage(SnowflakeBatchServiceConfig config) throws SQLException {
+    SerializableFunction<Void, DataSource> dataSourceProviderFn = config.getDataSourceProviderFn();
+    String source = config.getSource();
+    String integrationName = config.getIntegrationName();
+    String stagingBucketDir = config.getStagingBucketDir();
+    SnowflakeCloudProvider cloudProvider = config.getCloudProvider();
 
     String copyQuery =
         String.format(
@@ -61,17 +66,16 @@ public class SnowflakeServiceImpl implements SnowflakeService {
     return cloudProvider.transformCloudPathToSnowflakePath(stagingBucketDir).concat("*");
   }
 
-  @Override
-  public void copyToTable(
-      SerializableFunction<Void, DataSource> dataSourceProviderFn,
-      List<String> filesList,
-      String table,
-      SFTableSchema tableSchema,
-      String source,
-      CreateDisposition createDisposition,
-      WriteDisposition writeDisposition,
-      Location location)
-      throws SQLException {
+  public void copyToTable(SnowflakeBatchServiceConfig config) throws SQLException {
+
+    SerializableFunction<Void, DataSource> dataSourceProviderFn = config.getDataSourceProviderFn();
+    List<String> filesList = config.getFilesList();
+    String table = config.getTable();
+    SFTableSchema tableSchema = config.getTableSchema();
+    String source = config.getSource();
+    CreateDisposition createDisposition = config.getCreateDisposition();
+    WriteDisposition writeDisposition = config.getWriteDisposition();
+    Location location = config.getLocation();
 
     String files = String.join(", ", filesList);
     files = files.replaceAll(String.valueOf(location.getFilesPath()), "");

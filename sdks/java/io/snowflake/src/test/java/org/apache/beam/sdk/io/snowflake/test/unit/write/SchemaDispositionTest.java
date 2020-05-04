@@ -27,7 +27,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
-import org.apache.beam.sdk.io.snowflake.SnowflakeService;
+import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.io.snowflake.data.SFColumn;
 import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
 import org.apache.beam.sdk.io.snowflake.data.datetime.SFDate;
@@ -38,12 +38,12 @@ import org.apache.beam.sdk.io.snowflake.data.structured.SFObject;
 import org.apache.beam.sdk.io.snowflake.data.structured.SFVariant;
 import org.apache.beam.sdk.io.snowflake.data.text.SFText;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
+import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
+import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBatchServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeDatabase;
-import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeServiceImpl;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
-import org.apache.beam.sdk.io.snowflake.test.unit.BatchTestPipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
@@ -64,7 +64,7 @@ public class SchemaDispositionTest {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
-  private static BatchTestPipelineOptions options;
+  private static SnowflakePipelineOptions options;
   private static SnowflakeIO.DataSourceConfiguration dc;
   private static Location location;
 
@@ -73,14 +73,14 @@ public class SchemaDispositionTest {
 
   @BeforeClass
   public static void setupAll() {
-    PipelineOptionsFactory.register(BatchTestPipelineOptions.class);
-    options = TestPipeline.testingPipelineOptions().as(BatchTestPipelineOptions.class);
+    PipelineOptionsFactory.register(SnowflakePipelineOptions.class);
+    options = TestPipeline.testingPipelineOptions().as(SnowflakePipelineOptions.class);
     options.setStagingBucketName(BUCKET_NAME);
     options.setServerName("NULL.snowflakecomputing.com");
 
     location = Location.of(options);
 
-    snowflakeService = new FakeSnowflakeServiceImpl();
+    snowflakeService = new FakeSnowflakeBatchServiceImpl();
     cloudProvider = new FakeSnowflakeCloudProvider();
 
     dc =
@@ -122,7 +122,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testDates))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<String[]>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -130,7 +130,8 @@ public class SchemaDispositionTest {
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(TestUtils.getLStringCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
@@ -160,7 +161,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testNulls))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<String[]>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -168,7 +169,8 @@ public class SchemaDispositionTest {
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
@@ -199,7 +201,7 @@ public class SchemaDispositionTest {
         .apply(Create.of(testStructuredData))
         .apply(
             "Copy IO",
-            SnowflakeIO.<String[]>write(snowflakeService, cloudProvider)
+            SnowflakeIO.<String[]>write()
                 .withDataSourceConfiguration(dc)
                 .to("NO_EXIST_TABLE")
                 .withTableSchema(tableSchema)
@@ -207,7 +209,8 @@ public class SchemaDispositionTest {
                 .withFileNameTemplate("output*")
                 .withUserDataMapper(getCsvMapper())
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                .withParallelization(false));
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
 
