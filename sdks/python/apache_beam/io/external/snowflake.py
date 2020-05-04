@@ -27,7 +27,6 @@ import apache_beam as beam
 from apache_beam.transforms.external import ExternalTransform
 from apache_beam.transforms.external import ImplicitSchemaPayloadBuilder
 from apache_beam.transforms.external import NamedTupleBasedPayloadBuilder
-
 """
   PTransforms for supporting Snowflake in Python pipelines. These transforms do not
   run a Snowflake client in Python. Instead, they expand to ExternalTransforms

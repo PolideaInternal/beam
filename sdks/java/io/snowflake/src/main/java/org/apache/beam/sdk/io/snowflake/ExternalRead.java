@@ -18,6 +18,10 @@
 package org.apache.beam.sdk.io.snowflake;
 
 import com.google.auto.service.AutoService;
+import java.io.Serializable;
+import java.nio.charset.Charset;
+import java.util.Map;
+import javax.sql.DataSource;
 import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.coders.ByteArrayCoder;
 import org.apache.beam.sdk.expansion.ExternalTransformRegistrar;
@@ -31,11 +35,6 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
-
-import javax.sql.DataSource;
-import java.io.Serializable;
-import java.nio.charset.Charset;
-import java.util.Map;
 
 /** Exposes {@link SnowflakeIO.Read} as an external transform for cross-language usage. */
 @Experimental
@@ -144,11 +143,11 @@ public final class ExternalRead implements ExternalTransformRegistrar {
 
     public static SnowflakeIO.CsvMapper getCsvMapper() {
       return (SnowflakeIO.CsvMapper<byte[]>)
-              parts -> {
-                String partsCSV = String.join(",", parts);
+          parts -> {
+            String partsCSV = String.join(",", parts);
 
-                return partsCSV.getBytes(Charset.defaultCharset());
-              };
+            return partsCSV.getBytes(Charset.defaultCharset());
+          };
     }
   }
 
