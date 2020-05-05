@@ -70,7 +70,7 @@ PCollection element.
 1. Apply the side input.
 
 {{< highlight java >}}
-No sample present.
+{{< github_sample "/apache/beam/blob/master/examples/java/src/main/java/org/apache/beam/examples/snippets/Snippets.java" PeriodicallyUpdatingSideInputs >}}
 {{< /highlight >}}
 
 {{< highlight py >}}

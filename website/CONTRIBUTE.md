@@ -283,7 +283,7 @@ To render capability matrix, please take a look at [this example](/www/site/cont
 
 ## Translation guide
 
-In order to add a new language into Apache Beam website, please follow this guide. You could take a look at an [example branch](https://github.com/PolideaInternal/beam/tree/feature/i18n-example) to see how we completely translate the whole website.
+In order to add a new language into Apache Beam website, please follow this guide. You could take a look at an [example branch](https://github.com/PolideaInternal/beam/tree/example/i18n/) to see how we completely translate the whole website.
 
 For more details of syntax, please refer to [Hugo documentation](https://gohugo.io/content-management/multilingual/). Below is a step-by-step instructions of translating our website to Polish as an example.
 
@@ -306,7 +306,7 @@ The `www/site/content/pl` directory will be your main workspace of contents here
 
 2. Localizing our strings
 
-Some of the texts are placed into layouts which are html files, you need to translate all of these phrases inside `www/site/i18n`. Afterwards from our templates, Hugo's `i18n` function does the localization job. Please follow [our example](https://github.com/PolideaInternal/beam/tree/feature/i18n-example/website/www/site/i18n) to understand the structure.
+Some of the texts are placed into layouts which are html files, you need to translate all of these phrases inside `www/site/i18n`. Afterwards from our templates, Hugo's `i18n` function does the localization job. Please follow [our example](https://github.com/PolideaInternal/beam/tree/example/i18n/website/www/site/i18n) to understand the structure.
 
 3. Data files
 
@@ -333,4 +333,4 @@ Now from your template:
 
 Similar to markdown content translation, there are two separated section menus `/www/site/layouts/partials/section-menu` corresponding to your languages. Your job is to take the section menus in `en` directory, translate and place them inside your `pl` directory.
 
-**Note**: if you get stuck at adding translation, please refer to [our example](https://github.com/PolideaInternal/beam/tree/feature/i18n-example/).
+**Note**: if you get stuck at adding translation, please refer to [our example](https://github.com/PolideaInternal/beam/tree/example/i18n/).

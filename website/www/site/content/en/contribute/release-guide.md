@@ -214,7 +214,7 @@ docker login docker.io
 After successful login, authorization info will be stored at ~/.docker/config.json file. For example,
 ```
 "https://index.docker.io/v1/": {
-   "auth": "aGFubmFoamlhbmc6cmtkdGpmZ2hrMTIxMw=="
+   "auth": "xxxxxx"
 }
 ```
 Release managers should have push permission; please ask for help at dev@.

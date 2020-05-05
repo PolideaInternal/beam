@@ -471,7 +471,7 @@ IO connectors. However, a large amount of work is in progress or planned.
 
 As of August 2017, SDF is available for use in the Beam Java Direct runner and
 Dataflow Streaming runner, and implementation is in progress in the Flink and
-Apex runners; see [capability matrix]({/documentation/runners/capability-matrix/) for the current status. Support
+Apex runners; see [capability matrix](/documentation/runners/capability-matrix/) for the current status. Support
 for SDF in the Python SDK is [in active
 development](https://s.apache.org/splittable-do-fn-python).
 
