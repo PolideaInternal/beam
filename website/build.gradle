@@ -93,17 +93,17 @@ task startDockerContainer(type: Exec) {
 }
 
 task initGitSubmodules(type: Exec) {
-    commandLine 'docker', 'exec', '-u', 'root',
+    commandLine 'docker', 'exec',
                 "${->startDockerContainer.containerId()}", 'git',  'submodule', 'update', '--init',  '--recursive'
 }
 
 task installDependencies(type: Exec) {
-    commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
+    commandLine 'docker', 'exec', '--workdir', "$dockerSourceDir",
                 "${->startDockerContainer.containerId()}", 'yarn', 'install'
 }
 
 task buildGithubSamples(type: Exec) {
-  commandLine 'docker', 'exec', '-u', 'root', '--workdir', "$dockerSourceDir",
+  commandLine 'docker', 'exec', '--workdir', "$dockerSourceDir",
               "${->startDockerContainer.containerId()}", 'yarn', 'build_github_samples'
 }
 
