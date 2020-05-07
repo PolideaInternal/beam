@@ -169,7 +169,6 @@ build.dependsOn buildWebsite
 // task buildGcsWebsite
 createBuildTask(
   name:'Gcs',
-  useBranchRepoConfig: true,
   baseUrl: getBaseUrl(),
 )
 
