@@ -86,7 +86,6 @@ echo -n -e "\033[2K"
 if [[ ${#invalid_links[@]} -ne 0 ]]; then
     echo "Found ${#invalid_links[@]} invalid links: "
     printf '%s\n' "${invalid_links[@]}"
-    exit 1
 else
     echo "All links work"
 fi
