@@ -28,9 +28,9 @@ import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
-import org.apache.beam.sdk.io.snowflake.data.SFColumn;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeColumn;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.text.SnowflakeVarchar;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
@@ -146,7 +146,8 @@ public class CreateDispositionTest {
   @Test
   public void writeToExternalWithWriteCreateDispositionWithCreatedTableWithSchemaSuccess()
       throws SQLException {
-    SFTableSchema tableSchema = new SFTableSchema(SFColumn.of("id", new SFVarchar()));
+    SnowflakeTableSchema tableSchema =
+        new SnowflakeTableSchema(SnowflakeColumn.of("id", new SnowflakeVarchar()));
 
     pipeline
         .apply(Create.of(testData))

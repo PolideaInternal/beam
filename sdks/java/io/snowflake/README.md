@@ -279,15 +279,15 @@ data.apply(
 #### Table schema disposition
 
 When the `.withCreateDisposition()` .option is set to CREATE_IF_NEEDED, the `.withTableSchema()` option enables specifying the schema for the created target table. 
-A table schema is a list of `SFColumn` objects with name and type corresponding to [column type](https://docs.snowflake.net/manuals/sql-reference/data-types.html) for each column in the table. 
+A table schema is a list of `SnowflakeColumn` objects with name and type corresponding to [column type](https://docs.snowflake.net/manuals/sql-reference/data-types.html) for each column in the table. 
 
 Usage:
 ```
-SFTableSchema tableSchema =
-    new SFTableSchema(
-        SFColumn.of("my_date", new SFDate(), true),
-        new SFColumn("id", new SFNumber()),
-        SFColumn.of("name", new SFText(), true));
+SnowflakeTableSchema tableSchema =
+    new SnowflakeTableSchema(
+        SnowflakeColumn.of("my_date", new SnowflakeDate(), true),
+        new SnowflakeColumn("id", new SnowflakeNumber()),
+        SnowflakeColumn.of("name", new SnowflakeText(), true));
 
 data.apply(
    SnowflakeIO.<~>write()

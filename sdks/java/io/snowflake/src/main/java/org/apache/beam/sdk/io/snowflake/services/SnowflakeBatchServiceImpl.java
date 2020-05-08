@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 import javax.sql.DataSource;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.transforms.SerializableFunction;
@@ -71,7 +71,7 @@ public class SnowflakeBatchServiceImpl implements SnowflakeService<SnowflakeBatc
     SerializableFunction<Void, DataSource> dataSourceProviderFn = config.getDataSourceProviderFn();
     List<String> filesList = config.getFilesList();
     String table = config.getTable();
-    SFTableSchema tableSchema = config.getTableSchema();
+    SnowflakeTableSchema tableSchema = config.getTableSchema();
     String source = config.getSource();
     CreateDisposition createDisposition = config.getCreateDisposition();
     WriteDisposition writeDisposition = config.getWriteDisposition();
@@ -141,7 +141,7 @@ public class SnowflakeBatchServiceImpl implements SnowflakeService<SnowflakeBatc
   private void prepareTableAccordingCreateDisposition(
       DataSource dataSource,
       String table,
-      SFTableSchema tableSchema,
+      SnowflakeTableSchema tableSchema,
       CreateDisposition createDisposition)
       throws SQLException {
     switch (createDisposition) {
@@ -169,7 +169,7 @@ public class SnowflakeBatchServiceImpl implements SnowflakeService<SnowflakeBatc
   }
 
   private void createTableIfNotExists(
-      DataSource dataSource, String table, SFTableSchema tableSchema) throws SQLException {
+      DataSource dataSource, String table, SnowflakeTableSchema tableSchema) throws SQLException {
     String query =
         String.format(
             "SELECT EXISTS (SELECT 1 FROM  information_schema.tables  WHERE  table_name = '%s');",
@@ -202,7 +202,7 @@ public class SnowflakeBatchServiceImpl implements SnowflakeService<SnowflakeBatc
     }
   }
 
-  private void createTable(DataSource dataSource, String table, SFTableSchema tableSchema)
+  private void createTable(DataSource dataSource, String table, SnowflakeTableSchema tableSchema)
       throws SQLException {
     checkArgument(
         tableSchema != null,

@@ -15,15 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.services;
+package org.apache.beam.sdk.io.snowflake.data.numeric;
 
-import java.io.Serializable;
+public class SnowflakeNumeric extends SnowflakeNumber {
+  public SnowflakeNumeric() {}
 
-/** Interface which defines common methods for interacting with Snowflake. */
-public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
-  String CSV_QUOTE_CHAR_FOR_COPY = "''";
+  public SnowflakeNumeric(int precision, int scale) {
+    super(precision, scale);
+  }
 
-  String read(T config) throws Exception;
-
-  void write(T config) throws Exception;
+  public static SnowflakeNumeric of(int precision, int scale) {
+    return new SnowflakeNumeric(precision, scale);
+  }
 }

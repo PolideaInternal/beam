@@ -28,7 +28,7 @@ import org.apache.beam.sdk.expansion.ExternalTransformRegistrar;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCredentials;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.transforms.ExternalTransformBuilder;
@@ -53,7 +53,7 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
 
   /** Parameters class to expose the transform to an external SDK. */
   public static class WriteConfiguration extends Configuration {
-    private SFTableSchema tableSchema;
+    private SnowflakeTableSchema tableSchema;
     private CreateDisposition createDisposition;
     private WriteDisposition writeDisposition;
 
@@ -61,7 +61,7 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
       ObjectMapper mapper = new ObjectMapper();
 
       try {
-        this.tableSchema = mapper.readValue(tableSchema, SFTableSchema.class);
+        this.tableSchema = mapper.readValue(tableSchema, SnowflakeTableSchema.class);
       } catch (IOException e) {
         throw new RuntimeException("Format of provided table schema is invalid");
       }
@@ -75,7 +75,7 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
       this.writeDisposition = WriteDisposition.valueOf(writeDisposition);
     }
 
-    public SFTableSchema getTableSchema() {
+    public SnowflakeTableSchema getTableSchema() {
       return tableSchema;
     }
 

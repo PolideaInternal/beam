@@ -15,15 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.services;
+package org.apache.beam.sdk.io.snowflake.test.unit.data;
 
-import java.io.Serializable;
+import static org.junit.Assert.assertEquals;
 
-/** Interface which defines common methods for interacting with Snowflake. */
-public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
-  String CSV_QUOTE_CHAR_FOR_COPY = "''";
+import org.apache.beam.sdk.io.snowflake.data.structured.SnowflakeArray;
+import org.apache.beam.sdk.io.snowflake.data.structured.SnowflakeObject;
+import org.apache.beam.sdk.io.snowflake.data.structured.SnowflakeVariant;
+import org.junit.Test;
 
-  String read(T config) throws Exception;
+public class SnowflakeStructuredDataTest {
+  @Test
+  public void testVariant() {
+    SnowflakeVariant variant = SnowflakeVariant.of();
 
-  void write(T config) throws Exception;
+    assertEquals("VARIANT", variant.sql());
+  }
+
+  @Test
+  public void testArray() {
+    SnowflakeArray array = SnowflakeArray.of();
+
+    assertEquals("ARRAY", array.sql());
+  }
+
+  @Test
+  public void testObject() {
+    SnowflakeObject object = SnowflakeObject.of();
+
+    assertEquals("OBJECT", object.sql());
+  }
 }
