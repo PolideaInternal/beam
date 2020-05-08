@@ -47,7 +47,7 @@ import org.apache.beam.sdk.io.snowflake.credentials.KeyPairSnowflakeCredentials;
 import org.apache.beam.sdk.io.snowflake.credentials.OAuthTokenSnowflakeCredentials;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentials;
 import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCredentials;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.services.SnowflakeBatchServiceConfig;
@@ -172,10 +172,10 @@ public class SnowflakeIO {
    * @param <T> Type of the data to be read.
    */
   public static <T> Read<T> read(
-      SnowflakeService snowflakeService, SnowflakeCloudProvider snowFlakeCloudProvider) {
+      SnowflakeService snowflakeService, SnowflakeCloudProvider snowflakeCloudProvider) {
     return new AutoValue_SnowflakeIO_Read.Builder<T>()
         .setSnowflakeService(snowflakeService)
-        .setSnowflakeCloudProvider(snowFlakeCloudProvider)
+        .setSnowflakeCloudProvider(snowflakeCloudProvider)
         .build();
   }
 
@@ -273,7 +273,7 @@ public class SnowflakeIO {
 
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
-      abstract Builder<T> setSnowflakeCloudProvider(SnowflakeCloudProvider snowFlakeCloudProvider);
+      abstract Builder<T> setSnowflakeCloudProvider(SnowflakeCloudProvider snowflakeCloudProvider);
 
       abstract Read<T> build();
     }
@@ -462,20 +462,20 @@ public class SnowflakeIO {
     public static class CleanTmpFilesFromGcsFn extends DoFn<Object, Object> {
       private final String stagingBucketName;
       private final String bucketPath;
-      private final SnowflakeCloudProvider snowFlakeCloudProvider;
+      private final SnowflakeCloudProvider snowflakeCloudProvider;
 
       public CleanTmpFilesFromGcsFn(
           String stagingBucketName,
           String bucketPath,
-          SnowflakeCloudProvider snowFlakeCloudProvider) {
+          SnowflakeCloudProvider snowflakeCloudProvider) {
         this.stagingBucketName = stagingBucketName;
         this.bucketPath = bucketPath;
-        this.snowFlakeCloudProvider = snowFlakeCloudProvider;
+        this.snowflakeCloudProvider = snowflakeCloudProvider;
       }
 
       @ProcessElement
       public void processElement(ProcessContext c) {
-        snowFlakeCloudProvider.removeFiles(stagingBucketName, bucketPath);
+        snowflakeCloudProvider.removeFiles(stagingBucketName, bucketPath);
       }
     }
 
@@ -831,7 +831,7 @@ public class SnowflakeIO {
     abstract UserDataMapper getUserDataMapper();
 
     @Nullable
-    abstract SFTableSchema getTableSchema();
+    abstract SnowflakeTableSchema getTableSchema();
 
     @Nullable
     abstract SnowflakeService getSnowflakeService();
@@ -868,7 +868,7 @@ public class SnowflakeIO {
 
       abstract Builder<T> setCreateDisposition(CreateDisposition createDisposition);
 
-      abstract Builder<T> setTableSchema(SFTableSchema tableSchema);
+      abstract Builder<T> setTableSchema(SnowflakeTableSchema tableSchema);
 
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
@@ -930,7 +930,7 @@ public class SnowflakeIO {
       return toBuilder().setCreateDisposition(createDisposition).build();
     }
 
-    public Write<T> withTableSchema(SFTableSchema tableSchema) {
+    public Write<T> withTableSchema(SnowflakeTableSchema tableSchema) {
       return toBuilder().setTableSchema(tableSchema).build();
     }
 
@@ -1147,7 +1147,7 @@ public class SnowflakeIO {
     private final String source;
     private final String table;
     private final Location location;
-    private final SFTableSchema tableSchema;
+    private final SnowflakeTableSchema tableSchema;
     private final WriteDisposition writeDisposition;
     private final CreateDisposition createDisposition;
     private final SnowflakeService snowflakeService;
@@ -1159,7 +1159,7 @@ public class SnowflakeIO {
         Location location,
         CreateDisposition createDisposition,
         WriteDisposition writeDisposition,
-        SFTableSchema tableSchema,
+        SnowflakeTableSchema tableSchema,
         SnowflakeService snowflakeService,
         SnowflakeCloudProvider cloudProvider) {
       this.dataSourceProviderFn = dataSourceProviderFn;

@@ -25,7 +25,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.io.snowflake.services.SnowflakeBatchServiceConfig;
@@ -57,7 +57,7 @@ public class FakeSnowflakeBatchServiceImpl
   public void copyToTable(SnowflakeBatchServiceConfig config) throws SQLException {
     List<String> filesList = config.getFilesList();
     String table = config.getTable();
-    SFTableSchema tableSchema = config.getTableSchema();
+    SnowflakeTableSchema tableSchema = config.getTableSchema();
     CreateDisposition createDisposition = config.getCreateDisposition();
     WriteDisposition writeDisposition = config.getWriteDisposition();
 
@@ -73,7 +73,7 @@ public class FakeSnowflakeBatchServiceImpl
   }
 
   private void prepareTableAccordingCreateDisposition(
-      String table, SFTableSchema tableSchema, CreateDisposition createDisposition)
+      String table, SnowflakeTableSchema tableSchema, CreateDisposition createDisposition)
       throws SQLException {
     switch (createDisposition) {
       case CREATE_NEVER:

@@ -21,7 +21,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.transforms.SerializableFunction;
@@ -33,7 +33,7 @@ public class SnowflakeBatchServiceConfig extends ServiceConfig {
   private String table;
   private String integrationName;
   private List<String> filesList;
-  private SFTableSchema tableSchema;
+  private SnowflakeTableSchema tableSchema;
 
   private SnowflakeCloudProvider cloudProvider;
   private CreateDisposition createDisposition;
@@ -58,7 +58,7 @@ public class SnowflakeBatchServiceConfig extends ServiceConfig {
       SerializableFunction<Void, DataSource> dataSourceProviderFn,
       List<String> filesList,
       String table,
-      SFTableSchema tableSchema,
+      SnowflakeTableSchema tableSchema,
       String source,
       CreateDisposition createDisposition,
       WriteDisposition writeDisposition,
@@ -101,7 +101,7 @@ public class SnowflakeBatchServiceConfig extends ServiceConfig {
     return filesList;
   }
 
-  public SFTableSchema getTableSchema() {
+  public SnowflakeTableSchema getTableSchema() {
     return tableSchema;
   }
 

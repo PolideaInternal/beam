@@ -15,15 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.services;
+package org.apache.beam.sdk.io.snowflake.data;
 
 import java.io.Serializable;
 
-/** Interface which defines common methods for interacting with Snowflake. */
-public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
-  String CSV_QUOTE_CHAR_FOR_COPY = "''";
-
-  String read(T config) throws Exception;
-
-  void write(T config) throws Exception;
+/** Interface for data types to provide SQLs for themselves. */
+public interface SnowflakeDataType extends Serializable {
+  String sql();
 }
