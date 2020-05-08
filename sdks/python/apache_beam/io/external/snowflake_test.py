@@ -86,9 +86,9 @@ def run_write():
 
     with TestPipeline(options=PipelineOptions(OPTIONS)) as p:
         # TODO make it work with beam.Create([TestRow())
-        p \
-        | GenerateSequence(start=1, stop=3, expansion_service=EXPANSION_SERVICE) \
-        | beam.Map(lambda num: TestRow("test" + str(num) , num, True)) \
+        (p
+        | GenerateSequence(start=1, stop=3, expansion_service=EXPANSION_SERVICE)
+        | beam.Map(lambda num: TestRow("test" + str(num) , num, True))
         | WriteToSnowflake(server_name=SERVER_NAME,
                            username=USERNAME,
                            password=PASSWORD,
@@ -103,14 +103,14 @@ def run_write():
                            table=TABLE,
                            query=None,
                            expansion_service=EXPANSION_SERVICE
-                           )
+                           ))
 
 def run_read():
     def csv_mapper(strings_array):
         return TestRow(strings_array[0], int(strings_array[1]), bool(strings_array[2]))
 
     with TestPipeline(options=PipelineOptions(OPTIONS)) as p:
-        result = p \
+        result = (p
                  | ReadFromSnowflake(server_name=SERVER_NAME,
                                      username=USERNAME,
                                      password=PASSWORD,
@@ -122,7 +122,7 @@ def run_read():
                                      table=TABLE,
                                      query=None,
                                      expansion_service=EXPANSION_SERVICE
-                                     )
+                                     ))
 
         assert_that(result, equal_to([TestRow("test1",1, True),TestRow("test2",2, True)]))
 

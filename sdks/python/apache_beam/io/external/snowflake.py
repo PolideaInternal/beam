@@ -99,13 +99,13 @@ class ReadFromSnowflake(beam.PTransform):
         self.expansion_service = expansion_service
 
     def expand(self, pbegin):
-        return pbegin \
+        return (pbegin
                | ExternalTransform(self.URN,
                                    NamedTupleBasedPayloadBuilder(self.params),
                                    self.expansion_service
-                                   ) \
-               | 'csv_to_array_mapper' >> beam.Map(lambda csv: csv.split(','))\
-               | 'csv_mapper' >> beam.Map(self.csv_mapper)
+                                   )
+               | 'CSV to array mapper' >> beam.Map(lambda csv: csv.split(','))
+               | 'CSV mapper' >> beam.Map(self.csv_mapper))
 
 WriteToSnowflakeSchema = typing.NamedTuple(
     'WriteToSnowflakeSchema',
@@ -164,9 +164,9 @@ class WriteToSnowflake(beam.PTransform):
         self.expansion_service = expansion_service
 
     def expand(self, pbegin):
-        return pbegin \
-                | 'user_data_mapper' >> beam.Map(self.user_data_mapper).with_output_types(typing.List[str])\
+        return (pbegin
+                | 'User data mapper' >> beam.Map(self.user_data_mapper).with_output_types(typing.List[str])
                 | ExternalTransform(self.URN,
                                     NamedTupleBasedPayloadBuilder(self.params),
                                     self.expansion_service
-                                    ).with_output_types(typing.Any)
+                                    ).with_output_types(typing.Any))

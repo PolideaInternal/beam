@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake;
+package org.apache.beam.sdk.io.snowflake.xlang;
 
 import com.google.auto.service.AutoService;
 import java.io.Serializable;
@@ -25,6 +25,8 @@ import javax.sql.DataSource;
 import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.coders.ByteArrayCoder;
 import org.apache.beam.sdk.expansion.ExternalTransformRegistrar;
+import org.apache.beam.sdk.io.snowflake.Location;
+import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCredentials;
 import org.apache.beam.sdk.transforms.ExternalTransformBuilder;
 import org.apache.beam.sdk.transforms.PTransform;
@@ -47,77 +49,31 @@ public final class ExternalRead implements ExternalTransformRegistrar {
   }
 
   /** Parameters class to expose the transform to an external SDK. */
-  public static class Configuration {
-    private String serverName;
-    private String username;
-    private String password;
-    private String database;
-    private String schema;
-    private String table;
-    private String query;
-    private String stagingBucketName;
-    private String storageIntegration;
-
-    public void setServerName(String serverName) {
-      this.serverName = serverName;
-    }
-
-    public void setUsername(String username) {
-      this.username = username;
-    }
-
-    public void setPassword(String password) {
-      this.password = password;
-    }
-
-    public void setDatabase(String database) {
-      this.database = database;
-    }
-
-    public void setSchema(String schema) {
-      this.schema = schema;
-    }
-
-    public void setTable(String table) {
-      this.table = table;
-    }
-
-    public void setQuery(String query) {
-      this.query = query;
-    }
-
-    public void setStagingBucketName(String stagingBucketName) {
-      this.stagingBucketName = stagingBucketName;
-    }
-
-    public void setStorageIntegration(String storageIntegration) {
-      this.storageIntegration = storageIntegration;
-    }
-  }
+  public static class ReadConfiguration extends Configuration {}
 
   public static class ReadBuilder
-      implements ExternalTransformBuilder<Configuration, PBegin, PCollection<byte[]>> {
+      implements ExternalTransformBuilder<ReadConfiguration, PBegin, PCollection<byte[]>> {
     public ReadBuilder() {}
 
     @Override
-    public PTransform<PBegin, PCollection<byte[]>> buildExternal(Configuration config) {
-      Location location = Location.of(config.storageIntegration, config.stagingBucketName);
+    public PTransform<PBegin, PCollection<byte[]>> buildExternal(ReadConfiguration c) {
+      Location location = Location.of(c.getStorageIntegration(), c.getStagingBucketName());
 
       SerializableFunction<Void, DataSource> dataSourceSerializableFunction =
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
               SnowflakeIO.DataSourceConfiguration.create(
-                      new UsernamePasswordSnowflakeCredentials(config.username, config.password))
-                  .withServerName(config.serverName)
-                  .withDatabase(config.database)
-                  .withSchema(config.schema));
+                      new UsernamePasswordSnowflakeCredentials(c.getUsername(), c.getPassword()))
+                  .withServerName(c.getServerName())
+                  .withDatabase(c.getDatabase())
+                  .withSchema(c.getSchema()));
 
       return SnowflakeIO.<byte[]>read()
           .via(location)
           .withDataSourceProviderFn(dataSourceSerializableFunction)
           .withCsvMapper(CsvMapper.getCsvMapper())
           .withCoder(ByteArrayCoder.of())
-          .fromTable(config.table)
-          .fromQuery(config.query);
+          .fromTable(c.getTable())
+          .fromQuery(c.getQuery());
     }
   }
 
