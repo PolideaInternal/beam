@@ -15,15 +15,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.services;
+package org.apache.beam.sdk.io.snowflake.data.text;
 
 import java.io.Serializable;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeDataType;
 
-/** Interface which defines common methods for interacting with Snowflake. */
-public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
-  String CSV_QUOTE_CHAR_FOR_COPY = "''";
+public class SnowflakeVarchar implements SnowflakeDataType, Serializable {
+  private static final Long MAX_LENGTH = 16777216L;
+  private Long length;
 
-  String read(T config) throws Exception;
+  public static SnowflakeVarchar of() {
+    return new SnowflakeVarchar();
+  }
 
-  void write(T config) throws Exception;
+  public static SnowflakeVarchar of(long length) {
+    return new SnowflakeVarchar(length);
+  }
+
+  public SnowflakeVarchar() {}
+
+  public SnowflakeVarchar(long length) {
+    if (length > MAX_LENGTH) {
+      throw new IllegalArgumentException();
+    }
+    this.length = length;
+  }
+
+  @Override
+  public String sql() {
+    if (length != null) {
+      return String.format("VARCHAR(%d)", length);
+    }
+    return "VARCHAR";
+  }
 }

@@ -28,15 +28,15 @@ import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeCloudProvider;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
-import org.apache.beam.sdk.io.snowflake.data.SFColumn;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.data.datetime.SFDate;
-import org.apache.beam.sdk.io.snowflake.data.datetime.SFDateTime;
-import org.apache.beam.sdk.io.snowflake.data.datetime.SFTime;
-import org.apache.beam.sdk.io.snowflake.data.structured.SFArray;
-import org.apache.beam.sdk.io.snowflake.data.structured.SFObject;
-import org.apache.beam.sdk.io.snowflake.data.structured.SFVariant;
-import org.apache.beam.sdk.io.snowflake.data.text.SFText;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeColumn;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SnowflakeDate;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SnowflakeDateTime;
+import org.apache.beam.sdk.io.snowflake.data.datetime.SnowflakeTime;
+import org.apache.beam.sdk.io.snowflake.data.structured.SnowflakeArray;
+import org.apache.beam.sdk.io.snowflake.data.structured.SnowflakeObject;
+import org.apache.beam.sdk.io.snowflake.data.structured.SnowflakeVariant;
+import org.apache.beam.sdk.io.snowflake.data.text.SnowflakeText;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.services.SnowflakeService;
 import org.apache.beam.sdk.io.snowflake.test.FakeSnowflakeBasicDataSource;
@@ -109,14 +109,14 @@ public class SchemaDispositionTest {
             .boxed()
             .map(num -> new String[] {"2020-08-25", "2014-01-01 16:00:00", "00:02:03"})
             .collect(Collectors.toList());
-    List<String> testDatesSnowFlakeFormat =
+    List<String> testDatesSnowflakeFormat =
         testDates.stream().map(TestUtils::toSnowflakeRow).collect(Collectors.toList());
 
-    SFTableSchema tableSchema =
-        new SFTableSchema(
-            SFColumn.of("date", SFDate.of()),
-            SFColumn.of("datetime", SFDateTime.of()),
-            SFColumn.of("time", SFTime.of()));
+    SnowflakeTableSchema tableSchema =
+        new SnowflakeTableSchema(
+            SnowflakeColumn.of("date", SnowflakeDate.of()),
+            SnowflakeColumn.of("datetime", SnowflakeDateTime.of()),
+            SnowflakeColumn.of("time", SnowflakeTime.of()));
 
     pipeline
         .apply(Create.of(testDates))
@@ -136,7 +136,7 @@ public class SchemaDispositionTest {
     pipeline.run(options).waitUntilFinish();
 
     List<String> actualData = FakeSnowflakeDatabase.getElements("NO_EXIST_TABLE");
-    assertTrue(TestUtils.isListsEqual(testDatesSnowFlakeFormat, actualData));
+    assertTrue(TestUtils.isListsEqual(testDatesSnowflakeFormat, actualData));
   }
 
   @Test
@@ -148,14 +148,14 @@ public class SchemaDispositionTest {
             .boxed()
             .map(num -> new String[] {null, null, null})
             .collect(Collectors.toList());
-    List<String> testNullsSnowFlakeFormat =
+    List<String> testNullsSnowflakeFormat =
         testNulls.stream().map(TestUtils::toSnowflakeRow).collect(Collectors.toList());
 
-    SFTableSchema tableSchema =
-        new SFTableSchema(
-            SFColumn.of("date", SFDate.of(), true),
-            new SFColumn("datetime", SFDateTime.of(), true),
-            SFColumn.of("text", SFText.of(), true));
+    SnowflakeTableSchema tableSchema =
+        new SnowflakeTableSchema(
+            SnowflakeColumn.of("date", SnowflakeDate.of(), true),
+            new SnowflakeColumn("datetime", SnowflakeDateTime.of(), true),
+            SnowflakeColumn.of("text", SnowflakeText.of(), true));
 
     pipeline
         .apply(Create.of(testNulls))
@@ -175,7 +175,7 @@ public class SchemaDispositionTest {
     pipeline.run(options).waitUntilFinish();
 
     List<String> actualData = FakeSnowflakeDatabase.getElements("NO_EXIST_TABLE");
-    assertTrue(TestUtils.isListsEqual(testNullsSnowFlakeFormat, actualData));
+    assertTrue(TestUtils.isListsEqual(testNullsSnowflakeFormat, actualData));
   }
 
   @Test
@@ -188,14 +188,14 @@ public class SchemaDispositionTest {
             .boxed()
             .map(num -> new String[] {json, array, json})
             .collect(Collectors.toList());
-    List<String> testStructuredDataSnowFlakeFormat =
+    List<String> testStructuredDataSnowflakeFormat =
         testStructuredData.stream().map(TestUtils::toSnowflakeRow).collect(Collectors.toList());
 
-    SFTableSchema tableSchema =
-        new SFTableSchema(
-            SFColumn.of("variant", SFArray.of()),
-            SFColumn.of("object", SFObject.of()),
-            SFColumn.of("array", SFVariant.of()));
+    SnowflakeTableSchema tableSchema =
+        new SnowflakeTableSchema(
+            SnowflakeColumn.of("variant", SnowflakeArray.of()),
+            SnowflakeColumn.of("object", SnowflakeObject.of()),
+            SnowflakeColumn.of("array", SnowflakeVariant.of()));
 
     pipeline
         .apply(Create.of(testStructuredData))
@@ -215,6 +215,6 @@ public class SchemaDispositionTest {
     pipeline.run(options).waitUntilFinish();
 
     List<String> actualData = FakeSnowflakeDatabase.getElements("NO_EXIST_TABLE");
-    assertTrue(TestUtils.isListsEqual(testStructuredDataSnowFlakeFormat, actualData));
+    assertTrue(TestUtils.isListsEqual(testStructuredDataSnowflakeFormat, actualData));
   }
 }

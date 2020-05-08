@@ -33,10 +33,10 @@ import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
-import org.apache.beam.sdk.io.snowflake.data.SFColumn;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.data.numeric.SFInteger;
-import org.apache.beam.sdk.io.snowflake.data.text.SFString;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeColumn;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.numeric.SnowflakeInteger;
+import org.apache.beam.sdk.io.snowflake.data.text.SnowflakeString;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
 import org.apache.beam.sdk.testing.PAssert;
@@ -139,8 +139,9 @@ public class SnowflakeIOIT {
                 .via(location)
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
                 .withTableSchema(
-                    SFTableSchema.of(
-                        SFColumn.of("id", SFInteger.of()), SFColumn.of("name", SFString.of()))));
+                    SnowflakeTableSchema.of(
+                        SnowflakeColumn.of("id", SnowflakeInteger.of()),
+                        SnowflakeColumn.of("name", SnowflakeString.of()))));
 
     return pipelineWrite.run();
   }

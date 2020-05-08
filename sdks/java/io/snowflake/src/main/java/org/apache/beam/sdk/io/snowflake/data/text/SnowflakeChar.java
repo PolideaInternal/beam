@@ -15,15 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.services;
+package org.apache.beam.sdk.io.snowflake.data.text;
 
-import java.io.Serializable;
+public class SnowflakeChar extends SnowflakeVarchar {
+  public SnowflakeChar() {
+    super(1);
+  }
 
-/** Interface which defines common methods for interacting with Snowflake. */
-public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
-  String CSV_QUOTE_CHAR_FOR_COPY = "''";
-
-  String read(T config) throws Exception;
-
-  void write(T config) throws Exception;
+  public static SnowflakeChar of() {
+    return new SnowflakeChar();
+  }
 }
