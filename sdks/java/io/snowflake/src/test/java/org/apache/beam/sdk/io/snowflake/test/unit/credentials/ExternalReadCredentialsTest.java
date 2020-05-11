@@ -20,8 +20,9 @@ package org.apache.beam.sdk.io.snowflake.test.unit.credentials;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
-import org.apache.beam.sdk.io.snowflake.ExternalRead;
 import org.apache.beam.sdk.io.snowflake.test.TestUtils;
+import org.apache.beam.sdk.io.snowflake.xlang.ExternalRead;
+import org.apache.beam.sdk.io.snowflake.xlang.ExternalRead.ReadConfiguration;
 import org.junit.Test;
 
 public class ExternalReadCredentialsTest {
@@ -31,21 +32,21 @@ public class ExternalReadCredentialsTest {
 
   @Test
   public void testBuildExternalTransformWithoutCredentials() {
-    ExternalRead.Configuration configuration = createTestConfiguration();
+    ReadConfiguration configuration = createTestConfiguration();
     assertThrows(
         RuntimeException.class, () -> new ExternalRead.ReadBuilder().buildExternal(configuration));
   }
 
   @Test
   public void testBuildExternalTransformUsingOAuthToken() {
-    ExternalRead.Configuration configuration = createTestConfiguration();
+    ReadConfiguration configuration = createTestConfiguration();
     configuration.setOAuthToken("token");
     assertNotNull(new ExternalRead.ReadBuilder().buildExternal(configuration));
   }
 
   @Test
   public void testBuildExternalTransformUsingUsernameAndPassword() {
-    ExternalRead.Configuration configuration = createTestConfiguration();
+    ReadConfiguration configuration = createTestConfiguration();
     configuration.setUsername("username");
     configuration.setPassword("password");
     assertNotNull(new ExternalRead.ReadBuilder().buildExternal(configuration));
@@ -53,15 +54,15 @@ public class ExternalReadCredentialsTest {
 
   @Test
   public void testBuildExternalTransformUsingKeyPair() {
-    ExternalRead.Configuration configuration = createTestConfiguration();
+    ReadConfiguration configuration = createTestConfiguration();
     configuration.setUsername("username");
     configuration.setPrivateKeyFile(TestUtils.getPrivateKeyPath(getClass()));
     configuration.setPrivateKeyPassword(TestUtils.getPrivateKeyPassphrase());
     assertNotNull(new ExternalRead.ReadBuilder().buildExternal(configuration));
   }
 
-  private ExternalRead.Configuration createTestConfiguration() {
-    ExternalRead.Configuration configuration = new ExternalRead.Configuration();
+  private ReadConfiguration createTestConfiguration() {
+    ReadConfiguration configuration = new ReadConfiguration();
     configuration.setServerName(SERVER_NAME);
     configuration.setDatabase(DATABASE);
     configuration.setSchema(SCHEMA);

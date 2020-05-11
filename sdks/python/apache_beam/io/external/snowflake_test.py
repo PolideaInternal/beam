@@ -40,7 +40,7 @@ python setup.py nosetests --tests=apache_beam.io.external.snowflake_test --test-
   --database=<DATABASE>
   --schema=<SCHEMA>
   --table=<TABLE_NAME>
-  --expansion_service=<EXPANSION_SERVICE_URL>
+  --expansion_service=localhost:8097
   --runner=FlinkRunner
   --flink_version=1.10
   --flink_master=localhost:8081
@@ -49,9 +49,6 @@ python setup.py nosetests --tests=apache_beam.io.external.snowflake_test --test-
 """
 
 # pytype: skip-file
-
-from __future__ import absolute_import
-from __future__ import print_function
 
 import argparse
 import logging
@@ -75,7 +72,6 @@ SCHEMA_STRING = """
     {"dataType":{"type":"boolean"},"name":"boolean_column","nullable":false}
 ]}
 """
-
 
 class TestRow(object):
   def __init__(self, text_column, number_column, boolean_column):
@@ -153,15 +149,14 @@ class SnowflakeTest(unittest.TestCase):
               csv_mapper=csv_mapper,
               table=self.table,
               query=None,
-              expansion_service=self.expansion_service,
-          ))
+              expansion_service=self.expansion_service))
 
       assert_that(
           result,
           equal_to([TestRow(b'test1', 1, True), TestRow(b'test2', 2, True)]))
 
   def clean_up(self):
-    GCSFileSystem(pipeline_options=PipelineOptions())\
+    GCSFileSystem(pipeline_options=PipelineOptions()) \
         .delete([GCSFileSystem.GCS_PREFIX + self.staging_bucket_name + '/data/*'])
 
   def setUp(self):

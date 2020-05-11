@@ -15,15 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.beam.sdk.io.snowflake.services;
+package org.apache.beam.sdk.io.snowflake.data.datetime;
 
-import java.io.Serializable;
+public class SnowflakeDateTime extends SnowflakeTimestampNTZ {
 
-/** Interface which defines common methods for interacting with Snowflake. */
-public interface SnowflakeService<T extends ServiceConfig> extends Serializable {
-  String CSV_QUOTE_CHAR_FOR_COPY = "''";
+  public SnowflakeDateTime() {}
 
-  String read(T config) throws Exception;
-
-  void write(T config) throws Exception;
+  public static SnowflakeDateTime of() {
+    return new SnowflakeDateTime();
+  }
 }

@@ -23,10 +23,10 @@ import org.apache.beam.sdk.io.parquet.ParquetIO;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
-import org.apache.beam.sdk.io.snowflake.data.SFColumn;
-import org.apache.beam.sdk.io.snowflake.data.SFTableSchema;
-import org.apache.beam.sdk.io.snowflake.data.numeric.SFNumber;
-import org.apache.beam.sdk.io.snowflake.data.text.SFVarchar;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeColumn;
+import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
+import org.apache.beam.sdk.io.snowflake.data.numeric.SnowflakeNumber;
+import org.apache.beam.sdk.io.snowflake.data.text.SnowflakeVarchar;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
@@ -93,11 +93,11 @@ public class TpchWriteQueryIT {
 
   @Test
   public void tpchWriteTestForTable() {
-    SFTableSchema tableSchema =
-        SFTableSchema.of(
-            SFColumn.of("L_ORDERKEY", SFNumber.of()),
-            SFColumn.of("L_SUPPKEY", SFNumber.of()),
-            SFColumn.of("L_COMMENT", SFVarchar.of(44)));
+    SnowflakeTableSchema tableSchema =
+        SnowflakeTableSchema.of(
+            SnowflakeColumn.of("L_ORDERKEY", SnowflakeNumber.of()),
+            SnowflakeColumn.of("L_SUPPKEY", SnowflakeNumber.of()),
+            SnowflakeColumn.of("L_COMMENT", SnowflakeVarchar.of(44)));
 
     PCollection<GenericRecord> items =
         pipeline.apply(ParquetIO.read(TpchTestUtils.getSchema()).from(parquetFilesLocation));
