@@ -18,6 +18,8 @@
 package org.apache.beam.sdk.io.snowflake.data.numeric;
 
 public class SnowflakeDecimal extends SnowflakeNumber {
+  public SnowflakeDecimal() {}
+
   public SnowflakeDecimal(int precision, int scale) {
     super(precision, scale);
   }

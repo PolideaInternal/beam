@@ -18,6 +18,8 @@
 package org.apache.beam.sdk.io.snowflake.data.numeric;
 
 public class SnowflakeInteger extends SnowflakeNumber {
+  public SnowflakeInteger() {}
+
   public static SnowflakeInteger of() {
     return new SnowflakeInteger();
   }

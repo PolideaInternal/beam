@@ -23,7 +23,7 @@ import java.io.Serializable;
 public class SnowflakeColumn implements Serializable {
   private SnowflakeDataType dataType;
   private String name;
-  private boolean isNull;
+  private boolean isNullable;
 
   public static SnowflakeColumn of(String name, SnowflakeDataType dataType) {
     return new SnowflakeColumn(name, dataType);
@@ -33,22 +33,48 @@ public class SnowflakeColumn implements Serializable {
     return new SnowflakeColumn(name, dataType, isNull);
   }
 
+  public SnowflakeColumn() {}
+
   public SnowflakeColumn(String name, SnowflakeDataType dataType) {
     this.name = name;
     this.dataType = dataType;
   }
 
-  public SnowflakeColumn(String name, SnowflakeDataType dataType, boolean isNull) {
+  public SnowflakeColumn(String name, SnowflakeDataType dataType, boolean isNullable) {
     this.dataType = dataType;
     this.name = name;
-    this.isNull = isNull;
+    this.isNullable = isNullable;
   }
 
   public String sql() {
     String sql = String.format("%s %s", name, dataType.sql());
-    if (isNull) {
+    if (isNullable) {
       sql += " NULL";
     }
     return sql;
+  }
+
+  public SnowflakeDataType getDataType() {
+    return dataType;
+  }
+
+  public void setDataType(SnowflakeDataType dataType) {
+    this.dataType = dataType;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public boolean isNullable() {
+    return isNullable;
+  }
+
+  public void setNullable(boolean nullable) {
+    isNullable = nullable;
   }
 }

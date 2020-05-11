@@ -18,6 +18,7 @@
 package org.apache.beam.sdk.io.snowflake.data.text;
 
 public class SnowflakeChar extends SnowflakeVarchar {
+
   public SnowflakeChar() {
     super(1);
   }

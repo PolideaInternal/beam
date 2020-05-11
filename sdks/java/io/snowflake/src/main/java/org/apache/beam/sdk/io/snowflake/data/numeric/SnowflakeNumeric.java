@@ -18,6 +18,8 @@
 package org.apache.beam.sdk.io.snowflake.data.numeric;
 
 public class SnowflakeNumeric extends SnowflakeNumber {
+  public SnowflakeNumeric() {}
+
   public SnowflakeNumeric(int precision, int scale) {
     super(precision, scale);
   }

@@ -18,6 +18,8 @@
 package org.apache.beam.sdk.io.snowflake.data.numeric;
 
 public class SnowflakeDouble extends SnowflakeFloat {
+  public SnowflakeDouble() {}
+
   public static SnowflakeDouble of() {
     return new SnowflakeDouble();
   }

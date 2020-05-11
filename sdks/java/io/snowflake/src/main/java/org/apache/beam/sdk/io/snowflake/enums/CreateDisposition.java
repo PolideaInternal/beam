@@ -17,7 +17,13 @@
  */
 package org.apache.beam.sdk.io.snowflake.enums;
 
+import java.nio.charset.Charset;
+
 public enum CreateDisposition {
   CREATE_IF_NEEDED,
-  CREATE_NEVER
+  CREATE_NEVER;
+
+  public static CreateDisposition valueOf(byte[] createDisposition) {
+    return CreateDisposition.valueOf(new String(createDisposition, Charset.defaultCharset()));
+  }
 }

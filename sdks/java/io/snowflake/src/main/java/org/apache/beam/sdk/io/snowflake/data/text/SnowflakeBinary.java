@@ -50,4 +50,12 @@ public class SnowflakeBinary implements SnowflakeDataType, Serializable {
     }
     return "BINARY";
   }
+
+  public Long getSize() {
+    return size;
+  }
+
+  public void setSize(Long size) {
+    this.size = size;
+  }
 }

@@ -48,4 +48,12 @@ public class SnowflakeVarchar implements SnowflakeDataType, Serializable {
     }
     return "VARCHAR";
   }
+
+  public Long getLength() {
+    return length;
+  }
+
+  public void setLength(Long length) {
+    this.length = length;
+  }
 }

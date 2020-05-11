@@ -43,4 +43,20 @@ public class SnowflakeNumber implements SnowflakeDataType, Serializable {
   public String sql() {
     return String.format("NUMBER(%d,%d)", precision, scale);
   }
+
+  public int getPrecision() {
+    return precision;
+  }
+
+  public void setPrecision(int precision) {
+    this.precision = precision;
+  }
+
+  public int getScale() {
+    return scale;
+  }
+
+  public void setScale(int scale) {
+    this.scale = scale;
+  }
 }

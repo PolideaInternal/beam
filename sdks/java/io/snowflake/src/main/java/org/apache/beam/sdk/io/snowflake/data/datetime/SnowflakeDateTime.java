@@ -18,6 +18,9 @@
 package org.apache.beam.sdk.io.snowflake.data.datetime;
 
 public class SnowflakeDateTime extends SnowflakeTimestampNTZ {
+
+  public SnowflakeDateTime() {}
+
   public static SnowflakeDateTime of() {
     return new SnowflakeDateTime();
   }

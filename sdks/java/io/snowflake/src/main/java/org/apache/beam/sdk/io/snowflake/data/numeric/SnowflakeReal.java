@@ -18,6 +18,8 @@
 package org.apache.beam.sdk.io.snowflake.data.numeric;
 
 public class SnowflakeReal extends SnowflakeFloat {
+  public SnowflakeReal() {}
+
   public static SnowflakeReal of() {
     return new SnowflakeReal();
   }
