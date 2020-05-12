@@ -56,8 +56,8 @@ public class ExternalReadCredentialsTest {
   public void testBuildExternalTransformUsingKeyPair() {
     ReadConfiguration configuration = createTestConfiguration();
     configuration.setUsername("username");
-    configuration.setPrivateKeyFile(TestUtils.getPrivateKeyPath(getClass()));
-    configuration.setPrivateKeyPassword(TestUtils.getPrivateKeyPassphrase());
+    configuration.setPrivateKeyPath(TestUtils.getPrivateKeyPath(getClass()));
+    configuration.setPrivateKeyPassphrase(TestUtils.getPrivateKeyPassphrase());
     assertNotNull(new ExternalRead.ReadBuilder().buildExternal(configuration));
   }
 

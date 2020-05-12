@@ -37,25 +37,25 @@ public class SnowflakeCredentialsFactory {
   public static SnowflakeCredentials createCredentials(Configuration c) {
     return createCredentials(
         c.getOAuthToken(),
-        c.getPrivateKeyFile(),
-        c.getPrivateKeyPassword(),
+        c.getPrivateKeyPath(),
+        c.getPrivateKeyPassphrase(),
         c.getUsername(),
         c.getPassword());
   }
 
   private static SnowflakeCredentials createCredentials(
       String oAuth,
-      String privateKeyFile,
-      String privateKeyPassword,
+      String privateKeyPath,
+      String privateKeyPassphrase,
       String username,
       String password) {
 
     if (isNotEmpty(oAuth)) {
       return new OAuthTokenSnowflakeCredentials(oAuth);
-    } else if (isNotEmpty(privateKeyFile)
+    } else if (isNotEmpty(privateKeyPath)
         && isNotEmpty(username)
-        && isNotEmpty(privateKeyPassword)) {
-      return new KeyPairSnowflakeCredentials(username, privateKeyFile, privateKeyPassword);
+        && isNotEmpty(privateKeyPassphrase)) {
+      return new KeyPairSnowflakeCredentials(username, privateKeyPath, privateKeyPassphrase);
     } else if (isNotEmpty(username) && isNotEmpty(password)) {
       return new UsernamePasswordSnowflakeCredentials(username, password);
     } else {

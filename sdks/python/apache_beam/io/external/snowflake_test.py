@@ -32,7 +32,7 @@ python setup.py nosetests --tests=apache_beam.io.external.snowflake_test --test-
   --server_name=<SNOWFLAKE_SERVER_NAME>
   --username=<SNOWFLAKE_USERNAME>
   --password=<SNOWFLAKE_PASSWORD>
-  --private_key_file=<PATH_TO_PRIVATE_KEY_FILE>
+  --private_key_path=<PATH_TO_PRIVATE_KEY_FILE>
   --private_key_passphrase=<PASSWORD_TO_PRIVATE_KEY>
   --oauth_token=<TOKEN>
   --staging_bucket_name=<GCP_BUCKET_NAME_NOT_PATH>
@@ -73,6 +73,7 @@ SCHEMA_STRING = """
 ]}
 """
 
+
 class TestRow(object):
   def __init__(self, text_column, number_column, boolean_column):
     self.text_column = text_column
@@ -95,7 +96,7 @@ class SnowflakeTest(unittest.TestCase):
   def run_write(self):
     def user_data_mapper(test_row):
       return [
-          test_row.text_column.encode('utf-8'),
+          str(test_row.text_column).encode('utf-8'),
           str(test_row.number_column).encode('utf-8'),
           str(test_row.boolean_column).encode('utf-8'),
       ]
@@ -112,8 +113,8 @@ class SnowflakeTest(unittest.TestCase):
               username=self.username,
               password=self.password,
               o_auth_token=self.o_auth_token,
-              private_key_file=self.private_key_file,
-              private_key_password=self.private_key_password,
+              private_key_path=self.private_key_path,
+              private_key_passphrase=self.private_key_passphrase,
               schema=self.schema,
               database=self.database,
               staging_bucket_name=self.staging_bucket_name,
@@ -140,8 +141,8 @@ class SnowflakeTest(unittest.TestCase):
               username=self.username,
               password=self.password,
               o_auth_token=self.o_auth_token,
-              private_key_file=self.private_key_file,
-              private_key_password=self.private_key_password,
+              private_key_path=self.private_key_path,
+              private_key_passphrase=self.private_key_passphrase,
               schema=self.schema,
               database=self.database,
               staging_bucket_name=self.staging_bucket_name,
@@ -177,11 +178,11 @@ class SnowflakeTest(unittest.TestCase):
         help='Snowflake password',
     )
     parser.add_argument(
-        '--private_key_file',
+        '--private_key_path',
         help='Private key file path',
     )
     parser.add_argument(
-        '--private_key_password',
+        '--private_key_passphrase',
         help='Password to private key',
     )
     parser.add_argument(
@@ -229,16 +230,17 @@ class SnowflakeTest(unittest.TestCase):
     self.table = known_args.table
     self.username = known_args.username
     self.password = known_args.password
-    self.private_key_file = known_args.private_key_file
-    self.private_key_password = known_args.private_key_password
+    self.private_key_path = known_args.private_key_path
+    self.private_key_passphrase = known_args.private_key_passphrase
     self.o_auth_token = known_args.o_auth_token
     self.staging_bucket_name = known_args.staging_bucket_name
     self.storage_integration = known_args.storage_integration
     self.expansion_service = known_args.expansion_service
 
     self.assertTrue(
-        self.o_auth_token or (self.username and self.password) or
-        (self.username and self.private_key_file and self.private_key_password),
+        self.o_auth_token or (self.username and self.password) or (
+            self.username and self.private_key_path and
+            self.private_key_passphrase),
         'No credentials given',
     )
 
