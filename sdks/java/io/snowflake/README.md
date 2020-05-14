@@ -35,7 +35,7 @@ SnowflakeIO.DataSourceConfiguration.create(credentials)
 ### Username and password
 To use username/password authentication in SnowflakeIO, invoke your pipeline with the following Pipeline options:
 ```
---username=<USERNAME> --password=<PASSWORD
+--username=<USERNAME> --password=<PASSWORD>
 ```
 
 ### Key pair

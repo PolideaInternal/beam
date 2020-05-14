@@ -35,13 +35,13 @@ import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
 
 /** POJO for handling Key-Pair authentication against Snowflake. */
 public class KeyPairSnowflakeCredentials implements SnowflakeCredentials {
-  private String username;
-  private PrivateKey privateKey;
+  private final String username;
+  private final PrivateKey privateKey;
 
   public KeyPairSnowflakeCredentials(
-      String username, String privateKeyPath, String privateKeyPassword) {
+      String username, String privateKeyPath, String privateKeyPassphrase) {
     this.username = username;
-    this.privateKey = getPrivateKey(privateKeyPath, privateKeyPassword);
+    this.privateKey = getPrivateKey(privateKeyPath, privateKeyPassphrase);
   }
 
   public KeyPairSnowflakeCredentials(String username, PrivateKey privateKey) {

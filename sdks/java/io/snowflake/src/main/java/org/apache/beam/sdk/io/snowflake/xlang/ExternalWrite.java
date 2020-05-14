@@ -27,7 +27,8 @@ import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.expansion.ExternalTransformRegistrar;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
-import org.apache.beam.sdk.io.snowflake.credentials.UsernamePasswordSnowflakeCredentials;
+import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentials;
+import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
 import org.apache.beam.sdk.io.snowflake.enums.CreateDisposition;
 import org.apache.beam.sdk.io.snowflake.enums.WriteDisposition;
@@ -94,13 +95,12 @@ public final class ExternalWrite implements ExternalTransformRegistrar {
 
     @Override
     public PTransform<PCollection<byte[]>, PDone> buildExternal(WriteConfiguration c) {
-
       Location location = Location.of(c.getStorageIntegration(), c.getStagingBucketName());
+      SnowflakeCredentials credentials = SnowflakeCredentialsFactory.createCredentials(c);
 
       SerializableFunction<Void, DataSource> dataSourceSerializableFunction =
           SnowflakeIO.DataSourceProviderFromDataSourceConfiguration.of(
-              SnowflakeIO.DataSourceConfiguration.create(
-                      new UsernamePasswordSnowflakeCredentials(c.getUsername(), c.getPassword()))
+              SnowflakeIO.DataSourceConfiguration.create(credentials)
                   .withServerName(c.getServerName())
                   .withDatabase(c.getDatabase())
                   .withSchema(c.getSchema()));

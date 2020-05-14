@@ -71,6 +71,6 @@ public class SnowflakeCredentialsFactoryTest {
 
     Exception ex =
         assertThrows(RuntimeException.class, () -> SnowflakeCredentialsFactory.of(options));
-    assertEquals("Can't get credentials from Options", ex.getMessage());
+    assertEquals("Can't get credentials", ex.getMessage());
   }
 }

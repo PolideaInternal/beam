@@ -21,6 +21,9 @@ public abstract class Configuration {
   private String serverName;
   private String username;
   private String password;
+  private String privateKeyPath;
+  private String privateKeyPassphrase;
+  private String oAuthToken;
   private String database;
   private String schema;
   private String table;
@@ -50,6 +53,30 @@ public abstract class Configuration {
 
   public void setPassword(String password) {
     this.password = password;
+  }
+
+  public String getPrivateKeyPath() {
+    return privateKeyPath;
+  }
+
+  public void setPrivateKeyPath(String privateKeyPath) {
+    this.privateKeyPath = privateKeyPath;
+  }
+
+  public String getPrivateKeyPassphrase() {
+    return privateKeyPassphrase;
+  }
+
+  public void setPrivateKeyPassphrase(String privateKeyPassphrase) {
+    this.privateKeyPassphrase = privateKeyPassphrase;
+  }
+
+  public String getOAuthToken() {
+    return oAuthToken;
+  }
+
+  public void setOAuthToken(String oAuthToken) {
+    this.oAuthToken = oAuthToken;
   }
 
   public String getDatabase() {
