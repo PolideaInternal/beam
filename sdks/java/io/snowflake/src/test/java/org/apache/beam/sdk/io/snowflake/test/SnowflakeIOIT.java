@@ -98,6 +98,8 @@ public class SnowflakeIOIT {
     dataSourceConfiguration =
         SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
             .withDatabase(options.getDatabase())
+            .withRole(options.getRole())
+            .withWarehouse(options.getWarehouse())
             .withServerName(options.getServerName())
             .withSchema(options.getSchema());
   }
