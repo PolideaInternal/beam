@@ -18,6 +18,9 @@
 package org.apache.beam.sdk.io.snowflake.test;
 
 import static org.apache.beam.sdk.io.common.IOITHelper.readIOTestPipelineOptions;
+import static org.apache.beam.sdk.io.snowflake.test.TestUtils.SnowflakeIOITPipelineOptions;
+import static org.apache.beam.sdk.io.snowflake.test.TestUtils.getTestRowCsvMapper;
+import static org.apache.beam.sdk.io.snowflake.test.TestUtils.getTestRowDataMapper;
 
 import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
@@ -27,11 +30,9 @@ import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.common.HashingFn;
-import org.apache.beam.sdk.io.common.IOTestPipelineOptions;
 import org.apache.beam.sdk.io.common.TestRow;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
-import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.io.snowflake.data.SnowflakeColumn;
 import org.apache.beam.sdk.io.snowflake.data.SnowflakeTableSchema;
@@ -80,9 +81,6 @@ public class SnowflakeIOIT {
   private static int numberOfRows;
   private static Location location;
   private static SnowflakeIO.DataSourceConfiguration dataSourceConfiguration;
-
-  public interface SnowflakeIOITPipelineOptions
-      extends IOTestPipelineOptions, SnowflakePipelineOptions {}
 
   @Rule public TestPipeline pipelineWrite = TestPipeline.create();
   @Rule public TestPipeline pipelineRead = TestPipeline.create();
@@ -136,7 +134,7 @@ public class SnowflakeIOIT {
             SnowflakeIO.<TestRow>write()
                 .withDataSourceConfiguration(dataSourceConfiguration)
                 .withWriteDisposition(WriteDisposition.TRUNCATE)
-                .withUserDataMapper(getUserDataMapper())
+                .withUserDataMapper(getTestRowDataMapper())
                 .to(tableName)
                 .via(location)
                 .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
@@ -170,15 +168,5 @@ public class SnowflakeIOIT {
         .containsInAnyOrder(TestRow.getExpectedHashForRowCount(numberOfRows));
 
     return pipelineRead.run();
-  }
-
-  private SnowflakeIO.CsvMapper<TestRow> getTestRowCsvMapper() {
-    return (SnowflakeIO.CsvMapper<TestRow>)
-        parts -> TestRow.create(Integer.valueOf(parts[0]), parts[1]);
-  }
-
-  private SnowflakeIO.UserDataMapper getUserDataMapper() {
-    return (SnowflakeIO.UserDataMapper<TestRow>)
-        (TestRow element) -> new Object[] {element.id(), element.name()};
   }
 }

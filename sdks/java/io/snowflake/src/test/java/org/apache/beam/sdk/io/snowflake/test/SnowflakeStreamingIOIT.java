@@ -17,17 +17,16 @@
  */
 package org.apache.beam.sdk.io.snowflake.test;
 
+import static org.apache.beam.sdk.io.snowflake.test.TestUtils.SnowflakeIOITPipelineOptions;
 import static org.apache.beam.sdk.io.snowflake.test.TestUtils.getStringCsvMapper;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.GenerateSequence;
-import org.apache.beam.sdk.io.common.IOTestPipelineOptions;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO;
 import org.apache.beam.sdk.io.snowflake.Location;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
-import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.io.snowflake.credentials.SnowflakeCredentialsFactory;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
@@ -45,7 +44,7 @@ import org.junit.Test;
  * connection information using PipelineOptions:
  *
  * <pre>
- * ./gradlew integrationTest -DintegrationTestPipelineOptions='[
+ * ./gradlew -p sdks/java/io/snowflake integrationTest -DintegrationTestPipelineOptions='[
  * "--serverName=<YOUR SNOWFLAKE SERVER NAME>",
  * "--username=<USERNAME>",
  * "--privateKeyPath=<PATH TO KEY>",
@@ -54,23 +53,20 @@ import org.junit.Test;
  * "--schema=<SCHEMA NAME>",
  * "--stagingBucketName=<BUCKET NAME>",
  * "--storageIntegration=<STORAGE INTEGRATION NAME>",
- * "--snowPipe=<SNOWPIPE NAME>
- * "--region=<GCP REGION>"
+ * "--snowPipe=<SNOWPIPE NAME>",
+ * "--region=<GCP REGION>",
  * "--runner=DataflowRunner",
  * "--project=<GCP PROJECT>"]'
- * --tests org.apache.beam.sdk.io.snowflake.test.SnowflakeIOIT
+ * --tests org.apache.beam.sdk.io.snowflake.test.SnowflakeStreamingIOIT
  * -DintegrationTestRunner=dataflow
  * </pre>
  */
 public class SnowflakeStreamingIOIT {
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
 
-  static SnowflakeIOITPipelineOptions options;
+  static TestUtils.SnowflakeIOITPipelineOptions options;
   static SnowflakeIO.DataSourceConfiguration dc;
   static Location location;
-
-  public interface SnowflakeIOITPipelineOptions
-      extends IOTestPipelineOptions, SnowflakePipelineOptions {}
 
   @BeforeClass
   public static void setupAll() {
