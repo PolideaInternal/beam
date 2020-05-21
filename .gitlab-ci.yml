@@ -27,3 +27,13 @@ batchIntegrationTest:
   script:
     - gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS
     - ./gradlew --info -p sdks/java/io/snowflake integrationTest -DintegrationTestPipelineOptions="[\"--serverName=$SF_HOST\", \"--username=$SF_USERNAME\", \"--password=$SF_PASSWORD\",\"--warehouse=$SF_WAREHOUSE\", \"--numberOfRecords=1000\", \"--role=$SF_ROLE\", \"--database=$SF_DATABASE\", \"--schema=PUBLIC\", \"--stagingBucketName=$SF_BUCKET\", \"--storageIntegration=$SF_STORAGE_INTEGRATION\"]" --tests org.apache.beam.sdk.io.snowflake.test.SnowflakeIOIT -DintegrationTestRunner=direct
+
+streamIntegrationTest:
+  tags:
+    - docker
+  stage: test
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+  script:
+    - gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS
+    - ./gradlew --info -p sdks/java/io/snowflake integrationTest -DintegrationTestPipelineOptions="[\"--serverName=$SF_HOST\", \"--username=$SF_USERNAME\", \"--privateKeyPath=$SF_PRIVATE_KEY\", \"--privateKeyPassphrase=$SF_PRIVATE_KEY_PASSWORD\", \"--warehouse=$SF_WAREHOUSE\", \"--role=$SF_ROLE\", \"--database=$SF_DATABASE\", \"--schema=PUBLIC\", \"--stagingBucketName=$SF_BUCKET\", \"--storageIntegration=$SF_STORAGE_INTEGRATION\", \"--snowPipe=$SF_SNOW_PIPE\"]" --tests org.apache.beam.sdk.io.snowflake.test.SnowflakeCIStreamingIOIT -DintegrationTestRunner=direct
