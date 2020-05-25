@@ -36,7 +36,10 @@ import java.util.List;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import javax.sql.DataSource;
+import org.apache.beam.sdk.io.common.IOTestPipelineOptions;
+import org.apache.beam.sdk.io.common.TestRow;
 import org.apache.beam.sdk.io.snowflake.SnowflakeIO;
+import org.apache.beam.sdk.io.snowflake.SnowflakePipelineOptions;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.values.KV;
 import org.slf4j.Logger;
@@ -48,6 +51,9 @@ public class TestUtils {
 
   private static final String PRIVATE_KEY_FILE_NAME = "test_rsa_key.p8";
   private static final String PRIVATE_KEY_PASSPHRASE = "snowflake";
+
+  public interface SnowflakeIOITPipelineOptions
+      extends IOTestPipelineOptions, SnowflakePipelineOptions {}
 
   public static ResultSet runConnectionWithStatement(DataSource dataSource, String query)
       throws SQLException {
@@ -124,6 +130,16 @@ public class TestUtils {
 
   public static SnowflakeIO.UserDataMapper<String[]> getLStringCsvMapper() {
     return (SnowflakeIO.UserDataMapper<String[]>) recordLine -> recordLine;
+  }
+
+  public static SnowflakeIO.CsvMapper<TestRow> getTestRowCsvMapper() {
+    return (SnowflakeIO.CsvMapper<TestRow>)
+        parts -> TestRow.create(Integer.valueOf(parts[0]), parts[1]);
+  }
+
+  public static SnowflakeIO.UserDataMapper<TestRow> getTestRowDataMapper() {
+    return (SnowflakeIO.UserDataMapper<TestRow>)
+        (TestRow element) -> new Object[] {element.id(), element.name()};
   }
 
   public static class ParseToKv extends DoFn<Long, KV<String, Long>> {
