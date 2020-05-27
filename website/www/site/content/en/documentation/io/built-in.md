@@ -65,4 +65,8 @@ This table contains I/O transforms that are currently planned or in-progress. St
     <td>RestIO</td><td>Java</td>
     <td><a href="https://issues.apache.org/jira/browse/BEAM-1946">BEAM-1946</a></td>
   </tr>
+  <tr>
+    <td>SnowflakeIO</td><td>Java</td>
+    <td><a href="https://issues.apache.org/jira/browse/BEAM-9893">BEAM-9893</a></td>
+  </tr>
 </table>

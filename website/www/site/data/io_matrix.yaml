@@ -266,6 +266,12 @@ categories:
           - language: java
             name: org.apache.beam.sdk.io.solr.SolrIO
             url: https://beam.apache.org/releases/javadoc/current/org/apache/beam/sdk/io/solr/SolrIO.html
+      - transform: SnowflakeIO (in-progress)
+        description: Transforms for reading data from [Snowflake](https://www.snowflake.com/). [Write in progress](https://github.com/apache/beam/pull/11794)
+        implementations:
+          - language: java
+            name: org.apache.beam.sdk.io.snowflake.SnowflakeIO
+            url: https://beam.apache.org/releases/javadoc/current/org/apache/beam/sdk/io/snowflake/Snowflake.html
       - transform: ElasticsearchIO
         description: Transforms for reading and writing data from/to [Elasticsearch](https://www.elastic.co/elasticsearch/).
         implementations:
