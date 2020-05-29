@@ -712,10 +712,8 @@ public class SnowflakeIO {
     public DataSource buildDatasource() {
       if (getDataSource() == null) {
         SnowflakeBasicDataSource basicDataSource = new SnowflakeBasicDataSource();
+        basicDataSource.setUrl(buildUrl());
 
-        if (getUrl() != null) {
-          basicDataSource.setUrl(getUrl().get());
-        }
         if (getUsername() != null) {
           basicDataSource.setUser(getUsername().get());
         }
@@ -733,12 +731,6 @@ public class SnowflakeIO {
         }
         if (getSchema() != null) {
           basicDataSource.setSchema(getSchema().get());
-        }
-        if (getServerName() != null) {
-          basicDataSource.setServerName(getServerName().get());
-        }
-        if (getPortNumber() != null) {
-          basicDataSource.setPortNumber(getPortNumber().get());
         }
         if (getRole() != null) {
           basicDataSource.setRole(getRole().get());
@@ -759,6 +751,22 @@ public class SnowflakeIO {
         return basicDataSource;
       }
       return getDataSource();
+    }
+
+    private String buildUrl() {
+      StringBuilder url = new StringBuilder();
+
+      if (getUrl() != null) {
+        url.append(getUrl().get());
+      } else {
+        url.append("jdbc:snowflake://");
+        url.append(getServerName().get());
+      }
+      if (getPortNumber() != null) {
+        url.append(":").append(getPortNumber().get());
+      }
+      url.append("?application=beam");
+      return url.toString();
     }
   }
 
