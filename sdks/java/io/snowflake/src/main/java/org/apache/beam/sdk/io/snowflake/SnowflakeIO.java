@@ -176,6 +176,7 @@ public class SnowflakeIO {
     return new AutoValue_SnowflakeIO_Read.Builder<T>()
         .setSnowflakeService(snowflakeService)
         .setSnowflakeCloudProvider(snowflakeCloudProvider)
+        .setQuotationMark(CSV_QUOTE_CHAR)
         .build();
   }
 
@@ -224,6 +225,7 @@ public class SnowflakeIO {
         .setFlushTimeLimit(DEFAULT_FLUSH_TIME_LIMIT)
         .setShardsNumber(DEFAULT_BATCH_SHARDS_NUMBER)
         .setFlushRowLimit(DEFAULT_FLUSH_ROW_LIMIT)
+        .setQuotationMark(CSV_QUOTE_CHAR)
         .build();
   }
 
@@ -254,6 +256,9 @@ public class SnowflakeIO {
     @Nullable
     abstract SnowflakeCloudProvider getSnowflakeCloudProvider();
 
+    @Nullable
+    abstract String getQuotationMark();
+
     abstract Builder<T> toBuilder();
 
     @AutoValue.Builder
@@ -274,6 +279,8 @@ public class SnowflakeIO {
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
       abstract Builder<T> setSnowflakeCloudProvider(SnowflakeCloudProvider snowflakeCloudProvider);
+
+      abstract Builder<T> setQuotationMark(String quotationMark);
 
       abstract Read<T> build();
     }
@@ -315,6 +322,10 @@ public class SnowflakeIO {
       return toBuilder().setCoder(coder).build();
     }
 
+    public Read<T> withQuotationMark(String quotationMark) {
+      return toBuilder().setQuotationMark(quotationMark).build();
+    }
+
     @Override
     public PCollection<T> expand(PBegin input) {
       Location loc = getLocation();
@@ -336,11 +347,12 @@ public class SnowflakeIO {
                           loc.getStagingBucketName(),
                           gcpTmpDirName,
                           getSnowflakeService(),
-                          getSnowflakeCloudProvider())))
+                          getSnowflakeCloudProvider(),
+                          getQuotationMark())))
               .apply(FileIO.matchAll())
               .apply(FileIO.readMatches())
               .apply(readFiles())
-              .apply(ParDo.of(new MapCsvToStringArrayFn()))
+              .apply(ParDo.of(new MapCsvToStringArrayFn(getQuotationMark())))
               .apply(ParDo.of(new MapStringArrayToUserDataFn<>(getCsvMapper())));
 
       output.setCoder(getCoder());
@@ -394,6 +406,7 @@ public class SnowflakeIO {
       private final String tmpDirName;
       private final SnowflakeService snowflakeService;
       private final SnowflakeCloudProvider cloudProvider;
+      private final String quotationMark;
 
       private CopyIntoStageFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn,
@@ -403,13 +416,15 @@ public class SnowflakeIO {
           String stagingBucketName,
           String tmpDirName,
           SnowflakeService snowflakeService,
-          SnowflakeCloudProvider cloudProvider) {
+          SnowflakeCloudProvider cloudProvider,
+          String quotationMark) {
         this.dataSourceProviderFn = dataSourceProviderFn;
         this.storageIntegration = storageIntegration;
         this.stagingBucketName = stagingBucketName;
         this.tmpDirName = tmpDirName;
         this.snowflakeService = snowflakeService;
         this.cloudProvider = cloudProvider;
+        this.quotationMark = quotationMark;
 
         if (query != null) {
           // Query must be surrounded with brackets
@@ -428,7 +443,8 @@ public class SnowflakeIO {
                 source,
                 storageIntegration,
                 stagingBucketDir,
-                this.cloudProvider);
+                this.cloudProvider,
+                quotationMark);
 
         String output = snowflakeService.read(config);
 
@@ -437,10 +453,16 @@ public class SnowflakeIO {
     }
 
     public static class MapCsvToStringArrayFn extends DoFn<String, String[]> {
+      private String quoteChar;
+
+      public MapCsvToStringArrayFn(String quoteChar) {
+        this.quoteChar = quoteChar;
+      }
+
       @ProcessElement
       public void processElement(ProcessContext c) throws IOException {
         String csvLine = c.element();
-        CSVParser parser = new CSVParserBuilder().withQuoteChar(CSV_QUOTE_CHAR.charAt(0)).build();
+        CSVParser parser = new CSVParserBuilder().withQuoteChar(quoteChar.charAt(0)).build();
         String[] parts = parser.parseLine(csvLine);
         c.output(parts);
       }
@@ -847,6 +869,9 @@ public class SnowflakeIO {
     @Nullable
     abstract SnowflakeCloudProvider getSnowflakeCloudProvider();
 
+    @Nullable
+    abstract String getQuotationMark();
+
     abstract Builder<T> toBuilder();
 
     @AutoValue.Builder
@@ -881,6 +906,8 @@ public class SnowflakeIO {
       abstract Builder<T> setSnowflakeService(SnowflakeService snowflakeService);
 
       abstract Builder<T> setSnowflakeCloudProvider(SnowflakeCloudProvider cloudProvider);
+
+      abstract Builder<T> setQuotationMark(String quotationMark);
 
       abstract Write<T> build();
     }
@@ -950,6 +977,10 @@ public class SnowflakeIO {
       return toBuilder().setSnowflakeCloudProvider(cloudProvider).build();
     }
 
+    public Write<T> withQuotationMark(String quotationMark) {
+      return toBuilder().setQuotationMark(quotationMark).build();
+    }
+
     @Override
     public PDone expand(PCollection<T> input) {
       checkArguments(input);
@@ -985,7 +1016,7 @@ public class SnowflakeIO {
       if (input.isBounded() == PCollection.IsBounded.UNBOUNDED) {
         checkArgument(getSnowPipe() != null, "withSnowPipe() is required");
       } else {
-        checkArgument(getTable() != null, "withTable() is required");
+        checkArgument(getTable() != null, "to() is required");
       }
     }
 
@@ -1061,7 +1092,9 @@ public class SnowflakeIO {
               .apply(
                   "Map user data to Objects array",
                   ParDo.of(new MapUserDataObjectsArrayFn<T>(getUserDataMapper())))
-              .apply("Map Objects array to CSV lines", ParDo.of(new MapObjectsArrayToCsvFn()))
+              .apply(
+                  "Map Objects array to CSV lines",
+                  ParDo.of(new MapObjectsArrayToCsvFn(getQuotationMark())))
               .setCoder(StringUtf8Coder.of());
 
       WriteFilesResult filesResult =
@@ -1094,7 +1127,8 @@ public class SnowflakeIO {
               getWriteDisposition(),
               getTableSchema(),
               snowflakeService,
-              getSnowflakeCloudProvider()));
+              getSnowflakeCloudProvider(),
+              getQuotationMark()));
     }
 
     protected PTransform streamToTable(SnowflakeService snowflakeService) {
@@ -1123,6 +1157,11 @@ public class SnowflakeIO {
    * <p>Adds Snowflake-specific quotations around strings.
    */
   private static class MapObjectsArrayToCsvFn extends DoFn<Object[], String> {
+    private String quotationMark;
+
+    public MapObjectsArrayToCsvFn(String quotationMark) {
+      this.quotationMark = quotationMark;
+    }
 
     @ProcessElement
     public void processElement(ProcessContext context) {
@@ -1142,7 +1181,7 @@ public class SnowflakeIO {
     }
 
     private String quoteField(String field) {
-      return quoteField(field, CSV_QUOTE_CHAR);
+      return quoteField(field, this.quotationMark);
     }
 
     private String quoteField(String field, String quotation) {
@@ -1154,6 +1193,7 @@ public class SnowflakeIO {
     private final SerializableFunction<Void, DataSource> dataSourceProviderFn;
     private final String source;
     private final String table;
+    private final String quotationMark;
     private final Location location;
     private final SnowflakeTableSchema tableSchema;
     private final WriteDisposition writeDisposition;
@@ -1169,13 +1209,15 @@ public class SnowflakeIO {
         WriteDisposition writeDisposition,
         SnowflakeTableSchema tableSchema,
         SnowflakeService snowflakeService,
-        SnowflakeCloudProvider cloudProvider) {
+        SnowflakeCloudProvider cloudProvider,
+        String quotationMark) {
       this.dataSourceProviderFn = dataSourceProviderFn;
       this.table = table;
       this.tableSchema = tableSchema;
       this.location = location;
       this.createDisposition = createDisposition;
       this.writeDisposition = writeDisposition;
+      this.quotationMark = quotationMark;
 
       if (query != null) {
         this.source = String.format("(%s)", query);
@@ -1198,7 +1240,8 @@ public class SnowflakeIO {
               source,
               createDisposition,
               writeDisposition,
-              location);
+              location,
+              quotationMark);
       snowflakeService.write(config);
     }
   }

@@ -181,7 +181,8 @@ public class StreamingWriteTest {
   }
 
   @Test
-  public void streamWriteWithKey() throws SnowflakeSQLException, IOException {
+  public void streamWriteWithKey() throws SnowflakeSQLException {
+    String quotationMark = "'";
     options.setPrivateKeyPath(TestUtils.getPrivateKeyPath(getClass()));
     options.setPrivateKeyPassphrase(TestUtils.getPrivateKeyPassphrase());
 
@@ -223,12 +224,12 @@ public class StreamingWriteTest {
     pipeline.run(options).waitUntilFinish();
 
     List<String> actualDataFirstWin =
-        parseResults(FakeSnowflakeDatabase.getElements(String.format(FAKE_TABLE)));
+        parseResults(FakeSnowflakeDatabase.getElements(String.format(FAKE_TABLE)), quotationMark);
 
     Map<String, List<String>> mapOfResults = getMapOfFilesAndResults();
 
     String firstFileKey = "0";
-    List<String> filesResult = parseResults(mapOfResults.get(firstFileKey));
+    List<String> filesResult = parseResults(mapOfResults.get(firstFileKey), quotationMark);
 
     int amountOfCreatedFiles = 2;
     MatcherAssert.assertThat(mapOfResults.size(), equalTo(amountOfCreatedFiles));
@@ -236,8 +237,68 @@ public class StreamingWriteTest {
     MatcherAssert.assertThat(actualDataFirstWin, equalTo(SENTENCES));
   }
 
-  private List<String> parseResults(List<String> resultsList) {
-    return resultsList.stream().map(s -> s.replaceAll("'", "")).collect(Collectors.toList());
+  @Test
+  public void streamWriteWithDoubleQuotation() throws SnowflakeSQLException {
+    String quotationMark = "\"";
+    options.setPrivateKeyPath(TestUtils.getPrivateKeyPath(getClass()));
+    options.setPrivateKeyPassphrase(TestUtils.getPrivateKeyPassphrase());
+
+    TestStream<String> stringsStream =
+        TestStream.create(StringUtf8Coder.of())
+            .advanceWatermarkTo(START_TIME)
+            .addElements(event(FIRST_WIN_WORDS.get(0), 2L))
+            .advanceWatermarkTo(START_TIME.plus(Duration.standardSeconds(27L)))
+            .addElements(
+                event(FIRST_WIN_WORDS.get(1), 25L),
+                event(FIRST_WIN_WORDS.get(2), 18L),
+                event(FIRST_WIN_WORDS.get(3), 26L))
+            .advanceWatermarkTo(START_TIME.plus(Duration.standardSeconds(65L)))
+            // This are late elements after window ends so they should not be saved
+            .addElements(event(SECOND_WIN_WORDS.get(0), 67L), event(SECOND_WIN_WORDS.get(1), 68L))
+            .advanceWatermarkToInfinity();
+
+    dataSourceConfiguration =
+        SnowflakeIO.DataSourceConfiguration.create(SnowflakeCredentialsFactory.of(options))
+            .withServerName(options.getServerName())
+            .withSchema("PUBLIC")
+            .withDatabase("DATABASE")
+            .withWarehouse("WAREHOUSE");
+
+    pipeline
+        .apply(stringsStream)
+        .apply(Window.into(FixedWindows.of(WINDOW_DURATION)))
+        .apply(
+            SnowflakeIO.<String>write()
+                .withDataSourceConfiguration(dataSourceConfiguration)
+                .via(location)
+                .withSnowPipe(SNOW_PIPE)
+                .withFlushRowLimit(4)
+                .withQuotationMark(quotationMark)
+                .withFlushTimeLimit(WINDOW_DURATION)
+                .withUserDataMapper(TestUtils.getStringCsvMapper())
+                .withSnowflakeService(snowflakeService)
+                .withSnowflakeCloudProvider(cloudProvider));
+
+    pipeline.run(options).waitUntilFinish();
+
+    List<String> actualDataFirstWin =
+        parseResults(FakeSnowflakeDatabase.getElements(String.format(FAKE_TABLE)), quotationMark);
+
+    Map<String, List<String>> mapOfResults = getMapOfFilesAndResults();
+
+    String firstFileKey = "0";
+    List<String> filesResult = parseResults(mapOfResults.get(firstFileKey), quotationMark);
+
+    int amountOfCreatedFiles = 2;
+    MatcherAssert.assertThat(mapOfResults.size(), equalTo(amountOfCreatedFiles));
+    MatcherAssert.assertThat(filesResult, equalTo(FIRST_WIN_WORDS));
+    MatcherAssert.assertThat(actualDataFirstWin, equalTo(SENTENCES));
+  }
+
+  private List<String> parseResults(List<String> resultsList, String quotationMark) {
+    return resultsList.stream()
+        .map(s -> s.replaceAll(quotationMark, ""))
+        .collect(Collectors.toList());
   }
 
   private Map<String, List<String>> getMapOfFilesAndResults() {

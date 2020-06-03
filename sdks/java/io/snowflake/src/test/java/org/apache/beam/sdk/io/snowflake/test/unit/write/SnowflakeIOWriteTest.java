@@ -20,6 +20,7 @@ package org.apache.beam.sdk.io.snowflake.test.unit.write;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -64,12 +65,22 @@ public class SnowflakeIOWriteTest {
   private static SnowflakeService snowflakeService;
   private static SnowflakeCloudProvider cloudProvider;
   private static List<Long> testData;
+  private static List<String> testDataInStrings;
 
   @BeforeClass
   public static void setupAll() {
     cloudProvider = new FakeSnowflakeCloudProvider();
     snowflakeService = new FakeSnowflakeBatchServiceImpl();
     testData = LongStream.range(0, 100).boxed().collect(Collectors.toList());
+
+    testDataInStrings = new ArrayList<>();
+    testDataInStrings.add("First row");
+    testDataInStrings.add("Second row with 'single' quotation");
+    testDataInStrings.add("Second row with single one ' quotation");
+    testDataInStrings.add("Second row with single twice '' quotation");
+    testDataInStrings.add("Third row with \"double\" quotation");
+    testDataInStrings.add("Third row with double one \" quotation");
+    testDataInStrings.add("Third row with double twice \"\" quotation");
   }
 
   @Before
@@ -138,7 +149,7 @@ public class SnowflakeIOWriteTest {
   }
 
   @Test
-  public void writeToExternalWithKVInput() {
+  public void writeToExternalWithKVInput() throws SnowflakeSQLException {
     location = Location.of(options);
 
     pipeline
@@ -155,6 +166,11 @@ public class SnowflakeIOWriteTest {
                 .withSnowflakeCloudProvider(cloudProvider));
 
     pipeline.run(options).waitUntilFinish();
+
+    List<String> actualData = FakeSnowflakeDatabase.getElements(FAKE_TABLE);
+    List<String> testDataInStrings =
+        testData.stream().map(e -> e.toString()).collect(Collectors.toList());
+    assertTrue(TestUtils.isListsEqual(testDataInStrings, actualData));
   }
 
   @Test
@@ -181,5 +197,59 @@ public class SnowflakeIOWriteTest {
     List<Long> actualData = FakeSnowflakeDatabase.getElementsAsLong(FAKE_TABLE);
 
     assertTrue(TestUtils.isListsEqual(testData, actualData));
+  }
+
+  @Test
+  public void writeToExternalWithDoubleQuotation() throws SnowflakeSQLException {
+    location = Location.of(options);
+
+    pipeline
+        .apply(Create.of(testDataInStrings))
+        .apply(
+            "Write SnowflakeIO",
+            SnowflakeIO.<String>write()
+                .withDataSourceConfiguration(dc)
+                .withUserDataMapper(TestUtils.getStringCsvMapper())
+                .to(FAKE_TABLE)
+                .via(location)
+                .withSnowflakeService(snowflakeService)
+                .withQuotationMark("\"")
+                .withSnowflakeCloudProvider(cloudProvider));
+
+    pipeline.run(options).waitUntilFinish();
+
+    List<String> actualData = FakeSnowflakeDatabase.getElements(FAKE_TABLE);
+    List<String> escapedTestData =
+        testDataInStrings.stream()
+            .map(e -> e.replace("'", "''"))
+            .map(e -> String.format("\"%s\"", e))
+            .collect(Collectors.toList());
+    assertTrue(TestUtils.isListsEqual(escapedTestData, actualData));
+  }
+
+  @Test
+  public void writeToExternalWithBlankQuotation() throws SnowflakeSQLException {
+    location = Location.of(options);
+
+    pipeline
+        .apply(Create.of(testDataInStrings))
+        .apply(
+            "Write SnowflakeIO",
+            SnowflakeIO.<String>write()
+                .withDataSourceConfiguration(dc)
+                .withUserDataMapper(TestUtils.getStringCsvMapper())
+                .to(FAKE_TABLE)
+                .via(location)
+                .withSnowflakeService(snowflakeService)
+                .withQuotationMark("")
+                .withSnowflakeCloudProvider(cloudProvider));
+
+    pipeline.run(options).waitUntilFinish();
+
+    List<String> actualData = FakeSnowflakeDatabase.getElements(FAKE_TABLE);
+
+    List<String> escapedTestData =
+        testDataInStrings.stream().map(e -> e.replace("'", "''")).collect(Collectors.toList());
+    assertTrue(TestUtils.isListsEqual(escapedTestData, actualData));
   }
 }

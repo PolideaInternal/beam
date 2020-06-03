@@ -19,6 +19,8 @@ package org.apache.beam.sdk.io.snowflake.services;
 
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkArgument;
 
+import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -59,11 +61,18 @@ public class SnowflakeBatchServiceImpl implements SnowflakeService<SnowflakeBatc
     String copyQuery =
         String.format(
             "COPY INTO '%s' FROM %s STORAGE_INTEGRATION=%s FILE_FORMAT=(TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='%s');",
-            stagingBucketDir, source, integrationName, CSV_QUOTE_CHAR_FOR_COPY);
+            stagingBucketDir,
+            source,
+            integrationName,
+            getASCIICharRepresentation(config.getQuotationMark()));
 
     runStatement(copyQuery, getConnection(dataSourceProviderFn), null);
 
     return cloudProvider.transformCloudPathToSnowflakePath(stagingBucketDir).concat("*");
+  }
+
+  private String getASCIICharRepresentation(String input) {
+    return String.format("0x%x", new BigInteger(1, input.getBytes(Charset.defaultCharset())));
   }
 
   public void copyToTable(SnowflakeBatchServiceConfig config) throws SQLException {
@@ -90,12 +99,16 @@ public class SnowflakeBatchServiceImpl implements SnowflakeService<SnowflakeBatc
       query =
           String.format(
               "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP) STORAGE_INTEGRATION=%s;",
-              table, source, files, CSV_QUOTE_CHAR_FOR_COPY, integration);
+              table,
+              source,
+              files,
+              getASCIICharRepresentation(config.getQuotationMark()),
+              integration);
     } else {
       query =
           String.format(
               "COPY INTO %s FROM %s FILES=(%s) FILE_FORMAT=(TYPE=CSV FIELD_OPTIONALLY_ENCLOSED_BY='%s' COMPRESSION=GZIP);",
-              table, source, files, CSV_QUOTE_CHAR_FOR_COPY);
+              table, source, files, getASCIICharRepresentation(config.getQuotationMark()));
     }
 
     runStatement(query, dataSource.getConnection(), null);
