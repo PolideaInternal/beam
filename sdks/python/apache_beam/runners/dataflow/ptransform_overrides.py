@@ -111,3 +111,76 @@ class JrhReadPTransformOverride(PTransformOverride):
 
     return JrhRead().with_output_types(
         ptransform.get_type_hints().simple_output_type('Read'))
+
+
+class CombineValuesPTransformOverride(PTransformOverride):
+  """A ``PTransformOverride`` for ``CombineValues``.
+
+  The DataflowRunner expects that the CombineValues PTransform acts as a
+  primitive. So this override replaces the CombineValues with a primitive.
+  """
+  def matches(self, applied_ptransform):
+    # Imported here to avoid circular dependencies.
+    # pylint: disable=wrong-import-order, wrong-import-position
+    from apache_beam import CombineValues
+
+    if isinstance(applied_ptransform.transform, CombineValues):
+      self.transform = applied_ptransform.transform
+      return True
+    return False
+
+  def get_replacement_transform(self, ptransform):
+    # Imported here to avoid circular dependencies.
+    # pylint: disable=wrong-import-order, wrong-import-position
+    from apache_beam import PTransform
+    from apache_beam.pvalue import PCollection
+
+    # The DataflowRunner still needs access to the CombineValues members to
+    # generate a V1B3 proto representation, so we remember the transform from
+    # the matches method and forward it here.
+    class CombineValuesReplacement(PTransform):
+      def __init__(self, transform):
+        self.transform = transform
+
+      def expand(self, pcoll):
+        return PCollection.from_(pcoll)
+
+    return CombineValuesReplacement(self.transform)
+
+
+class NativeReadPTransformOverride(PTransformOverride):
+  """A ``PTransformOverride`` for ``Read`` using native sources.
+
+  The DataflowRunner expects that the Read PTransform using native sources act
+  as a primitive. So this override replaces the Read with a primitive.
+  """
+  def matches(self, applied_ptransform):
+    # Imported here to avoid circular dependencies.
+    # pylint: disable=wrong-import-order, wrong-import-position
+    from apache_beam.io import Read
+
+    # Consider the native Read to be a primitive for Dataflow by replacing.
+    return (
+        isinstance(applied_ptransform.transform, Read) and
+        not getattr(applied_ptransform.transform, 'override', False) and
+        hasattr(applied_ptransform.transform.source, 'format'))
+
+  def get_replacement_transform(self, ptransform):
+    # Imported here to avoid circular dependencies.
+    # pylint: disable=wrong-import-order, wrong-import-position
+    from apache_beam import pvalue
+    from apache_beam.io import iobase
+
+    # This is purposely subclassed from the Read transform to take advantage of
+    # the existing windowing, typing, and display data.
+    class Read(iobase.Read):
+      override = True
+
+      def expand(self, pbegin):
+        return pvalue.PCollection.from_(pbegin)
+
+    # Use the source's coder type hint as this replacement's output. Otherwise,
+    # the typing information is not properly forwarded to the DataflowRunner and
+    # will choose the incorrect coder for this transform.
+    return Read(ptransform.source).with_output_types(
+        ptransform.source.coder.to_type_hint())

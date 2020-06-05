@@ -44,6 +44,7 @@ from typing import overload
 
 import grpc
 
+from apache_beam.io import filesystems
 from apache_beam.portability import common_urns
 from apache_beam.portability import python_urns
 from apache_beam.portability.api import beam_artifact_api_pb2
@@ -144,6 +145,10 @@ class ControlConnection(object):
         self.push(BeamFnControlServicer._DONE_MARKER)
         self._read_thread.join()
       self._state = BeamFnControlServicer.DONE_STATE
+
+  def abort(self, exn):
+    for future in self._futures_by_id.values():
+      future.abort(exn)
 
 
 class BeamFnControlServicer(beam_fn_api_pb2_grpc.BeamFnControlServicer):
@@ -402,15 +407,15 @@ class BasicProvisionService(beam_provision_api_pb2_grpc.ProvisionServiceServicer
 
   def GetProvisionInfo(self, request, context=None):
     # type: (...) -> beam_provision_api_pb2.GetProvisionInfoResponse
-    info = copy.copy(self._base_info)
-    logging.error(('info', info, 'context', context))
     if context:
       worker_id = dict(context.invocation_metadata())['worker_id']
       worker = self._worker_manager.get_worker(worker_id)
+      info = copy.copy(worker.provision_info.provision_info)
       info.logging_endpoint.CopyFrom(worker.logging_api_service_descriptor())
       info.artifact_endpoint.CopyFrom(worker.artifact_api_service_descriptor())
       info.control_endpoint.CopyFrom(worker.control_api_service_descriptor())
-      logging.error(('info', info, 'worker_id', worker_id))
+    else:
+      info = self._base_info
     return beam_provision_api_pb2.GetProvisionInfoResponse(info=info)
 
 
@@ -473,6 +478,11 @@ class GrpcServer(object):
         service = EmptyArtifactRetrievalService()
       beam_artifact_api_pb2_grpc.add_LegacyArtifactRetrievalServiceServicer_to_server(
           service, self.control_server)
+
+      beam_artifact_api_pb2_grpc.add_ArtifactRetrievalServiceServicer_to_server(
+          artifact_service.ArtifactRetrievalService(
+              file_reader=filesystems.FileSystems.open),
+          self.control_server)
 
     self.data_plane_handler = data_plane.BeamFnDataServicer(
         DATA_BUFFER_TIME_LIMIT_MS)
@@ -587,6 +597,7 @@ class ExternalWorkerHandler(GrpcWorkerHandler):
 
   def start_worker(self):
     # type: () -> None
+    _LOGGER.info("Requesting worker at %s", self._external_payload.endpoint.url)
     stub = beam_fn_api_pb2_grpc.BeamFnExternalWorkerPoolStub(
         GRPCChannelFactory.insecure_channel(
             self._external_payload.endpoint.url))
@@ -608,8 +619,8 @@ class ExternalWorkerHandler(GrpcWorkerHandler):
     pass
 
   def host_from_worker(self):
-    # TODO(BEAM-8646): Reconcile the behavior on Windows platform.
-    if sys.platform == 'win32':
+    # TODO(BEAM-8646): Reconcile across platforms.
+    if sys.platform in ['win32', 'darwin']:
       return 'localhost'
     import socket
     return socket.getfqdn()
@@ -745,9 +756,34 @@ class DockerSdkWorkerHandler(GrpcWorkerHandler):
               'SDK failed to start. Final status is %s' %
               status.decode('utf-8'))
       time.sleep(1)
+    self._done = False
+    t = threading.Thread(target=self.watch_container)
+    t.daemon = True
+    t.start()
+
+  def watch_container(self):
+    while not self._done:
+      status = subprocess.check_output(
+          ['docker', 'inspect', '-f', '{{.State.Status}}',
+           self._container_id]).strip()
+      if status != b'running':
+        if not self._done:
+          logs = subprocess.check_output([
+              'docker', 'container', 'logs', '--tail', '10', self._container_id
+          ],
+                                         stderr=subprocess.STDOUT)
+          _LOGGER.info(logs)
+          self.control_conn.abort(
+              RuntimeError(
+                  'SDK exited unexpectedly. '
+                  'Final status is %s. Final log line is %s' % (
+                      status.decode('utf-8'),
+                      logs.decode('utf-8').strip().split('\n')[-1])))
+      time.sleep(5)
 
   def stop_worker(self):
     # type: () -> None
+    self._done = True
     if self._container_id:
       with SUBPROCESS_LOCK:
         subprocess.call(['docker', 'kill', self._container_id])
@@ -809,7 +845,7 @@ class WorkerHandlerManager(object):
         worker_handler = WorkerHandler.create(
             environment,
             self.state_servicer,
-            self._job_provision_info,
+            self._job_provision_info.for_environment(environment),
             grpc_server)
         _LOGGER.info(
             "Created Worker handler %s for environment %s",
@@ -1038,6 +1074,7 @@ class ControlFuture(object):
     else:
       self._response = None
       self._condition = threading.Condition()
+    self._exception = None
 
   def is_done(self):
     return self._response is not None
@@ -1048,8 +1085,16 @@ class ControlFuture(object):
       self._condition.notify_all()
 
   def get(self, timeout=None):
-    if not self._response:
+    if not self._response and not self._exception:
       with self._condition:
-        if not self._response:
+        if not self._response and not self._exception:
           self._condition.wait(timeout)
-    return self._response
+    if self._exception:
+      raise self._exception
+    else:
+      return self._response
+
+  def abort(self, exception):
+    with self._condition:
+      self._exception = exception
+      self._condition.notify_all()

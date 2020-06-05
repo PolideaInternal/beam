@@ -138,6 +138,7 @@ public class BeamFnDataWriteRunnerTest {
             PipelineOptionsFactory.create(),
             mockBeamFnDataClient,
             null /* beamFnStateClient */,
+            null /* beamFnTimerClient */,
             TRANSFORM_ID,
             pTransform,
             Suppliers.ofInstance(bundleId)::get,
@@ -149,6 +150,7 @@ public class BeamFnDataWriteRunnerTest {
             startFunctionRegistry,
             finishFunctionRegistry,
             teardownFunctions::add,
+            null /* addProgressRequestCallback */,
             null /* splitListener */,
             null /* bundleFinalizer */);
 
@@ -182,7 +184,7 @@ public class BeamFnDataWriteRunnerTest {
     verify(mockBeamFnDataClient)
         .send(
             eq(PORT_SPEC.getApiServiceDescriptor()),
-            eq(LogicalEndpoint.of(bundleId, TRANSFORM_ID)),
+            eq(LogicalEndpoint.data(bundleId, TRANSFORM_ID)),
             eq(WIRE_CODER));
 
     assertThat(consumers.keySet(), containsInAnyOrder(localInputId));
@@ -219,7 +221,7 @@ public class BeamFnDataWriteRunnerTest {
     verify(mockBeamFnDataClient)
         .send(
             eq(PORT_SPEC.getApiServiceDescriptor()),
-            eq(LogicalEndpoint.of(bundleId.get(), TRANSFORM_ID)),
+            eq(LogicalEndpoint.data(bundleId.get(), TRANSFORM_ID)),
             eq(WIRE_CODER));
 
     writeRunner.consume(valueInGlobalWindow("ABC"));
@@ -238,7 +240,7 @@ public class BeamFnDataWriteRunnerTest {
     verify(mockBeamFnDataClient)
         .send(
             eq(PORT_SPEC.getApiServiceDescriptor()),
-            eq(LogicalEndpoint.of(bundleId.get(), TRANSFORM_ID)),
+            eq(LogicalEndpoint.data(bundleId.get(), TRANSFORM_ID)),
             eq(WIRE_CODER));
 
     writeRunner.consume(valueInGlobalWindow("GHI"));

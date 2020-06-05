@@ -31,6 +31,7 @@ import hashlib
 import os
 import queue
 import sys
+import tempfile
 import threading
 import typing
 import zipfile
@@ -38,6 +39,7 @@ from io import BytesIO
 from typing import Callable
 from typing import Iterator
 
+import grpc
 from future.moves.urllib.request import urlopen
 from google.protobuf import json_format
 
@@ -50,6 +52,8 @@ from apache_beam.utils import proto_utils
 
 if typing.TYPE_CHECKING:
   from typing import BinaryIO  # pylint: disable=ungrouped-imports
+  from typing import Iterable
+  from typing import MutableMapping
 
 # The legacy artifact staging and retrieval services.
 
@@ -372,19 +376,24 @@ class ArtifactStagingService(
     self._jobs_to_stage = {}
     self._file_writer = file_writer
 
-  def register_job(self, staging_token, dependencies):
+  def register_job(
+      self,
+      staging_token,  # type: str
+      dependency_sets  # type: MutableMapping[Any, List[beam_runner_api_pb2.ArtifactInformation]]
+    ):
     if staging_token in self._jobs_to_stage:
       raise ValueError('Already staging %s' % staging_token)
     with self._lock:
-      self._jobs_to_stage[staging_token] = list(dependencies), threading.Event()
+      self._jobs_to_stage[staging_token] = (
+          dict(dependency_sets), threading.Event())
 
   def resolved_deps(self, staging_token, timeout=None):
     with self._lock:
-      dependencies_list, event = self._jobs_to_stage[staging_token]
+      dependency_sets, event = self._jobs_to_stage[staging_token]
     try:
       if not event.wait(timeout):
         raise concurrent.futures.TimeoutError()
-      return dependencies_list
+      return dependency_sets
     finally:
       with self._lock:
         del self._jobs_to_stage[staging_token]
@@ -392,7 +401,13 @@ class ArtifactStagingService(
   def ReverseArtifactRetrievalService(self, responses, context=None):
     staging_token = next(responses).staging_token
     with self._lock:
-      dependencies, event = self._jobs_to_stage[staging_token]
+      try:
+        dependency_sets, event = self._jobs_to_stage[staging_token]
+      except KeyError:
+        if context:
+          context.set_code(grpc.StatusCode.NOT_FOUND)
+          context.set_details('No such staging token: %r' % staging_token)
+        raise
 
     requests = _QueueIter()
 
@@ -414,11 +429,13 @@ class ArtifactStagingService(
 
     def resolve():
       try:
-        file_deps = resolve_as_files(
-            ForwardingRetrievalService(),
-            lambda name: self._file_writer(os.path.join(staging_token, name)),
-            dependencies)
-        dependencies[:] = file_deps
+        for key, dependencies in dependency_sets.items():
+          dependency_sets[key] = list(
+              resolve_as_files(
+                  ForwardingRetrievalService(),
+                  lambda name: self._file_writer(
+                      os.path.join(staging_token, name)),
+                  dependencies))
         requests.done()
       except:  # pylint: disable=bare-except
         requests.abort()
@@ -520,3 +537,55 @@ class BeamFilesystemHandler(object):
   def file_writer(self, name=None):
     full_path = filesystems.FileSystems.join(self._root, name)
     return filesystems.FileSystems.create(full_path), full_path
+
+
+def resolve_artifacts(artifacts, service, dest_dir):
+  if not artifacts:
+    return artifacts
+  else:
+    return [
+        maybe_store_artifact(artifact, service,
+                             dest_dir) for artifact in service.ResolveArtifacts(
+                                 beam_artifact_api_pb2.ResolveArtifactsRequest(
+                                     artifacts=artifacts)).replacements
+    ]
+
+
+def maybe_store_artifact(artifact, service, dest_dir):
+  if artifact.type_urn in (common_urns.artifact_types.URL.urn,
+                           common_urns.artifact_types.EMBEDDED.urn):
+    return artifact
+  elif artifact.type_urn == common_urns.artifact_types.FILE.urn:
+    payload = beam_runner_api_pb2.ArtifactFilePayload.FromString(
+        artifact.type_payload)
+    if os.path.exists(
+        payload.path) and payload.sha256 and payload.sha256 == sha256(
+            payload.path) and False:
+      return artifact
+    else:
+      return store_artifact(artifact, service, dest_dir)
+  else:
+    return store_artifact(artifact, service, dest_dir)
+
+
+def store_artifact(artifact, service, dest_dir):
+  hasher = hashlib.sha256()
+  with tempfile.NamedTemporaryFile(dir=dest_dir, delete=False) as fout:
+    for block in service.GetArtifact(
+        beam_artifact_api_pb2.GetArtifactRequest(artifact=artifact)):
+      hasher.update(block.data)
+      fout.write(block.data)
+  return beam_runner_api_pb2.ArtifactInformation(
+      type_urn=common_urns.artifact_types.FILE.urn,
+      type_payload=beam_runner_api_pb2.ArtifactFilePayload(
+          path=fout.name, sha256=hasher.hexdigest()).SerializeToString(),
+      role_urn=artifact.role_urn,
+      role_payload=artifact.role_payload)
+
+
+def sha256(path):
+  hasher = hashlib.sha256()
+  with open(path, 'rb') as fin:
+    for block in iter(lambda: fin.read(4 << 20), b''):
+      hasher.update(block)
+  return hasher.hexdigest()

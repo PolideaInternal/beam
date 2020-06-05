@@ -26,7 +26,7 @@ import (
 	"github.com/apache/beam/sdks/go/pkg/beam/core/graph/mtime"
 	"github.com/apache/beam/sdks/go/pkg/beam/core/metrics"
 	"github.com/apache/beam/sdks/go/pkg/beam/core/runtime/exec"
-	ppb "github.com/apache/beam/sdks/go/pkg/beam/model/pipeline_v1"
+	pipepb "github.com/apache/beam/sdks/go/pkg/beam/model/pipeline_v1"
 )
 
 type mUrn uint32
@@ -54,6 +54,7 @@ var sUrns = [...]string{
 
 	"beam:metric:ptransform_progress:remaining:v1",
 	"beam:metric:ptransform_progress:completed:v1",
+	"beam:metric:data_channel:read_index:v1",
 
 	"TestingSentinelUrn", // Must remain last.
 }
@@ -80,6 +81,7 @@ const (
 
 	urnProgressRemaining
 	urnProgressCompleted
+	urnDataChannelReadIndex
 
 	urnTestSentinel // Must remain last.
 )
@@ -111,6 +113,8 @@ func urnToType(u mUrn) string {
 
 	case urnProgressRemaining, urnProgressCompleted:
 		return "beam:metrics:progress:v1"
+	case urnDataChannelReadIndex:
+		return "beam:metrics:sum_int64:v1"
 
 	// Monitoring Table isn't currently in the protos.
 	// case ???:
@@ -137,7 +141,7 @@ type shortKey struct {
 type shortIDCache struct {
 	mu              sync.Mutex
 	labels2ShortIds map[shortKey]string
-	shortIds2Infos  map[string]*ppb.MonitoringInfo
+	shortIds2Infos  map[string]*pipepb.MonitoringInfo
 
 	lastShortID int64
 }
@@ -145,7 +149,7 @@ type shortIDCache struct {
 func newShortIDCache() *shortIDCache {
 	return &shortIDCache{
 		labels2ShortIds: make(map[shortKey]string),
-		shortIds2Infos:  make(map[string]*ppb.MonitoringInfo),
+		shortIds2Infos:  make(map[string]*pipepb.MonitoringInfo),
 	}
 }
 
@@ -166,7 +170,7 @@ func (c *shortIDCache) getShortID(l metrics.Labels, urn mUrn) string {
 	}
 	s = c.getNextShortID()
 	c.labels2ShortIds[k] = s
-	c.shortIds2Infos[s] = &ppb.MonitoringInfo{
+	c.shortIds2Infos[s] = &pipepb.MonitoringInfo{
 		Urn:    sUrns[urn],
 		Type:   urnToType(urn),
 		Labels: userLabels(l),
@@ -174,10 +178,10 @@ func (c *shortIDCache) getShortID(l metrics.Labels, urn mUrn) string {
 	return s
 }
 
-func (c *shortIDCache) shortIdsToInfos(shortids []string) map[string]*ppb.MonitoringInfo {
+func (c *shortIDCache) shortIdsToInfos(shortids []string) map[string]*pipepb.MonitoringInfo {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	m := make(map[string]*ppb.MonitoringInfo, len(shortids))
+	m := make(map[string]*pipepb.MonitoringInfo, len(shortids))
 	for _, s := range shortids {
 		m[s] = c.shortIds2Infos[s]
 	}
@@ -195,11 +199,11 @@ func getShortID(l metrics.Labels, urn mUrn) string {
 	return defaultShortIDCache.getShortID(l, urn)
 }
 
-func shortIdsToInfos(shortids []string) map[string]*ppb.MonitoringInfo {
+func shortIdsToInfos(shortids []string) map[string]*pipepb.MonitoringInfo {
 	return defaultShortIDCache.shortIdsToInfos(shortids)
 }
 
-func monitoring(p *exec.Plan) ([]*ppb.MonitoringInfo, map[string][]byte) {
+func monitoring(p *exec.Plan) ([]*pipepb.MonitoringInfo, map[string][]byte) {
 	store := p.Store()
 	if store == nil {
 		return nil, nil
@@ -208,7 +212,7 @@ func monitoring(p *exec.Plan) ([]*ppb.MonitoringInfo, map[string][]byte) {
 	defaultShortIDCache.mu.Lock()
 	defer defaultShortIDCache.mu.Unlock()
 
-	var monitoringInfo []*ppb.MonitoringInfo
+	var monitoringInfo []*pipepb.MonitoringInfo
 	payloads := make(map[string][]byte)
 	metrics.Extractor{
 		SumInt64: func(l metrics.Labels, v int64) {
@@ -219,7 +223,7 @@ func monitoring(p *exec.Plan) ([]*ppb.MonitoringInfo, map[string][]byte) {
 			payloads[getShortID(l, urnUserSumInt64)] = payload
 
 			monitoringInfo = append(monitoringInfo,
-				&ppb.MonitoringInfo{
+				&pipepb.MonitoringInfo{
 					Urn:     sUrns[urnUserSumInt64],
 					Type:    urnToType(urnUserSumInt64),
 					Labels:  userLabels(l),
@@ -234,7 +238,7 @@ func monitoring(p *exec.Plan) ([]*ppb.MonitoringInfo, map[string][]byte) {
 			payloads[getShortID(l, urnUserDistInt64)] = payload
 
 			monitoringInfo = append(monitoringInfo,
-				&ppb.MonitoringInfo{
+				&pipepb.MonitoringInfo{
 					Urn:     sUrns[urnUserDistInt64],
 					Type:    urnToType(urnUserDistInt64),
 					Labels:  userLabels(l),
@@ -249,7 +253,7 @@ func monitoring(p *exec.Plan) ([]*ppb.MonitoringInfo, map[string][]byte) {
 			payloads[getShortID(l, urnUserLatestMsInt64)] = payload
 
 			monitoringInfo = append(monitoringInfo,
-				&ppb.MonitoringInfo{
+				&pipepb.MonitoringInfo{
 					Urn:     sUrns[urnUserLatestMsInt64],
 					Type:    urnToType(urnUserLatestMsInt64),
 					Labels:  userLabels(l),
@@ -265,14 +269,26 @@ func monitoring(p *exec.Plan) ([]*ppb.MonitoringInfo, map[string][]byte) {
 		if err != nil {
 			panic(err)
 		}
-		payloads[getShortID(metrics.PCollectionLabels(snapshot.PID), urnElementCount)] = payload
 
+		// TODO(BEAM-9934): This metric should account for elements in multiple windows.
+		payloads[getShortID(metrics.PCollectionLabels(snapshot.PID), urnElementCount)] = payload
 		monitoringInfo = append(monitoringInfo,
-			&ppb.MonitoringInfo{
+			&pipepb.MonitoringInfo{
 				Urn:  sUrns[urnElementCount],
 				Type: urnToType(urnElementCount),
 				Labels: map[string]string{
 					"PCOLLECTION": snapshot.PID,
+				},
+				Payload: payload,
+			})
+
+		payloads[getShortID(metrics.PTransformLabels(snapshot.ID), urnDataChannelReadIndex)] = payload
+		monitoringInfo = append(monitoringInfo,
+			&pipepb.MonitoringInfo{
+				Urn:  sUrns[urnDataChannelReadIndex],
+				Type: urnToType(urnDataChannelReadIndex),
+				Labels: map[string]string{
+					"PTRANSFORM": snapshot.ID,
 				},
 				Payload: payload,
 			})

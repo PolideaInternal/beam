@@ -425,6 +425,24 @@ class StandardOptions(PipelineOptions):
         help='Whether to enable streaming mode.')
 
 
+class CrossLanguageOptions(PipelineOptions):
+  @classmethod
+  def _add_argparse_args(cls, parser):
+    parser.add_argument(
+        '--beam_services',
+        type=json.loads,
+        default={},
+        help=(
+            'For convienience, Beam provides the ability to automatically '
+            'download and start various services (such as expansion services) '
+            'used at pipeline construction and execution. These services are '
+            'identified by gradle target. This option provides the ability to '
+            'use pre-started services or non-default pre-existing artifacts to '
+            'start the given service. '
+            'Should be a json mapping of gradle build targets to pre-built '
+            'artifacts (e.g. jar files) expansion endpoints (e.g. host:port).'))
+
+
 class TypeOptions(PipelineOptions):
   @classmethod
   def _add_argparse_args(cls, parser):
@@ -703,7 +721,8 @@ class WorkerOptions(PipelineOptions):
         default=None,
         help=(
             'GCE availability zone for launching workers. Default is up to the '
-            'Dataflow service.'))
+            'Dataflow service. This flag is deprecated, and will be replaced '
+            'by worker_zone.'))
     parser.add_argument(
         '--network',
         default=None,

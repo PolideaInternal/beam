@@ -34,6 +34,7 @@ import mock
 
 import apache_beam as beam
 import apache_beam.transforms as ptransform
+from apache_beam.coders import BytesCoder
 from apache_beam.coders import coders
 from apache_beam.options.pipeline_options import DebugOptions
 from apache_beam.options.pipeline_options import PipelineOptions
@@ -51,6 +52,7 @@ from apache_beam.runners.dataflow.internal.clients import dataflow as dataflow_a
 from apache_beam.runners.runner import PipelineState
 from apache_beam.testing.extra_assertions import ExtraAssertionsMixin
 from apache_beam.testing.test_pipeline import TestPipeline
+from apache_beam.transforms import environments
 from apache_beam.transforms import window
 from apache_beam.transforms.core import Windowing
 from apache_beam.transforms.core import _GroupByKeyOnly
@@ -101,7 +103,8 @@ class DataflowRunnerTest(unittest.TestCase, ExtraAssertionsMixin):
         '--staging_location=ignored',
         '--temp_location=/dev/null',
         '--no_auth',
-        '--dry_run=True'
+        '--dry_run=True',
+        '--sdk_location=container'
     ]
 
   @mock.patch('time.sleep', return_value=None)
@@ -219,7 +222,8 @@ class DataflowRunnerTest(unittest.TestCase, ExtraAssertionsMixin):
             beam_runner_api_pb2.Environment(
                 urn=common_urns.environments.DOCKER.urn,
                 payload=beam_runner_api_pb2.DockerPayload(
-                    container_image='FOO').SerializeToString())
+                    container_image='FOO').SerializeToString(),
+                capabilities=environments.python_sdk_capabilities())
         ])
 
   def test_remote_runner_translation(self):
@@ -247,7 +251,7 @@ class DataflowRunnerTest(unittest.TestCase, ExtraAssertionsMixin):
     self.assertEqual(job_dict[u'steps'][1][u'kind'], u'ParallelDo')
     self.assertEqual(job_dict[u'steps'][2][u'kind'], u'ParallelDo')
 
-  def test_biqquery_read_streaming_fail(self):
+  def test_bigquery_read_streaming_fail(self):
     remote_runner = DataflowRunner()
     self.default_properties.append("--streaming")
     with self.assertRaisesRegex(ValueError,
@@ -255,6 +259,18 @@ class DataflowRunnerTest(unittest.TestCase, ExtraAssertionsMixin):
       with Pipeline(remote_runner,
                     PipelineOptions(self.default_properties)) as p:
         _ = p | beam.io.Read(beam.io.BigQuerySource('some.table'))
+
+  def test_biqquery_read_fn_api_fail(self):
+    remote_runner = DataflowRunner()
+    for flag in ['beam_fn_api', 'use_unified_worker', 'use_runner_v2']:
+      self.default_properties.append("--experiments=%s" % flag)
+      with self.assertRaisesRegex(
+          ValueError,
+          'The Read.BigQuerySource.*is not supported.*'
+          'apache_beam.io.gcp.bigquery.ReadFromBigQuery.*'):
+        with Pipeline(remote_runner,
+                      PipelineOptions(self.default_properties)) as p:
+          _ = p | beam.io.Read(beam.io.BigQuerySource('some.table'))
 
   def test_remote_runner_display_data(self):
     remote_runner = DataflowRunner()
@@ -422,7 +438,8 @@ class DataflowRunnerTest(unittest.TestCase, ExtraAssertionsMixin):
         beam.pvalue.AsSingleton(pc),
         beam.pvalue.AsMultiMap(pc))
     applied_transform = AppliedPTransform(None, transform, "label", [pc])
-    DataflowRunner.side_input_visitor().visit_transform(applied_transform)
+    DataflowRunner.side_input_visitor(
+        use_fn_api=True).visit_transform(applied_transform)
     self.assertEqual(2, len(applied_transform.side_inputs))
     for side_input in applied_transform.side_inputs:
       self.assertEqual(
@@ -565,6 +582,87 @@ class DataflowRunnerTest(unittest.TestCase, ExtraAssertionsMixin):
     runner = DataflowRunner()
     result = runner.get_default_gcp_region()
     self.assertIsNone(result)
+
+  def test_combine_values_translation(self):
+    runner = DataflowRunner()
+
+    with beam.Pipeline(runner=runner,
+                       options=PipelineOptions(self.default_properties)) as p:
+      (  # pylint: disable=expression-not-assigned
+          p
+          | beam.Create([('a', [1, 2]), ('b', [3, 4])])
+          | beam.CombineValues(lambda v, _: sum(v)))
+
+    job_dict = json.loads(str(runner.job))
+    self.assertIn(
+        u'CombineValues', set(step[u'kind'] for step in job_dict[u'steps']))
+
+  def expect_correct_override(self, job, step_name, step_kind):
+    """Expects that a transform was correctly overriden."""
+
+    # If the typing information isn't being forwarded correctly, the component
+    # encodings here will be incorrect.
+    expected_output_info = [{
+        "encoding": {
+            "@type": "kind:windowed_value",
+            "component_encodings": [{
+                "@type": "kind:bytes"
+            }, {
+                "@type": "kind:global_window"
+            }],
+            "is_wrapper": True
+        },
+        "output_name": "out",
+        "user_name": step_name + ".out"
+    }]
+
+    job_dict = json.loads(str(job))
+    maybe_step = [
+        s for s in job_dict[u'steps']
+        if s[u'properties'][u'user_name'] == step_name
+    ]
+    self.assertTrue(maybe_step, 'Could not find step {}'.format(step_name))
+
+    step = maybe_step[0]
+    self.assertEqual(step[u'kind'], step_kind)
+
+    # The display data here is forwarded because the replace transform is
+    # subclassed from iobase.Read.
+    self.assertGreater(len(step[u'properties']['display_data']), 0)
+    self.assertEqual(step[u'properties']['output_info'], expected_output_info)
+
+  def test_read_create_translation(self):
+    runner = DataflowRunner()
+
+    with beam.Pipeline(runner=runner,
+                       options=PipelineOptions(self.default_properties)) as p:
+      # pylint: disable=expression-not-assigned
+      p | beam.Create([b'a', b'b', b'c'])
+
+    self.expect_correct_override(runner.job, u'Create/Read', u'ParallelRead')
+
+  def test_read_bigquery_translation(self):
+    runner = DataflowRunner()
+
+    with beam.Pipeline(runner=runner,
+                       options=PipelineOptions(self.default_properties)) as p:
+      # pylint: disable=expression-not-assigned
+      p | beam.io.Read(beam.io.BigQuerySource('some.table', coder=BytesCoder()))
+
+    self.expect_correct_override(runner.job, u'Read', u'ParallelRead')
+
+  def test_read_pubsub_translation(self):
+    runner = DataflowRunner()
+
+    self.default_properties.append("--streaming")
+
+    with beam.Pipeline(runner=runner,
+                       options=PipelineOptions(self.default_properties)) as p:
+      # pylint: disable=expression-not-assigned
+      p | beam.io.ReadFromPubSub(topic='projects/project/topics/topic')
+
+    self.expect_correct_override(
+        runner.job, u'ReadFromPubSub/Read', u'ParallelRead')
 
 
 class CustomMergingWindowFn(window.WindowFn):

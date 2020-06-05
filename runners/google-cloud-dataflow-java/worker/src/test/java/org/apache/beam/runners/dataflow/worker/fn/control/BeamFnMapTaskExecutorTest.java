@@ -36,6 +36,7 @@ import javax.annotation.Nullable;
 import org.apache.beam.model.fnexecution.v1.BeamFnApi;
 import org.apache.beam.model.fnexecution.v1.BeamFnApi.InstructionRequest;
 import org.apache.beam.model.fnexecution.v1.BeamFnApi.InstructionResponse;
+import org.apache.beam.model.fnexecution.v1.BeamFnApi.ProcessBundleDescriptor;
 import org.apache.beam.model.pipeline.v1.MetricsApi.MonitoringInfo;
 import org.apache.beam.model.pipeline.v1.RunnerApi;
 import org.apache.beam.runners.core.StateInternals;
@@ -155,6 +156,9 @@ public class BeamFnMapTaskExecutorTest {
           }
 
           @Override
+          public void registerProcessBundleDescriptor(ProcessBundleDescriptor descriptor) {}
+
+          @Override
           public void close() {}
         };
 
@@ -248,7 +252,11 @@ public class BeamFnMapTaskExecutorTest {
 
           @Override
           public <W extends BoundedWindow> void setStateCleanupTimer(
-              String timerId, W window, Coder<W> windowCoder, Instant cleanupTime) {}
+              String timerId,
+              W window,
+              Coder<W> windowCoder,
+              Instant cleanupTime,
+              Instant cleanupOutputTimestamp) {}
 
           @Override
           public DataflowStepContext namespacedToUser() {

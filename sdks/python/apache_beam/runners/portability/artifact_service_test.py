@@ -36,6 +36,7 @@ import time
 import unittest
 
 import grpc
+from future.moves.urllib.parse import quote
 
 from apache_beam.portability import common_urns
 from apache_beam.portability.api import beam_artifact_api_pb2
@@ -327,7 +328,7 @@ class ArtifactServiceTest(unittest.TestCase):
     url_dep = beam_runner_api_pb2.ArtifactInformation(
         type_urn=common_urns.artifact_types.URL.urn,
         type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
-            url='file://' + __file__).SerializeToString())
+            url='file:' + quote(__file__)).SerializeToString())
     content = b''.join([
         r.data for r in retrieval_service.GetArtifact(
             beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep))
@@ -366,7 +367,7 @@ class ArtifactServiceTest(unittest.TestCase):
     file_manager = InMemoryFileManager()
     server = artifact_service.ArtifactStagingService(file_manager.file_writer)
 
-    server.register_job('staging_token', [unresolved, dep_big])
+    server.register_job('staging_token', {'env': [unresolved, dep_big]})
 
     # "Push" artifacts as if from a client.
     t = threading.Thread(
@@ -375,7 +376,7 @@ class ArtifactServiceTest(unittest.TestCase):
     t.daemon = True
     t.start()
 
-    resolved_deps = server.resolved_deps('staging_token', timeout=5)
+    resolved_deps = server.resolved_deps('staging_token', timeout=5)['env']
     expected = {
         'a.txt': b'a',
         'b.txt': b'bb',

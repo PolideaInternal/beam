@@ -104,12 +104,14 @@ message InstructionRequest {
 
   // (Required) A request that the SDK Harness needs to interpret.
   oneof request {
-    RegisterRequest register = 1000;
     ProcessBundleRequest process_bundle = 1001;
     ProcessBundleProgressRequest process_bundle_progress = 1002;
     ProcessBundleSplitRequest process_bundle_split = 1003;
     FinalizeBundleRequest finalize_bundle = 1004;
     ProcessBundleProgressMetadataRequest process_bundle_progress_metadata = 1005;
+
+    // DEPRECATED
+    RegisterRequest register = 1000;
   }
 }
 
@@ -129,12 +131,14 @@ message InstructionResponse {
   // If the instruction did not fail, it is required to return an equivalent
   // response type depending on the request this matches.
   oneof response {
-    RegisterResponse register = 1000;
     ProcessBundleResponse process_bundle = 1001;
     ProcessBundleProgressResponse process_bundle_progress = 1002;
     ProcessBundleSplitResponse process_bundle_split = 1003;
     FinalizeBundleResponse finalize_bundle = 1004;
     ProcessBundleProgressMetadataResponse process_bundle_progress_metadata = 1005;
+
+    // DEPRECATED
+    RegisterResponse register = 1000;
   }
 }
 
@@ -371,6 +375,9 @@ message ProcessBundleSplitRequest {
 
     // A set of allowed element indices where the SDK may split. When this is
     // empty, there are no constraints on where to split.
+    // Specifically, the first_residual_element of a split result must be an
+    // allowed split point, and the last_primary_element must immediately
+    // preceded an allowed split point.
     repeated int64 allowed_split_points = 3;
 
     // (Required for GrpcRead operations) Number of total elements expected
@@ -483,7 +490,7 @@ message Elements {
 
   // Represent the encoded user timer for a given instruction, transform and
   // timer id.
-  message Timer {
+  message Timers {
     // (Required) A reference to an active instruction request with the given
     // instruction id.
     string instruction_id = 1;
@@ -494,7 +501,7 @@ message Elements {
     // represents the producer of these timers.
     string transform_id = 2;
 
-    // (Optional) The local timer family name used to identify the associated
+    // (Required) The local timer family name used to identify the associated
     // timer family specification
     string timer_family_id = 3;
 
@@ -512,7 +519,7 @@ message Elements {
   repeated Data data = 1;
 
   // (Optional)  A list of timer byte streams.
-  repeated Timer timer = 2;
+  repeated Timers timers = 2;
 }
 
 // Stable
