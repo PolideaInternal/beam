@@ -20,28 +20,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Contact Us
 
+# Contact us!
+#
 There are many ways to reach the Beam user and developer communities - use
 whichever one seems best.
+#
+#
+## How to use mailing lists?/What is it?
+Here should be a short description on what mailing lists are and how to use them. Also information on how does subscribe, unsubscribe and archives do work (blank email etc).
+#
+#
+## Available points of contact
+Choose the mailing list that suits you best and send us an email!
+#
+#
 
-<!-- We use div instead of table shortcode here, because markdownify break superscripts -->
 <div class="table-wrapper">
 
-| How to contact us | When to use it |
-| ----------------- | ---------------|
-| [user@](https://lists.apache.org/list.html?user@beam.apache.org) mailing list | User support and questions ([Subscribe](mailto:user-subscribe@beam.apache.org)[^1], [Unsubscribe](mailto:user-unsubscribe@beam.apache.org)[^1], [Archives](https://lists.apache.org/list.html?user@beam.apache.org)) |
-| [dev@](https://lists.apache.org/list.html?dev@beam.apache.org) mailing list | Development discussions ([Subscribe](mailto:dev-subscribe@beam.apache.org)[^1], [Unsubscribe](mailto:dev-unsubscribe@beam.apache.org)[^1], [Archives](https://lists.apache.org/list.html?dev@beam.apache.org)) |
-| [commits@](https://lists.apache.org/list.html?commits@beam.apache.org) mailing list | Firehose of commits, bugs, pull requests, etc. ([Subscribe](mailto:commits-subscribe@beam.apache.org)[^1], [Unsubscribe](mailto:commits-unsubscribe@beam.apache.org)[^1], [Archives](https://lists.apache.org/list.html?commits@beam.apache.org)) |
-| [builds@](https://lists.apache.org/list.html?builds@beam.apache.org) mailing list | Firehose of build notifications from Jenkins ([Subscribe](mailto:builds-subscribe@beam.apache.org)[^1], [Unsubscribe](mailto:builds-unsubscribe@beam.apache.org)[^1], [Archives](https://lists.apache.org/list.html?builds@beam.apache.org)) |
-| [JIRA bug tracker](https://issues.apache.org/jira/browse/BEAM) | Report bugs / discover known issues |
-| [StackOverflow](https://stackoverflow.com/questions/tagged/apache-beam) | Ask and answer user support questions |
-| [Slack](https://s.apache.org/beam-slack-channel) | Chat with users and developers in the ASF Slack. Note: Please [join the #beam channel](https://s.apache.org/beam-slack-channel) after you [created an account](https://s.apache.org/slack-invite). Please do not ask Beam questions in #general. |
-
+| PURPOSE | CONTACT | ACTION | 
+| ------- | ------- | -------|
+| <div><img src="/images/community/contact-us/question-mark.svg" width="45" alt="question icon"/> <p> User support and questions </p> </div> | [user@](https://lists.apache.org/list.html?user@beam.apache.org) mailing list | <div> [Subscribe](mailto:user-subscribe@beam.apache.org) [Unsubscribe](mailto:user-unsubscribe@beam.apache.org) [Archives](https://lists.apache.org/list.html?user@beam.apache.org) </div>|
+| <div><img src="/images/community/contact-us/discussion.svg" width="45" alt="discussion icon"/> <p> Development discussions </p></div> | [dev@](https://lists.apache.org/list.html?dev@beam.apache.org) mailing list | <div>  [Subscribe](mailto:dev-subscribe@beam.apache.org) [Unsubscribe](mailto:dev-unsubscribe@beam.apache.org) [Archives](https://lists.apache.org/list.html?dev@beam.apache.org) </div> |
+| <div><img src="/images/community/contact-us/gitArrows.svg" width="45" alt="git icon"/> <p> Firehose of commits, bugs, pull requests, etc.</p></div> | [commits@](https://lists.apache.org/list.html?commits@beam.apache.org) mailing list | <div>  [Subscribe](mailto:commits-subscribe@beam.apache.org) [Unsubscribe](mailto:commits-unsubscribe@beam.apache.org) [Archives](https://lists.apache.org/list.html?commits@beam.apache.org) </div>  |
+| <div><img src="/images/community/contact-us/notification.svg" width="45" alt="notification icon"/> <p> Firehose of build notifications from Jenkins </p> </div> | [builds@](https://lists.apache.org/list.html?builds@beam.apache.org) mailing list | <div>  [Subscribe](mailto:builds-subscribe@beam.apache.org) [Unsubscribe](mailto:builds-unsubscribe@beam.apache.org) [Archives](https://lists.apache.org/list.html?builds@beam.apache.org) </div> |
+| <div><img src="/images/community/contact-us/bug.svg" width="45" alt="bug icon"/> <p>Report bugs / discover known issues </p></div> | [JIRA bug tracker](https://issues.apache.org/jira/browse/BEAM) | &#8208; |
+| <div><img src="/images/community/contact-us/messages.svg" width="45" alt="messages icon"/> <p>Ask and answer user support questions </p></div> | [StackOverflow](https://stackoverflow.com/questions/tagged/apache-beam) | &#8208; |
+| <div><img src="/images/community/contact-us/knot.svg" width="45" alt="question icon"/> <p>Chat with users and developers in the ASF Slack. Note: Please [join the #beam channel](https://s.apache.org/beam-slack-channel) after you [created an account](https://s.apache.org/slack-invite). Please do not ask Beam questions in #general. </p></div> | [Slack](https://s.apache.org/beam-slack-channel) | &#8208; |
 </div>
+
+#
+#
+<div class="font-16">
 
 If you have questions about how to use Apache Beam, we recommend you try out the [user@](https://lists.apache.org/list.html?user@beam.apache.org) mailing list, and [StackOverflow](https://stackoverflow.com/questions/tagged/apache-beam).
 
-[^1]: To subscribe or unsubscribe, a blank email is fine.
-
 If you wish to report a security vulnerability, please contact [security@apache.org](mailto:security@apache.org). Apache Beam follows the typical [Apache vulnerability handling process](https://apache.org/security/committers.html#vulnerability-handling).
+
+</div>

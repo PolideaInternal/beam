@@ -96,3 +96,34 @@
     font-size: 24px;
   }
 }
+.font-16{
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1.63;
+  letter-spacing: 0.43px;
+}
+
+h1{
+  @media (max-width: $tablet){
+    font-size: 32px;
+    line-height: 1.19;
+  }
+  font-size: 46px;
+  font-weight: normal;
+  line-height: 1;
+}
+h2{
+  @media (max-width: $tablet){
+  font-size: 24px;
+  line-height: 1.25;
+  }
+  font-size: 29px;
+  line-height: 1.24;
+}
+p{
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 1.63;
+  letter-spacing: 0.43px;
+}
