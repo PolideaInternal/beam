@@ -30,21 +30,20 @@ $(document).ready(function() {
             var scrollMenu = scroll + $("." + idMenu).height() + _self.menuConfig.offsetTop;
             var scrollHeight = scroll + $(window).height();
             var bodyHeightOffset = $('body')[0].scrollHeight - _self.menuConfig.offsetBottom;
-
             if (scroll <= _self.menuConfig.offsetTop) {
               $("." + idMenu).css({
                 top: '',
                 bottom: ''
               });
-            } else if (scroll > _self.menuConfig.offsetTop && scrollMenu < bodyHeightOffset) {
+            } else if (scroll > _self.menuConfig.offsetTop && scrollMenu < bodyHeightOffset-170 ) {
               $("." + idMenu).css({
-                top: _self.menuConfig.offsetTop,
+                top: 125,
                 bottom: ''
               });
-            } else if (scrollMenu >= bodyHeightOffset) {
+            } else if (scrollMenu >= bodyHeightOffset-170) {
               $("." + idMenu).css({
                 top: '',
-                bottom: scrollHeight - bodyHeightOffset
+                bottom: scrollHeight - (bodyHeightOffset-120)
               });
             }
           } else {
@@ -71,6 +70,6 @@ $(document).ready(function() {
     }
   }
 
-  FixMenu({"classNameMenu":"section-nav"}).init();
+  //FixMenu({"classNameMenu":"section-nav"}).init();
   FixMenu({ "classNameMenu":"page-nav" }).init();
 });

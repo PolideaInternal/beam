@@ -113,22 +113,23 @@ your pipeline's configuration options programmatically, but it's often easier to
 set the options ahead of time (or read them from the command line) and pass them
 to the `Pipeline` object when you create the object.
 
-{{< highlight java >}}
+{{< highlight1 language="java" >}}
+
 // Start by defining the options for the pipeline.
 PipelineOptions options = PipelineOptionsFactory.create();
 
 // Then create the pipeline.
 Pipeline p = Pipeline.create(options);
-{{< /highlight >}}
+{{< /highlight1 >}}
 
-{{< highlight py >}}
+{{< highlight1 language="py" >}}
 {{< code_sample "sdks/python/apache_beam/examples/snippets/snippets.py" pipelines_constructing_creating >}}
-{{< /highlight >}}
+{{< /highlight1 >}}
 
-{{< highlight go >}}
+{{< highlight1 language="go" >}}
 // In order to start creating the pipeline for execution, a Pipeline object and a Scope object are needed.
 p, s := beam.NewPipelineWithRoot()
-{{< /highlight >}}
+{{< /highlight1 >}}
 
 ### 2.1. Configuring pipeline options {#configuring-pipeline-options}
 

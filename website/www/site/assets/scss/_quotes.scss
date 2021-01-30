@@ -16,136 +16,106 @@
  */
 
 @import "media";
-
 .quotes {
-  padding: $pad-l $pad;
-  background-color: $color-medium-gray;
-
-  .quotes-title {
+	padding: 84px 30px;
+	background-color: #fbfbfb;
+	.quotes-title {
     @extend .component-title;
-
-    text-align: center;
-    border: none;
-  }
-
-  .quotes-desktop {
-    display: flex;
-    justify-content: center;
-
-    .quote-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      width: 100%;
-      max-width: 381px;
-      height: 474px;
-      margin: 86px 36px 0 0;
-      padding: 55px 20px 24px 20px;
-      border-radius: 16px;
-      background-color: $color-white;
-      box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.16),
-        0 4px 4px 0 rgba(0, 0, 0, 0.06);
-      margin-right: 36px;
-
-      .quote-text {
+		text-align: center;
+		border: none;
+	}
+	.quotes-desktop {
+		display: flex;
+		justify-content: center;
+		.quote-card {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+			width: 100%;
+			max-width: 381px;
+			height: 474px;
+			margin: 86px 36px 0 0;
+			padding: 55px 20px 24px;
+			border-radius: 16px;
+			background-color: #fff;
+			-webkit-box-shadow: 0 4px 16px 0 rgba(0, 0, 0, .16), 0 4px 4px 0 rgba(0, 0, 0, .06);
+			box-shadow: 0 4px 16px 0 rgba(0, 0, 0, .16), 0 4px 4px 0 rgba(0, 0, 0, .06);
+			margin-right: 36px;
+			.quote-text {
+				margin: 108px 0 20px;
         @extend .component-quote;
-
-        margin: 108px 0 20px 0;
-      }
-
-      img {
-        width: 172px;
-      }
-    }
-
-    :last-child {
-      margin-right: 0;
-    }
-  }
-  
-  // Sliding feature is only displayed on mobile version
-  .keen-slider {
-    display: none;
-  }
-
-  .dots {
-    display: none;
-  }
-
-  .keen-slider {
-    width: 327px;
-    margin: 0 auto;
-    border-radius: 16px;
-    background-color: $color-white;
-    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.16),
-      0 4px 4px 0 rgba(0, 0, 0, 0.06);
-
-    .keen-slider__slide {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      width: 100%;
-      max-width: 327px;
-      height: 468px;
-      padding: 55px 24px 24px 24px;
-
-      .quote-text {
-        @extend .component-quote;
-
-        margin: 108px 0 20px 0;
-      }
-
-      img {
-        width: 172px;
-      }
-    }
-  }
-
-  .dots {
-    display: none;
-    padding: 10px 0;
-    justify-content: center;
-    margin-top: 46px;
-  }
-
-  .dot {
-    border: none;
-    width: 13px;
-    height: 13px;
-    background: $color-smoke;
-    border-radius: 50%;
-    margin: 0 5px;
-    padding: 4px;
-    cursor: pointer;
-  }
-
-  .dot:focus {
-    outline: none;
-  }
-
-  .dot--active {
-    background: $color-sun;
-  }
+			}
+			img {
+				width: 172px;
+			}
+		}
+		&:last-child {
+			margin-right: 0;
+		}
+	}
+	.keen-slider {
+		display: none;
+		width: 327px;
+		margin: 0 auto;
+		border-radius: 16px;
+		background-color: #fff;
+		-webkit-box-shadow: 0 4px 16px 0 rgba(0, 0, 0, .16), 0 4px 4px 0 rgba(0, 0, 0, .06);
+		box-shadow: 0 4px 16px 0 rgba(0, 0, 0, .16), 0 4px 4px 0 rgba(0, 0, 0, .06);
+		.keen-slider__slide {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+			width: 100%;
+			max-width: 327px;
+			height: 468px;
+			padding: 55px 24px 24px;
+			.quote-text {
+				margin: 108px 0 20px;
+			}
+			img {
+				width: 172px;
+			}
+		}
+	}
+	.dots {
+		display: none;
+		padding: 10px 0;
+		justify-content: center;
+		margin-top: 46px;
+	}
+	.dot {
+		border: none;
+		width: 13px;
+		height: 13px;
+		background: #8c8b8e;
+		border-radius: 50%;
+		margin: 0 5px;
+		padding: 4px;
+		cursor: pointer;
+		&:focus {
+			outline: none;
+		}
+	}
+	.dot--active {
+		background: #f26628;
+	}
 }
-
-@media (max-width: $tablet) {
-  .quotes {
-    .quotes-title {
-      margin-bottom: 64px;
-    }
-
-    .quotes-desktop {
-      display: none;
-    }
-
-    .keen-slider {
-      display: flex;
-    }
-
-    .dots {
-      display: flex;
-    }
-  }
+@media (max-width: $ak-breakpoint-lg) {
+	.quotes {
+		.quotes-title {
+			margin-bottom: 64px;
+		}
+		.quotes-desktop {
+			display: none;
+		}
+		.keen-slider {
+			display: flex;
+      		max-width: 100%;
+		}
+		.dots {
+			display: flex;
+		}
+	}
 }

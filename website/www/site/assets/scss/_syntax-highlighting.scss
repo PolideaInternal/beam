@@ -103,3 +103,116 @@
 pre {
   background: #eef;
 }
+[class*=-switcher] {
+	ul {
+		li {
+			&:hover {
+				cursor: pointer;
+			}
+			a {
+				border: none;
+				margin-right: 0;
+				color: #333;
+				&:hover {
+					background-color: #f2804d;
+				}
+			}
+			&::before {
+				display: none;
+			}
+		}
+		li.active {
+			color: #fff;
+			a {
+				background-color: #ff6d05;
+				color: #fff;
+				border: none;
+			}
+		}
+	}
+}
+.language-switcher {
+	ul.nav-tabs {
+    padding-left:0;
+		li {
+			&:hover {
+				cursor: pointer;
+			}
+			a {
+				border: none;
+				margin-right: 0;
+				color: #333;
+				&:hover {
+					background-color: #f2804d;
+				}
+			}
+			&::before {
+				display: none;
+			}
+		}
+		li.active {
+			color: #fff;
+			a {
+				background-color: #ff6d05;
+				color: #fff;
+				border: none;
+			}
+		}
+	}
+}
+nav.version-switcher {
+	ul {
+		li {
+			&:hover {
+				cursor: pointer;
+			}
+			a {
+				border: none;
+				margin-right: 0;
+				color: #333;
+				&:hover {
+					background-color: #f2804d;
+				}
+			}
+			&::before {
+				display: none;
+			}
+		}
+		li.active {
+			color: #fff;
+			a {
+				background-color: #ff6d05;
+				color: #fff;
+				border: none;
+			}
+		}
+	}
+}
+nav.runner-switcher {
+	ul {
+		li {
+			&:hover {
+				cursor: pointer;
+			}
+			a {
+				border: none;
+				margin-right: 0;
+				color: #333;
+				&:hover {
+					background-color: #f2804d;
+				}
+			}
+			&::before {
+				display: none;
+			}
+		}
+		li.active {
+			color: #fff;
+			a {
+				background-color: #ff6d05;
+				color: #fff;
+				border: none;
+			}
+		}
+	}
+}

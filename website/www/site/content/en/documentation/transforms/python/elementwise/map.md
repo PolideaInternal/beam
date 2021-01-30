@@ -35,17 +35,18 @@ Then, we apply `Map` in multiple ways to transform every element in the `PCollec
 We use the function `str.strip` which takes a single `str` element and outputs a `str`.
 It strips the input element's whitespaces, including newlines and tabs.
 
-{{< highlight py >}}
+{{< highlight1 language="py" py="sdks/python/apache_beam/examples/snippets/transforms/elementwise/map.py"
+  notebook="examples/notebooks/documentation/transforms/python/elementwise/map" >}}
 {{< code_sample "sdks/python/apache_beam/examples/snippets/transforms/elementwise/map.py" map_simple >}}
-{{< /highlight >}}
+{{< /highlight1 >}}
 
 {{< paragraph class="notebook-skip" >}}
 Output:
 {{< /paragraph >}}
 
-{{< highlight class="notebook-skip" >}}
+{{< highlight1  >}}
 {{< code_sample "sdks/python/apache_beam/examples/snippets/transforms/elementwise/map_test.py" plants >}}
-{{< /highlight >}}
+{{< /highlight1 >}}
 
 {{< buttons-code-snippet
   py="sdks/python/apache_beam/examples/snippets/transforms/elementwise/map.py"
