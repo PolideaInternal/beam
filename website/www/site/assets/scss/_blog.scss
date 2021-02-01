@@ -31,6 +31,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
     flex-wrap: wrap-reverse;
     margin: 0 auto;
     margin-bottom: 80px;
@@ -101,6 +102,10 @@
   height: 46px;
   &:hover {
     background-color: #f2804d;
+  }
+  a {
+    color: #fff;
+    text-decoration: none;
   }
 }
 

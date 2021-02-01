@@ -14,7 +14,7 @@
 
 // Legacy.
 @import "bootstrap";
-@import "capability-matrix";
+@import "_capability-matrix";
 @import "_syntax-highlighting";
 @import "_toggler-nav";
 
@@ -45,7 +45,7 @@
 @import "_table-wrapper.scss";
 @import "_calendar.scss";
 @import "_quotes.scss";
-@import "navbar-desktop.scss";
+@import "_navbar-desktop.scss";
 @import "_blog.scss";
 @import "_lists.scss";
 @import "_traits.scss";

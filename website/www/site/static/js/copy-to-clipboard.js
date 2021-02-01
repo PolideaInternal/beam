@@ -18,7 +18,7 @@ $(document).ready(function() {
             el.value=text;document.body.appendChild(el);
             el.select();document.execCommand('copy');
             document.body.removeChild(el);
-            alert('copied');
+            alert('copied to clipboard');
         })
     }
    copy();
